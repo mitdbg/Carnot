@@ -1,2 +1,2 @@
-# carnot
+# Carnot
 Optimized System for Deep Research
