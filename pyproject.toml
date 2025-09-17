@@ -1,0 +1,73 @@
+[project]
+name = "carnot-ai"
+version = "0.1.0"
+description = "Carnot is an optimized system for Deep Research."
+readme = "README.md"
+requires-python = ">=3.10"
+keywords = ["deep research", "optimization", "llm", "AI programming", "query engine"]
+authors = [
+    {name="MIT DSG", email="mdrusso@csail.mit.edu"},
+]
+dependencies = [
+    "beautifulsoup4>=4.13.4",
+    "colorama>=0.4.6",
+    "chromadb>=1.0.15",
+    "fastapi~=0.115.0",
+    "google-cloud-aiplatform>=1.38",
+    "litellm>=1.76.1",
+    "palimpzest>=0.8.6",
+    "pandas>=2.3.1",
+    "pydantic>=2.11.7",
+    "pypdf>=5.1.0",
+    "regex>=2024.5.15",
+    "requests>=2.25",
+    "rich[jupyter]>=13.9.2",
+    "ruff>=0.9.0",
+    "setuptools>=70.1.1",
+    "smolagents[toolkit]",
+    "tiktoken>=0.8.0",
+]
+classifiers=[
+    "Development Status :: 4 - Beta",  # Change as appropriate
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",  # Change as appropriate
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",  # Specify versions you support
+    # Add more classifiers as appropriate
+]
+
+[project.optional-dependencies]
+vllm = [
+    "vllm>=0.10.1.1",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+namespaces = false
+
+[tool.setuptools.package-data]
+"*" = ["*.txt", "*.rst", "*.md"]
+
+
+[tool.pytest.ini_options]
+testpaths = ["tests/pytest"]
+filterwarnings = [
+    "error",
+    "ignore::DeprecationWarning",
+    "ignore::ResourceWarning",
+    "ignore::UserWarning",
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project.urls]
+homepage = "https://github.com/mitdbg/Carnot"
+repository = "https://github.com/mitdbg/Carnot"
+documentation = "https://github.com/mitdbg/Carnot"
+# changelog = "https://github.com/me/spam/blob/master/CHANGELOG.md"
