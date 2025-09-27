@@ -5,7 +5,7 @@ from carnot.config import QueryProcessorConfig
 from carnot.core.data.dataset import Dataset
 from carnot.core.elements.records import DataRecordCollection
 from carnot.execution.execution_strategy import ExecutionStrategy
-from carnot.execution.execution_strategy_type import ExecutionStrategyType
+from carnot.execution.parallel_execution_strategy import ParallelExecutionStrategy
 from carnot.optimizer.cost_model import SampleBasedCostModel
 from carnot.optimizer.optimizer import Optimizer
 from carnot.optimizer.optimizer_strategy_type import OptimizationStrategyType
@@ -31,22 +31,16 @@ class QueryProcessorFactory:
         Convert the string representation of each strategy into its Enum equivalent and throw
         an exception if the conversion fails.
         """
-        strategy_types = {
-            "execution_strategy": ExecutionStrategyType,
-            "optimizer_strategy": OptimizationStrategyType,
-        }
-        for strategy in ["execution_strategy", "optimizer_strategy"]:
-            strategy_str = getattr(config, strategy)
-            strategy_type = strategy_types[strategy]
-            strategy_enum = None
-            if strategy_str is not None:
-                try:
-                    strategy_enum = cls._convert_to_enum(strategy_type, strategy_str)
-                except ValueError as e:
-                    raise ValueError(f"""Unsupported {strategy}: {strategy_str}.
-                                        The supported strategies are: {strategy_type.__members__.keys()}""") from e
-            setattr(config, strategy, strategy_enum)
-            logger.debug(f"Normalized {strategy}: {strategy_enum}")
+        # Only handle optimizer strategy since execution strategy is always parallel
+        strategy_str = getattr(config, "optimizer_strategy")
+        if strategy_str is not None:
+            try:
+                strategy_enum = cls._convert_to_enum(OptimizationStrategyType, strategy_str)
+                setattr(config, "optimizer_strategy", strategy_enum)
+                logger.debug(f"Normalized optimizer_strategy: {strategy_enum}")
+            except ValueError as e:
+                raise ValueError(f"""Unsupported optimizer_strategy: {strategy_str}.
+                                    The supported strategies are: {OptimizationStrategyType.__members__.keys()}""") from e
 
         return config
 
@@ -87,10 +81,11 @@ class QueryProcessorFactory:
     def _create_execution_strategy(cls, dataset: Dataset, config: QueryProcessorConfig) -> ExecutionStrategy:
         """
         Creates an execution strategy based on the configuration.
+        Since we only have parallel execution, we always use ParallelExecutionStrategy.
         """
         # for parallel execution, set the batch size if there's a limit in the query
         limit = dataset.get_limit()
-        if limit is not None and config.execution_strategy == ExecutionStrategyType.PARALLEL:
+        if limit is not None:
             if config.batch_size is None:
                 config.batch_size = limit
                 logger.info(f"Setting batch size to query limit: {limit}")
@@ -98,9 +93,8 @@ class QueryProcessorFactory:
                 config.batch_size = limit
                 logger.info(f"Setting batch size to query limit: {limit} since it was larger than the limit")
 
-        # create the execution strategy
-        execution_strategy_cls = config.execution_strategy.value
-        return execution_strategy_cls(**config.to_dict())
+        # create the execution strategy (always parallel)
+        return ParallelExecutionStrategy(**config.to_dict())
 
     @classmethod
     def create_processor(

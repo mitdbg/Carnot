@@ -14,7 +14,6 @@ from carnot.core.data.iter_dataset import (
     TextFileDataset,
     XLSFileDataset,
 )
-from carnot.core.elements.groupbysig import GroupBySig
 from carnot.core.lib.schemas import AudioBase64, AudioFilepath, ImageBase64, ImageFilepath, ImageURL
 from carnot.policy import (
     MaxQuality,
@@ -36,7 +35,6 @@ __all__ = [
     "Cardinality",
     "Model",
     # core
-    "GroupBySig",
     "Context",
     "TextFileContext",
     "Dataset",

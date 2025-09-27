@@ -10,7 +10,7 @@ class QueryProcessorConfig(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     # execution and optimization flags
-    execution_strategy: str = Field(default="parallel")              # substituted with ExecutionStrategyType
+    execution_strategy: str = Field(default="parallel")              # Always parallel execution
     sentinel_execution_strategy: str | None = Field(default="auto")  # substituted with SentinelExecutionStrategyType
     optimizer_strategy: str = Field(default="pareto")                # substituted with OptimizationStrategyType
 

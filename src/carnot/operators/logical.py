@@ -8,7 +8,6 @@ from pydantic import BaseModel
 from carnot.constants import AggFunc, Cardinality
 from carnot.core.data import context, dataset
 from carnot.core.elements.filters import Filter
-from carnot.core.elements.groupbysig import GroupBySig
 from carnot.core.lib.schemas import Average, Count
 from carnot.utils.hash_helpers import hash_for_id
 
@@ -23,7 +22,6 @@ class LogicalOperator:
     - FilteredScan (scans input Set and applies filter)
     - ConvertScan (scans input Set and converts it to new Schema)
     - LimitScan (scans up to N records from a Set)
-    - GroupByAggregate (applies a group by on the Set)
     - Aggregate (applies an aggregation on the Set)
     - RetrieveScan (fetches documents from a provided input for a given query)
     - Map (applies a function to each record in the Set without adding any new columns)
@@ -357,40 +355,6 @@ class FilteredScan(LogicalOperator):
         logical_op_params = {
             "filter": self.filter,
             "desc": self.desc,
-            **logical_op_params,
-        }
-
-        return logical_op_params
-
-
-class GroupByAggregate(LogicalOperator):
-    def __init__(
-        self,
-        group_by_sig: GroupBySig,
-        *args,
-        **kwargs,
-    ):
-        super().__init__(*args, **kwargs)
-        if not self.input_schema:
-            raise ValueError("GroupByAggregate requires an input schema")
-        (valid, error) = group_by_sig.validate_schema(self.input_schema)
-        if not valid:
-            raise TypeError(error)
-        self.group_by_sig = group_by_sig
-
-    def __str__(self):
-        return f"GroupBy({self.group_by_sig.serialize()})"
-
-    def get_logical_id_params(self) -> dict:
-        logical_id_params = super().get_logical_id_params()
-        logical_id_params = {"group_by_sig": self.group_by_sig, **logical_id_params}
-
-        return logical_id_params
-
-    def get_logical_op_params(self) -> dict:
-        logical_op_params = super().get_logical_op_params()
-        logical_op_params = {
-            "group_by_sig": self.group_by_sig,
             **logical_op_params,
         }
 
