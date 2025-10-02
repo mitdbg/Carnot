@@ -12,6 +12,7 @@ dependencies = [
     "beautifulsoup4>=4.13.4",
     "colorama>=0.4.6",
     "chromadb>=1.0.15",
+    "dspy>=2.5.0",
     "fastapi~=0.115.0",
     "google-cloud-aiplatform>=1.38",
     "litellm>=1.76.1",
