@@ -4,7 +4,6 @@ import logging
 from typing import Any
 
 from carnot.core.models import PlanCost
-from carnot.execution.execution_strategy_type import ExecutionStrategyType
 from carnot.optimizer.cost_model import BaseCostModel
 from carnot.optimizer.optimizer_strategy_type import OptimizationStrategyType
 from carnot.optimizer.primitives import Expression, Group
@@ -433,7 +432,7 @@ class OptimizePhysicalExpression(Task):
 
         # get the optimizer strategy (type) and the execution strategy (type) from the context
         optimizer_strategy: OptimizationStrategyType = context['optimizer_strategy']
-        execution_strategy: ExecutionStrategyType = context['execution_strategy']
+        execution_strategy = context['execution_strategy']  # Always parallel execution
 
         # return if we've already computed the cost of this physical expression
         if optimizer_strategy.is_pareto() and self.physical_expression.pareto_optimal_plan_costs is not None:

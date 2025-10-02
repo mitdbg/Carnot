@@ -267,24 +267,6 @@ TOKENS_PER_CHARACTER = 0.25
 # Rough estimate of the number of tokens the context is allowed to take up for LLAMA3 models
 LLAMA_CONTEXT_TOKENS_LIMIT = 6000
 
-# a naive estimate for the input record size
-NAIVE_EST_SOURCE_RECORD_SIZE_IN_BYTES = 1_000_000
-
-# a naive estimate for filter selectivity
-NAIVE_EST_FILTER_SELECTIVITY = 0.5
-
-# a naive estimate for join selectivity
-NAIVE_EST_JOIN_SELECTIVITY = 0.5
-
-# a naive estimate for the number of input tokens processed per record
-NAIVE_EST_NUM_INPUT_TOKENS = 1000
-
-# a naive estimate for the number of output tokens processed per record
-NAIVE_EST_NUM_OUTPUT_TOKENS = 100
-
-# a naive estimate for the number of groups returned by a group by
-NAIVE_EST_NUM_GROUPS = 3
-
 # a naive estimate for the factor of increase (loosely termed "selectivity") for one-to-many cardinality operations
 NAIVE_EST_ONE_TO_MANY_SELECTIVITY = 2
 

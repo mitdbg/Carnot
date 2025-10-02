@@ -9,14 +9,12 @@ from pydantic import BaseModel
 from carnot.config import QueryProcessorConfig
 from carnot.constants import AggFunc, Cardinality
 from carnot.core.elements.filters import Filter
-from carnot.core.elements.groupbysig import GroupBySig
 from carnot.core.lib.schemas import create_schema_from_fields, project, relax_schema, union_schemas
 from carnot.operators.logical import (
     Aggregate,
     ConvertScan,
     Distinct,
     FilteredScan,
-    GroupByAggregate,
     JoinOp,
     LimitScan,
     LogicalOperator,
@@ -531,11 +529,6 @@ class Dataset:
         """Apply an average aggregation to this set"""
         operator = Aggregate(input_schema=self.schema, agg_func=AggFunc.AVERAGE)
         return Dataset(sources=[self], operator=operator, schema=operator.output_schema)
-
-    def groupby(self, groupby: GroupBySig) -> Dataset:
-        output_schema = groupby.output_schema()
-        operator = GroupByAggregate(input_schema=self.schema, output_schema=output_schema, group_by_sig=groupby)
-        return Dataset(sources=[self], operator=operator, schema=output_schema)
 
     def retrieve(
         self,
