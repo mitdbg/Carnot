@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 keywords = ["deep research", "optimization", "llm", "AI programming", "query engine"]
 authors = [
-    {name="MIT DSG", email="mdrusso@csail.mit.edu"},
+    { name = "MIT DSG", email = "mdrusso@csail.mit.edu" },
 ]
 dependencies = [
     "beautifulsoup4>=4.13.4",
@@ -27,13 +27,16 @@ dependencies = [
     "setuptools>=70.1.1",
     "smolagents[toolkit]",
     "tiktoken>=0.8.0",
+    "numpy>=1.24.0",
+    "scikit-learn>=1.3.0",
+    "sentence-transformers>=2.2.0",
 ]
-classifiers=[
-    "Development Status :: 4 - Beta",  # Change as appropriate
+classifiers = [
+    "Development Status :: 4 - Beta", # Change as appropriate
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",  # Change as appropriate
+    "License :: OSI Approved :: MIT License", # Change as appropriate
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",  # Specify versions you support
+    "Programming Language :: Python :: 3.8", # Specify versions you support
     # Add more classifiers as appropriate
 ]
 
@@ -43,7 +46,7 @@ vllm = [
 ]
 
 [tool.setuptools]
-package-dir = {"" = "src"}
+package-dir = { "" = "src" }
 include-package-data = true
 
 [tool.setuptools.packages.find]
