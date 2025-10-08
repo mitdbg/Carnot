@@ -11,6 +11,7 @@ Paper: https://aclanthology.org/2023.acl-long.784.pdf
 import json
 import random
 import requests
+import csv
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 import dspy
@@ -149,25 +150,52 @@ def main():
     # Load training data
     training_queries = loader.load_training_data()
     print(f"Loaded {len(training_queries)} training queries")
-    import pdb; pdb.set_trace()
 
-    # Sample 10 random queries for testing
-    sample_queries = random.sample(training_queries, min(10, len(training_queries)))
-    print(f"Testing on {len(sample_queries)} randomly sampled queries")
+    # Sample n random queries for testing (change this number if needed)
+    num_samples = 50
+    sample_queries = random.sample(training_queries, min(num_samples, len(training_queries)))
+    print(f"Generating concepts for {len(sample_queries)} randomly sampled queries")
 
     # Initialize the concept generator
     generator = QuestConceptGenerator()
 
-    for i, quest_query in enumerate(sample_queries):
+    # Prepare data for CSV
+    csv_data = []
+    
+    for i, quest_query in enumerate(sample_queries, 1):
+        print(f"Processing query {i}/{len(sample_queries)}...", end='\r')
+        
         result = generator(query=quest_query.query)
         raw = result.concepts
         concept_list = _safe_parse_concept_list(raw)
+        
+        # Join concepts into a single string for CSV storage
+        concepts_str = json.dumps(concept_list)
+        
+        csv_data.append({
+            'query': quest_query.query,
+            'original_query': quest_query.original_query,
+            'concepts': concepts_str
+        })
 
-        print(f"\n--- Example {i+1} ---")
+        # Also print progress
+        print(f"\n--- Example {i} ---")
         print(f"Query: {quest_query.query}")
+        print(f"Original: {quest_query.original_query}")
         print("Concepts:")
         for j, c in enumerate(concept_list, 1):
             print(f"  {j}. {c}")
+
+    # Save to CSV
+    output_filename = 'quest_queries_with_concepts.csv'
+    with open(output_filename, 'w', newline='', encoding='utf-8') as csvfile:
+        fieldnames = ['query', 'original_query', 'concepts']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        
+        writer.writeheader()
+        writer.writerows(csv_data)
+    
+    print(f"\n✓ Saved {len(csv_data)} queries with concepts to '{output_filename}'")
 
 
 if __name__ == "__main__":
