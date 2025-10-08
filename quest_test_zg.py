@@ -15,7 +15,7 @@ import csv
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 import dspy
-
+import os
 
 @dataclass
 class QuestQuery:
@@ -67,21 +67,30 @@ class QuestDatasetLoader:
 
         self.training_queries = queries
         return queries
-
-
-# -------------------------
-# CHANGED: signature/module
-# -------------------------
+    
 
 class ConceptGenerator(dspy.Signature):
-    """Generate compact, reusable concept strings suitable for an inverted index."""
-    query = dspy.InputField(desc="Natural language query (may imply set ops or facets)")
+    """
+    Generate compact, interpretable concepts for an Inverted Learned Concepts Index (ILCI).
+    """
+    query = dspy.InputField(
+        desc=(
+            "A user's natural-language information need. Produce reusable, human-readable concepts "
+            "that capture facets of this need (not full queries or reasoning)."
+        )
+    )
     concepts = dspy.OutputField(
         desc=(
-            "Return a JSON array of strings. "
-            "Each string is a single, self-contained concept (short, indexable). "
-            "Avoid set-operator syntax; write concepts directly. "
-            "Example: [\"Birds of Kolombangara\", \"Western Province (Solomon Islands) Birds\"]"
+            "Return ONLY a JSON array of strings (no prose before/after). Each string is ONE self-contained, "
+            "Boolean-friendly concepts.\n\n"
+            "Rules:\n"
+            "- Format: a bare JSON list of strings, e.g., [\"concept A\", \"concept B\"].\n"
+            "- Count: ~2-6 concepts, adjust as needed per domain.\n"
+            "- No logic or comparators inside concepts (no AND/OR/NOT, '+', '/', '>', '<', '==', ranges, years).\n"
+            "- Keep mid-granularity: avoid single broad words and ultra-specific one-offs.\n"
+            "- Avoid near-duplicates and trivial variants.\n\n"
+            "Aim:\n"
+            "- Cover distinct facets (type, domain, geography) so concepts can be combined with logical ops.\n\n"        
         )
     )
 
@@ -90,32 +99,45 @@ class QuestConceptGenerator(dspy.Module):
     def __init__(self):
         super().__init__()
         self.generate = dspy.Predict(ConceptGenerator)
-
-        # Placeholder few-shot examples (now arrays of strings)
+        
         self.few_shot_examples = [
             dspy.Example(
                 query="Birds of Kolombangara or of the Western Province (Solomon Islands)",
-                concepts='["Birds of Kolombangara","Western Province (Solomon Islands) Birds"]'
-            ),
+                concepts='['
+                        '"Vertebrates of Kolombangara",'
+                        '"Birds on the New Georgia Islands group",'
+                        '"Vertebrates of the Western Province (Solomon Islands)",'
+                        '"Birds of the Solomon Islands"'
+                        ']'
+            ).with_inputs("query"),
             dspy.Example(
                 query="Trees of South Africa that are also in the south-central Pacific",
-                concepts='["Trees of South Africa","South-Central Pacific Trees"]'
-            ),
+                concepts='['
+                        '"Trees of Africa",'
+                        '"Flora of South Africa",'
+                        '"Flora of the South-Central Pacific",'
+                        '"Trees in the Pacific",'
+                        '"Coastal trees"'
+                        ']'
+            ).with_inputs("query"),
             dspy.Example(
-                query="2010's adventure films set in the Southwestern United States but not in California",
-                concepts='["2010s Adventure Films","Films set in the Southwestern United States","California-Set Films (exclude)"]'
-            ),
+                query="2010s adventure films set in the Southwestern United States but not in California",
+                concepts='['
+                        '"Adventure films",'
+                        '"2010s films",'
+                        '"Films set in the U.S. Southwest",'
+                        '"Films set in California"'
+                        ']'
+            ).with_inputs("query"),
         ]
 
+
     def forward(self, query: str):
-        with dspy.context(examples=self.few_shot_examples):
-            result = self.generate(query=query)
+        # Pass few-shot examples as demos
+        result = self.generate(query=query, demos=self.few_shot_examples) # with few-shot examples
+        # result = self.generate(query=query) # without few-shot examples
         return result
 
-
-# -------------------------
-# CHANGED: parsing/printing
-# -------------------------
 
 def _safe_parse_concept_list(raw: str) -> List[str]:
     """Parse a JSON array of strings; attempt simple salvage if extra text appears."""
@@ -140,8 +162,8 @@ def _safe_parse_concept_list(raw: str) -> List[str]:
     return [raw.strip()]
 
 
-def main():
-    lm = dspy.LM('openai/gpt-5-nano', temperature=1.0, max_tokens=16000, api_key="")
+def test_llm_concept_generation():
+    lm = dspy.LM('openai/gpt-5', temperature=1.0, max_tokens=16000, api_key="")
     dspy.configure(lm=lm)
 
     # Initialize the loader
@@ -151,8 +173,10 @@ def main():
     training_queries = loader.load_training_data()
     print(f"Loaded {len(training_queries)} training queries")
 
+    random.seed(17)
+    
     # Sample n random queries for testing (change this number if needed)
-    num_samples = 50
+    num_samples = 10
     sample_queries = random.sample(training_queries, min(num_samples, len(training_queries)))
     print(f"Generating concepts for {len(sample_queries)} randomly sampled queries")
 
@@ -162,7 +186,7 @@ def main():
     # Prepare data for CSV
     csv_data = []
     
-    for i, quest_query in enumerate(sample_queries, 1):
+    for i, quest_query in enumerate(sample_queries):
         print(f"Processing query {i}/{len(sample_queries)}...", end='\r')
         
         result = generator(query=quest_query.query)
@@ -187,7 +211,8 @@ def main():
             print(f"  {j}. {c}")
 
     # Save to CSV
-    output_filename = 'quest_queries_with_concepts.csv'
+    output_filename = 'results/llm_concept_generation/quest_queries_with_concepts.csv'
+    os.makedirs(os.path.dirname(output_filename), exist_ok=True)
     with open(output_filename, 'w', newline='', encoding='utf-8') as csvfile:
         fieldnames = ['query', 'original_query', 'concepts']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -199,4 +224,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    test_llm_concept_generation()
