@@ -75,8 +75,7 @@ class ConceptGenerator(dspy.Signature):
     """
     query = dspy.InputField(
         desc=(
-            "A user's natural-language information need. Produce reusable, human-readable concepts "
-            "that capture facets of this need (not full queries or reasoning)."
+            "Natural language query with implicit set operations."
         )
     )
     concepts = dspy.OutputField(
@@ -86,13 +85,24 @@ class ConceptGenerator(dspy.Signature):
             "Rules:\n"
             "- Format: a bare JSON list of strings, e.g., [\"concept A\", \"concept B\"].\n"
             "- Count: ~2-6 concepts, adjust as needed per domain.\n"
-            "- No logic or comparators inside concepts (no AND/OR/NOT, '+', '/', '>', '<', '==', ranges, years).\n"
+            "- No logic or comparators inside concepts (no negation, AND/OR/NOT, '+', '/', '>', '<', '==', ranges, years).\n"
             "- Keep mid-granularity: avoid single broad words and ultra-specific one-offs.\n"
             "- Avoid near-duplicates and trivial variants.\n\n"
             "Aim:\n"
             "- Cover distinct facets (type, domain, geography) so concepts can be combined with logical ops.\n\n"        
         )
     )
+    
+    # query = dspy.InputField(
+    #     desc="Natural language query with implicit set operations"
+    # )
+    # concepts = dspy.OutputField(
+    #     desc=(
+    #         "JSON list of human-readable concept strings extracted from the query. "
+    #         "Each concept reflects a distinct facet or semantic filter implied by the query, "
+    #         "suitable for use as a Boolean key in an inverted index."
+    #     )
+    # )
 
 
 class QuestConceptGenerator(dspy.Module):
@@ -176,7 +186,7 @@ def test_llm_concept_generation():
     random.seed(17)
     
     # Sample n random queries for testing (change this number if needed)
-    num_samples = 10
+    num_samples = 100
     sample_queries = random.sample(training_queries, min(num_samples, len(training_queries)))
     print(f"Generating concepts for {len(sample_queries)} randomly sampled queries")
 
@@ -211,7 +221,7 @@ def test_llm_concept_generation():
             print(f"  {j}. {c}")
 
     # Save to CSV
-    output_filename = 'results/llm_concept_generation/quest_queries_with_concepts.csv'
+    output_filename = 'results/llm_concept_generation/quest_queries_with_concepts_fewshot_2.csv'
     os.makedirs(os.path.dirname(output_filename), exist_ok=True)
     with open(output_filename, 'w', newline='', encoding='utf-8') as csvfile:
         fieldnames = ['query', 'original_query', 'concepts']
