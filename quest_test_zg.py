@@ -16,6 +16,9 @@ from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 import dspy
 import os
+import numpy as np
+from sklearn.cluster import KMeans
+from sentence_transformers import SentenceTransformer
 
 @dataclass
 class QuestQuery:
@@ -186,7 +189,7 @@ def test_llm_concept_generation():
     random.seed(17)
     
     # Sample n random queries for testing (change this number if needed)
-    num_samples = 100
+    num_samples = len(training_queries)
     sample_queries = random.sample(training_queries, min(num_samples, len(training_queries)))
     print(f"Generating concepts for {len(sample_queries)} randomly sampled queries")
 
@@ -221,7 +224,7 @@ def test_llm_concept_generation():
             print(f"  {j}. {c}")
 
     # Save to CSV
-    output_filename = 'results/llm_concept_generation/quest_queries_with_concepts_fewshot_2.csv'
+    output_filename = 'results/llm_concept_generation/quest_queries_with_concepts_fewshot_all.csv'
     os.makedirs(os.path.dirname(output_filename), exist_ok=True)
     with open(output_filename, 'w', newline='', encoding='utf-8') as csvfile:
         fieldnames = ['query', 'original_query', 'concepts']
@@ -233,5 +236,119 @@ def test_llm_concept_generation():
     print(f"\n✓ Saved {len(csv_data)} queries with concepts to '{output_filename}'")
 
 
+def test_concept_clustering(csv_filename, n_clusters=50, save_results=True):
+    """
+    Cluster LLM-generated concepts from saved CSV files.
+    
+    This function:
+    1. Loads concepts from CSV files in results/llm_concept_generation/
+    2. Extracts individual concepts while tracking which query they came from
+    3. Embeds concepts using SentenceTransformer
+    4. Clusters concepts using K-means
+    5. Displays cluster samples with source query labels
+    6. Saves results to results/llm_concept_clustering/
+    """
+    print(f"Loading concepts from: {csv_filename}")
+    
+    # Load CSV and extract concepts with source query tracking
+    concept_query_pairs = []  # List of (concept_text, query_id) tuples
+    query_id_to_text = {}  # Map query_id to full query text
+    
+    with open(csv_filename, 'r', encoding='utf-8') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for query_id, row in enumerate(reader):
+            query = row['query']
+            concepts_json = row['concepts']
+            
+            # Store query text with its ID
+            query_id_to_text[query_id] = query
+            
+            # Parse the JSON array of concepts
+            try:
+                concept_list = json.loads(concepts_json)
+                # Track each concept with its source query ID
+                for concept in concept_list:
+                    concept_query_pairs.append((concept, query_id))
+            except json.JSONDecodeError as e:
+                print(f"Warning: Failed to parse concepts for query {query_id} '{query[:50]}...': {e}")
+                continue
+    
+    print(f"Extracted {len(concept_query_pairs)} concepts from {len(query_id_to_text)} queries")
+    
+    # Separate concepts and queries for processing
+    concepts_only = [pair[0] for pair in concept_query_pairs]
+    
+    # Generate embeddings
+    print(f"\nGenerating embeddings...")
+    model = SentenceTransformer('all-MiniLM-L6-v2')  # Same model as tianyu's code
+    embeddings = model.encode(concepts_only, show_progress_bar=True)
+    print(f"Generated embeddings with shape: {embeddings.shape}")
+    
+    # Determine number of clusters
+    print(f"\nUsing {n_clusters} clusters")
+    
+    # Perform clustering
+    print(f"Running K-Means clustering...")
+    kmeans = KMeans(n_clusters=n_clusters, random_state=42, n_init=10)
+    cluster_labels = kmeans.fit_predict(embeddings)
+    
+    # Group (concept, query_id) pairs by cluster
+    clusters = {}
+    for (concept, query_id), label in zip(concept_query_pairs, cluster_labels):
+        if label not in clusters:
+            clusters[label] = []
+        clusters[label].append((concept, query_id))
+    
+    # Display clusters with query IDs
+    print(f"\n{'='*80}")
+    print(f"CLUSTERING RESULTS: {len(clusters)} clusters")
+    print(f"{'='*80}\n")
+    
+    for cluster_id in sorted(clusters.keys()):
+        pairs_in_cluster = clusters[cluster_id]
+        sample_size = min(10, len(pairs_in_cluster))
+        sampled_pairs = random.sample(pairs_in_cluster, sample_size)
+        
+        print(f"Cluster {cluster_id} (sampled {sample_size} of {len(pairs_in_cluster)} concepts):")
+        for i, (concept, query_id) in enumerate(sampled_pairs, 1):
+            print(f"  {i:2d}. {concept}")
+            print(f"      └─ Query ID: {query_id}")
+        print()  # Empty line between clusters
+    
+    # Save results if requested
+    if save_results:
+        # Create output directory
+        output_dir = 'results/llm_concept_clustering'
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Generate output filename based on input CSV
+        base_name = os.path.splitext(os.path.basename(csv_filename))[0]
+        output_file = f"{output_dir}/{base_name}_clusters{n_clusters}.json"
+        
+        # Save everything in one comprehensive JSON file
+        clustering_results = {
+            'metadata': {
+                'source_csv': csv_filename,
+                'n_clusters': n_clusters,
+                'total_concepts': len(concept_query_pairs),
+                'total_queries': len(query_id_to_text),
+                'model': 'all-MiniLM-L6-v2'
+            },
+            'clusters': {}
+        }
+        
+        for cluster_id in sorted(clusters.keys()):
+            pairs_in_cluster = clusters[cluster_id]
+            clustering_results['clusters'][str(cluster_id)] = [
+                {'concept': concept, 'query_id': query_id}
+                for concept, query_id in pairs_in_cluster
+            ]
+        
+        with open(output_file, 'w', encoding='utf-8') as f:
+            json.dump(clustering_results, f, indent=2, ensure_ascii=False)
+        print(f"✓ Saved clustering results to: {output_file}")
+
+
 if __name__ == "__main__":
-    test_llm_concept_generation()
+    # test_llm_concept_generation()
+    test_concept_clustering('results/llm_concept_generation/quest_queries_with_concepts_fewshot_all.csv')
