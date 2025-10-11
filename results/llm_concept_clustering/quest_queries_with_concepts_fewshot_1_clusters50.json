@@ -1,0 +1,1627 @@
+{
+  "metadata": {
+    "source_csv": "results/llm_concept_generation/quest_queries_with_concepts_fewshot_1.csv",
+    "n_clusters": 50,
+    "total_concepts": 379,
+    "total_queries": 100,
+    "model": "all-MiniLM-L6-v2"
+  },
+  "clusters": {
+    "0": [
+      {
+        "concept": "Birds of Saint Lucia",
+        "query_id": 29
+      },
+      {
+        "concept": "Birds of Dominica",
+        "query_id": 29
+      },
+      {
+        "concept": "Birds of the Lesser Antilles",
+        "query_id": 29
+      },
+      {
+        "concept": "Birds of Atlantic Ocean islands",
+        "query_id": 56
+      },
+      {
+        "concept": "Birds of the Caribbean islands",
+        "query_id": 56
+      }
+    ],
+    "1": [
+      {
+        "concept": "Comedy thriller films",
+        "query_id": 2
+      },
+      {
+        "concept": "Romantic comedy films",
+        "query_id": 8
+      },
+      {
+        "concept": "Black comedy films",
+        "query_id": 21
+      },
+      {
+        "concept": "Comedy films",
+        "query_id": 68
+      },
+      {
+        "concept": "Comedy films",
+        "query_id": 83
+      },
+      {
+        "concept": "South Korean political comedy films",
+        "query_id": 89
+      },
+      {
+        "concept": "Indian political comedy-drama films",
+        "query_id": 89
+      }
+    ],
+    "2": [
+      {
+        "concept": "Novels set in elementary schools",
+        "query_id": 54
+      },
+      {
+        "concept": "Novels set in primary schools",
+        "query_id": 54
+      },
+      {
+        "concept": "Children's school novels",
+        "query_id": 54
+      },
+      {
+        "concept": "American children's novels",
+        "query_id": 54
+      }
+    ],
+    "3": [
+      {
+        "concept": "Trees of the Windward Islands",
+        "query_id": 26
+      },
+      {
+        "concept": "Trees of Îles des Saintes",
+        "query_id": 26
+      },
+      {
+        "concept": "Trees of Tabasco",
+        "query_id": 26
+      },
+      {
+        "concept": "Trees of the Southern United States",
+        "query_id": 31
+      },
+      {
+        "concept": "Trees of the North-Central United States",
+        "query_id": 31
+      },
+      {
+        "concept": "Trees of Eastern Canada",
+        "query_id": 31
+      },
+      {
+        "concept": "Trees of the Western United States",
+        "query_id": 40
+      },
+      {
+        "concept": "Trees of the Northwestern United States",
+        "query_id": 40
+      },
+      {
+        "concept": "Trees of Mexico",
+        "query_id": 40
+      },
+      {
+        "concept": "Trees of the Caribbean",
+        "query_id": 80
+      },
+      {
+        "concept": "Trees of the Southeastern United States",
+        "query_id": 80
+      },
+      {
+        "concept": "Trees of western South America",
+        "query_id": 80
+      },
+      {
+        "concept": "Neotropical trees",
+        "query_id": 80
+      },
+      {
+        "concept": "Palm trees",
+        "query_id": 97
+      },
+      {
+        "concept": "Trees of Indo-China",
+        "query_id": 97
+      }
+    ],
+    "4": [
+      {
+        "concept": "Miocene animals of Europe",
+        "query_id": 3
+      },
+      {
+        "concept": "Miocene mammals",
+        "query_id": 3
+      },
+      {
+        "concept": "Prehistoric mammals of Europe",
+        "query_id": 3
+      },
+      {
+        "concept": "Neogene mammals",
+        "query_id": 11
+      },
+      {
+        "concept": "Pennsylvanian animals",
+        "query_id": 23
+      },
+      {
+        "concept": "Middle Jurassic reptiles",
+        "query_id": 24
+      },
+      {
+        "concept": "Jurassic period animals",
+        "query_id": 24
+      },
+      {
+        "concept": "Ornithology new species descriptions",
+        "query_id": 69
+      },
+      {
+        "concept": "Neogene mammals",
+        "query_id": 71
+      },
+      {
+        "concept": "Miocene mammals",
+        "query_id": 71
+      },
+      {
+        "concept": "Pliocene mammals",
+        "query_id": 71
+      }
+    ],
+    "5": [
+      {
+        "concept": "Fauna of Central Africa",
+        "query_id": 5
+      },
+      {
+        "concept": "Fauna of Canada",
+        "query_id": 14
+      },
+      {
+        "concept": "Middle Jurassic tetrapods of South America",
+        "query_id": 24
+      },
+      {
+        "concept": "Pinnipeds of Africa",
+        "query_id": 44
+      },
+      {
+        "concept": "Vertebrates of Belize",
+        "query_id": 56
+      },
+      {
+        "concept": "Insects of Africa",
+        "query_id": 70
+      },
+      {
+        "concept": "Fauna of the Caribbean",
+        "query_id": 82
+      },
+      {
+        "concept": "Pantropical marine fauna",
+        "query_id": 82
+      },
+      {
+        "concept": "Marine fauna of Canada",
+        "query_id": 86
+      },
+      {
+        "concept": "Insects of Western New Guinea",
+        "query_id": 96
+      }
+    ],
+    "6": [
+      {
+        "concept": "German psychological drama films",
+        "query_id": 34
+      },
+      {
+        "concept": "Danish nonlinear narrative films",
+        "query_id": 34
+      },
+      {
+        "concept": "War films",
+        "query_id": 49
+      },
+      {
+        "concept": "War films",
+        "query_id": 64
+      },
+      {
+        "concept": "Musical films",
+        "query_id": 68
+      },
+      {
+        "concept": "Drama films",
+        "query_id": 74
+      },
+      {
+        "concept": "Musical films",
+        "query_id": 83
+      },
+      {
+        "concept": "Drama films",
+        "query_id": 98
+      }
+    ],
+    "7": [
+      {
+        "concept": "Books about Islamic fundamentalism",
+        "query_id": 32
+      },
+      {
+        "concept": "Academic books on political Islam",
+        "query_id": 32
+      },
+      {
+        "concept": "Ideologies",
+        "query_id": 32
+      },
+      {
+        "concept": "History books on Hinduism",
+        "query_id": 48
+      },
+      {
+        "concept": "Books on Hindutva ideology",
+        "query_id": 48
+      },
+      {
+        "concept": "Religious history of India",
+        "query_id": 48
+      },
+      {
+        "concept": "Hinduism in modern India",
+        "query_id": 48
+      }
+    ],
+    "8": [
+      {
+        "concept": "Fish of the Atlantic Ocean",
+        "query_id": 6
+      },
+      {
+        "concept": "Eastern Atlantic fish",
+        "query_id": 6
+      },
+      {
+        "concept": "Marine fish",
+        "query_id": 6
+      },
+      {
+        "concept": "Widely distributed pelagic fishes",
+        "query_id": 82
+      },
+      {
+        "concept": "Marine animals",
+        "query_id": 86
+      },
+      {
+        "concept": "Marine fauna of the East Coast of the United States",
+        "query_id": 86
+      },
+      {
+        "concept": "Western North Atlantic marine species",
+        "query_id": 86
+      }
+    ],
+    "9": [
+      {
+        "concept": "Novels about writers",
+        "query_id": 25
+      },
+      {
+        "concept": "Biographical novels",
+        "query_id": 25
+      },
+      {
+        "concept": "Contemporary novels",
+        "query_id": 39
+      },
+      {
+        "concept": "Philosophical novels",
+        "query_id": 50
+      },
+      {
+        "concept": "Contemporary novels",
+        "query_id": 61
+      },
+      {
+        "concept": "Biographical novels",
+        "query_id": 76
+      },
+      {
+        "concept": "American novels",
+        "query_id": 76
+      },
+      {
+        "concept": "Political novels",
+        "query_id": 88
+      },
+      {
+        "concept": "Political thriller novels",
+        "query_id": 88
+      },
+      {
+        "concept": "Canadian novels",
+        "query_id": 94
+      },
+      {
+        "concept": "Novels published in 1985",
+        "query_id": 94
+      },
+      {
+        "concept": "Novels by Robertson Davies",
+        "query_id": 94
+      }
+    ],
+    "10": [
+      {
+        "concept": "Birds of Canada",
+        "query_id": 14
+      },
+      {
+        "concept": "Birds of Mexico",
+        "query_id": 14
+      },
+      {
+        "concept": "Birds of North America",
+        "query_id": 14
+      },
+      {
+        "concept": "Flightless birds",
+        "query_id": 15
+      },
+      {
+        "concept": "Birds of Mexico",
+        "query_id": 18
+      },
+      {
+        "concept": "Birds of Canada",
+        "query_id": 18
+      },
+      {
+        "concept": "Native birds of the Western United States",
+        "query_id": 18
+      },
+      {
+        "concept": "Birds of Guadeloupe",
+        "query_id": 29
+      },
+      {
+        "concept": "Birds described in 1957",
+        "query_id": 46
+      },
+      {
+        "concept": "Endemic birds of Panama",
+        "query_id": 46
+      },
+      {
+        "concept": "Birds of the Sierra Madre Oriental",
+        "query_id": 51
+      },
+      {
+        "concept": "Birds of the Sierra Madre Occidental",
+        "query_id": 51
+      },
+      {
+        "concept": "Montane birds of Mexico",
+        "query_id": 51
+      },
+      {
+        "concept": "Birds of northeastern Mexico",
+        "query_id": 51
+      },
+      {
+        "concept": "Extinct birds",
+        "query_id": 57
+      },
+      {
+        "concept": "Birds of Europe",
+        "query_id": 57
+      },
+      {
+        "concept": "Bird species described in 2004",
+        "query_id": 69
+      },
+      {
+        "concept": "Cosmopolitan shorebirds",
+        "query_id": 82
+      },
+      {
+        "concept": "Barbet birds",
+        "query_id": 99
+      },
+      {
+        "concept": "Birds described in the 1960s",
+        "query_id": 99
+      }
+    ],
+    "11": [
+      {
+        "concept": "Flora of Sinaloa",
+        "query_id": 13
+      },
+      {
+        "concept": "Flora of Northeastern Mexico",
+        "query_id": 13
+      },
+      {
+        "concept": "Endemic flora of Sinaloa",
+        "query_id": 13
+      },
+      {
+        "concept": "Flora of Northwestern Mexico",
+        "query_id": 13
+      },
+      {
+        "concept": "Flora of North Korea",
+        "query_id": 37
+      },
+      {
+        "concept": "Flora of Palau",
+        "query_id": 55
+      },
+      {
+        "concept": "Flora of Guam",
+        "query_id": 55
+      },
+      {
+        "concept": "Carnivorous plants of the Pacific",
+        "query_id": 55
+      },
+      {
+        "concept": "Flora of Micronesia",
+        "query_id": 55
+      },
+      {
+        "concept": "Flora of Manchuria",
+        "query_id": 59
+      },
+      {
+        "concept": "Flora of Northeast China",
+        "query_id": 59
+      },
+      {
+        "concept": "Flora of Heilongjiang",
+        "query_id": 59
+      },
+      {
+        "concept": "Flora of Jilin",
+        "query_id": 59
+      },
+      {
+        "concept": "Flora of Liaoning",
+        "query_id": 59
+      },
+      {
+        "concept": "Flora of the United States",
+        "query_id": 62
+      },
+      {
+        "concept": "Flora of the Western United States",
+        "query_id": 62
+      },
+      {
+        "concept": "Flora of Indo-China",
+        "query_id": 97
+      }
+    ],
+    "12": [
+      {
+        "concept": "Tinamous",
+        "query_id": 15
+      },
+      {
+        "concept": "Ratites",
+        "query_id": 15
+      },
+      {
+        "concept": "Rodents of Malaysia",
+        "query_id": 53
+      },
+      {
+        "concept": "Rodents of Indonesia",
+        "query_id": 53
+      },
+      {
+        "concept": "Endemic rodents of Malaysia",
+        "query_id": 53
+      },
+      {
+        "concept": "Rodents of Peninsular Malaysia",
+        "query_id": 53
+      },
+      {
+        "concept": "Rodents of Borneo",
+        "query_id": 53
+      }
+    ],
+    "13": [
+      {
+        "concept": "Mammals of Lesotho",
+        "query_id": 58
+      },
+      {
+        "concept": "Endemic mammals of Lesotho",
+        "query_id": 58
+      },
+      {
+        "concept": "Fauna of Lesotho",
+        "query_id": 58
+      },
+      {
+        "concept": "Bats of Lesotho",
+        "query_id": 58
+      }
+    ],
+    "14": [
+      {
+        "concept": "French psychological horror films",
+        "query_id": 34
+      },
+      {
+        "concept": "Thriller films",
+        "query_id": 36
+      },
+      {
+        "concept": "Horror novels",
+        "query_id": 52
+      },
+      {
+        "concept": "Horror films",
+        "query_id": 64
+      },
+      {
+        "concept": "Monster movies",
+        "query_id": 64
+      },
+      {
+        "concept": "Pornographic horror films",
+        "query_id": 67
+      },
+      {
+        "concept": "Pornographic films",
+        "query_id": 67
+      },
+      {
+        "concept": "Horror films",
+        "query_id": 67
+      },
+      {
+        "concept": "Irish supernatural horror films",
+        "query_id": 73
+      },
+      {
+        "concept": "Swedish comedy horror films",
+        "query_id": 73
+      },
+      {
+        "concept": "Supernatural films",
+        "query_id": 90
+      }
+    ],
+    "15": [
+      {
+        "concept": "Books about human sexuality",
+        "query_id": 35
+      },
+      {
+        "concept": "Books about sexual health",
+        "query_id": 35
+      },
+      {
+        "concept": "Sex education books",
+        "query_id": 35
+      },
+      {
+        "concept": "Books about LGBT topics",
+        "query_id": 35
+      },
+      {
+        "concept": "Japanese LGBT novels",
+        "query_id": 60
+      }
+    ],
+    "16": [
+      {
+        "concept": "Batman films",
+        "query_id": 28
+      },
+      {
+        "concept": "Live-action Batman films",
+        "query_id": 79
+      },
+      {
+        "concept": "DC Comics film adaptations",
+        "query_id": 79
+      }
+    ],
+    "17": [
+      {
+        "concept": "1950s books",
+        "query_id": 9
+      },
+      {
+        "concept": "1960s films",
+        "query_id": 36
+      },
+      {
+        "concept": "1930s films",
+        "query_id": 68
+      },
+      {
+        "concept": "1950s films",
+        "query_id": 87
+      }
+    ],
+    "18": [
+      {
+        "concept": "Crime comedy films",
+        "query_id": 8
+      },
+      {
+        "concept": "Spy comedy films",
+        "query_id": 36
+      },
+      {
+        "concept": "Crime films with entertainer protagonists",
+        "query_id": 41
+      },
+      {
+        "concept": "Stalking in film",
+        "query_id": 41
+      },
+      {
+        "concept": "Kidnapping films",
+        "query_id": 45
+      },
+      {
+        "concept": "British crime thriller films",
+        "query_id": 45
+      },
+      {
+        "concept": "Crime films",
+        "query_id": 49
+      },
+      {
+        "concept": "Spy films",
+        "query_id": 74
+      },
+      {
+        "concept": "Films about murderers",
+        "query_id": 87
+      },
+      {
+        "concept": "Crime films",
+        "query_id": 87
+      }
+    ],
+    "19": [
+      {
+        "concept": "Paleognathae",
+        "query_id": 15
+      },
+      {
+        "concept": "Carboniferous of Asia",
+        "query_id": 23
+      },
+      {
+        "concept": "Carboniferous fauna of Asia",
+        "query_id": 23
+      },
+      {
+        "concept": "Mesozoic fossils of Asia",
+        "query_id": 47
+      },
+      {
+        "concept": "Quaternary period",
+        "query_id": 57
+      },
+      {
+        "concept": "Taxa described in the twenty-first century",
+        "query_id": 69
+      }
+    ],
+    "20": [
+      {
+        "concept": "Plants of Nigeria",
+        "query_id": 63
+      },
+      {
+        "concept": "Flora of the Zanzibar Archipelago",
+        "query_id": 65
+      },
+      {
+        "concept": "Endemic plants of Zanzibar and Pemba",
+        "query_id": 65
+      },
+      {
+        "concept": "Coastal East African flora",
+        "query_id": 65
+      },
+      {
+        "concept": "Island flora of Tanzania",
+        "query_id": 65
+      },
+      {
+        "concept": "Indian Ocean island plant species",
+        "query_id": 65
+      }
+    ],
+    "21": [
+      {
+        "concept": "Historical novels",
+        "query_id": 17
+      },
+      {
+        "concept": "Novels about nobility",
+        "query_id": 39
+      },
+      {
+        "concept": "Historical novels",
+        "query_id": 39
+      },
+      {
+        "concept": "Speculative fiction novels",
+        "query_id": 52
+      },
+      {
+        "concept": "Fantasy novels",
+        "query_id": 52
+      },
+      {
+        "concept": "Magical realism novels",
+        "query_id": 52
+      },
+      {
+        "concept": "Supernatural fiction novels",
+        "query_id": 52
+      },
+      {
+        "concept": "Alternate history novels",
+        "query_id": 52
+      },
+      {
+        "concept": "Historical novels",
+        "query_id": 61
+      },
+      {
+        "concept": "1970s novels",
+        "query_id": 76
+      },
+      {
+        "concept": "Books published in the 1550s",
+        "query_id": 84
+      },
+      {
+        "concept": "Mid-16th-century literature",
+        "query_id": 84
+      },
+      {
+        "concept": "Early modern printed books",
+        "query_id": 84
+      },
+      {
+        "concept": "Speculative fiction novels",
+        "query_id": 88
+      },
+      {
+        "concept": "High fantasy novels",
+        "query_id": 91
+      },
+      {
+        "concept": "Historical fantasy novels",
+        "query_id": 91
+      },
+      {
+        "concept": "Secondary world fantasy with historical eras",
+        "query_id": 91
+      },
+      {
+        "concept": "Medieval-inspired fantasy settings",
+        "query_id": 91
+      },
+      {
+        "concept": "Epic fantasy with historical themes",
+        "query_id": 91
+      }
+    ],
+    "22": [
+      {
+        "concept": "Fauna of Tibet",
+        "query_id": 27
+      },
+      {
+        "concept": "Arthropods of Asia",
+        "query_id": 27
+      },
+      {
+        "concept": "Himalayan arthropods",
+        "query_id": 27
+      },
+      {
+        "concept": "High-altitude invertebrates",
+        "query_id": 27
+      },
+      {
+        "concept": "Pinnipeds of Oceania",
+        "query_id": 44
+      },
+      {
+        "concept": "Fauna of East Asia",
+        "query_id": 82
+      }
+    ],
+    "23": [
+      {
+        "concept": "Books by Icelandic authors",
+        "query_id": 12
+      },
+      {
+        "concept": "Books published in Iceland",
+        "query_id": 12
+      },
+      {
+        "concept": "Icelandic-language books",
+        "query_id": 12
+      },
+      {
+        "concept": "Books about Iceland",
+        "query_id": 12
+      }
+    ],
+    "24": [
+      {
+        "concept": "Endemic birds of Vietnam",
+        "query_id": 4
+      },
+      {
+        "concept": "Endemic fauna of Vietnam",
+        "query_id": 4
+      },
+      {
+        "concept": "Birds of Vietnam",
+        "query_id": 4
+      },
+      {
+        "concept": "Endemic birds of Southeast Asia",
+        "query_id": 4
+      },
+      {
+        "concept": "Endemic birds of Zambia",
+        "query_id": 99
+      }
+    ],
+    "25": [
+      {
+        "concept": "Crops native to Uruguay",
+        "query_id": 7
+      },
+      {
+        "concept": "Crops native to Paraguay",
+        "query_id": 7
+      },
+      {
+        "concept": "Crops native to Chile",
+        "query_id": 7
+      },
+      {
+        "concept": "Southern Cone native crops",
+        "query_id": 7
+      },
+      {
+        "concept": "Plants of Peru",
+        "query_id": 63
+      }
+    ],
+    "26": [
+      {
+        "concept": "Amphibians of Cambodia",
+        "query_id": 22
+      },
+      {
+        "concept": "Amphibians of Thailand",
+        "query_id": 22
+      },
+      {
+        "concept": "Endemic amphibians of Cambodia",
+        "query_id": 22
+      },
+      {
+        "concept": "Amphibians of Mainland Southeast Asia",
+        "query_id": 22
+      }
+    ],
+    "27": [
+      {
+        "concept": "German-language books",
+        "query_id": 19
+      },
+      {
+        "concept": "Books by German authors",
+        "query_id": 19
+      },
+      {
+        "concept": "Novels by Ernst Jünger",
+        "query_id": 50
+      },
+      {
+        "concept": "German-language novels",
+        "query_id": 50
+      },
+      {
+        "concept": "20th-century German novels",
+        "query_id": 50
+      },
+      {
+        "concept": "Books about Europe",
+        "query_id": 95
+      },
+      {
+        "concept": "Books set in Europe",
+        "query_id": 95
+      }
+    ],
+    "28": [
+      {
+        "concept": "Odd-toed ungulates",
+        "query_id": 3
+      },
+      {
+        "concept": "Odd-toed ungulates",
+        "query_id": 11
+      }
+    ],
+    "29": [
+      {
+        "concept": "Mesozoic cephalopods",
+        "query_id": 47
+      },
+      {
+        "concept": "Mesozoic fossils of North America",
+        "query_id": 47
+      },
+      {
+        "concept": "Ammonites of the Mesozoic",
+        "query_id": 47
+      },
+      {
+        "concept": "Belemnites of the Mesozoic",
+        "query_id": 47
+      }
+    ],
+    "30": [
+      {
+        "concept": "Fauna of Metropolitan France",
+        "query_id": 30
+      },
+      {
+        "concept": "Endemic fish of Metropolitan France",
+        "query_id": 30
+      },
+      {
+        "concept": "Freshwater fish of Metropolitan France",
+        "query_id": 30
+      },
+      {
+        "concept": "Marine fish of Metropolitan France",
+        "query_id": 30
+      }
+    ],
+    "31": [
+      {
+        "concept": "Orchids of Réunion",
+        "query_id": 10
+      },
+      {
+        "concept": "Orchids of Mauritius",
+        "query_id": 10
+      },
+      {
+        "concept": "Orchids of the Mascarene Islands",
+        "query_id": 10
+      },
+      {
+        "concept": "Orchids of Guizhou",
+        "query_id": 37
+      },
+      {
+        "concept": "Orchids of Sichuan",
+        "query_id": 37
+      }
+    ],
+    "32": [
+      {
+        "concept": "Flowering plants",
+        "query_id": 59
+      },
+      {
+        "concept": "Apiaceae genera",
+        "query_id": 62
+      },
+      {
+        "concept": "Cultivated plants",
+        "query_id": 63
+      },
+      {
+        "concept": "Magnoliales genera",
+        "query_id": 66
+      },
+      {
+        "concept": "Annonaceae genera",
+        "query_id": 66
+      },
+      {
+        "concept": "Magnoliaceae genera",
+        "query_id": 66
+      },
+      {
+        "concept": "Myristicaceae genera",
+        "query_id": 66
+      },
+      {
+        "concept": "Arecaceae",
+        "query_id": 97
+      }
+    ],
+    "33": [
+      {
+        "concept": "Engineering books",
+        "query_id": 0
+      },
+      {
+        "concept": "Technology books",
+        "query_id": 0
+      },
+      {
+        "concept": "Science books",
+        "query_id": 33
+      },
+      {
+        "concept": "Psychology books",
+        "query_id": 33
+      }
+    ],
+    "34": [
+      {
+        "concept": "South Korean fantasy adventure films",
+        "query_id": 16
+      },
+      {
+        "concept": "Adventure films based on classic literature",
+        "query_id": 75
+      },
+      {
+        "concept": "Adventure films",
+        "query_id": 98
+      }
+    ],
+    "35": [
+      {
+        "concept": "Animated superhero films",
+        "query_id": 16
+      },
+      {
+        "concept": "American animated space adventure films",
+        "query_id": 16
+      },
+      {
+        "concept": "Children's animated films",
+        "query_id": 16
+      },
+      {
+        "concept": "American animated superhero films",
+        "query_id": 28
+      },
+      {
+        "concept": "Animated DC Comics films",
+        "query_id": 79
+      },
+      {
+        "concept": "Animated films",
+        "query_id": 83
+      },
+      {
+        "concept": "DC Animated Universe films",
+        "query_id": 85
+      }
+    ],
+    "36": [
+      {
+        "concept": "Sacred plants in Hinduism",
+        "query_id": 20
+      },
+      {
+        "concept": "Plants mentioned in the Bible",
+        "query_id": 20
+      },
+      {
+        "concept": "Plants used in religious rituals",
+        "query_id": 20
+      },
+      {
+        "concept": "Plants with religious symbolism",
+        "query_id": 20
+      },
+      {
+        "concept": "Sacred trees in world religions",
+        "query_id": 20
+      }
+    ],
+    "37": [
+      {
+        "concept": "Mammals of Uganda",
+        "query_id": 5
+      },
+      {
+        "concept": "Mammals of East Africa",
+        "query_id": 5
+      },
+      {
+        "concept": "Mammals of the African Great Lakes region",
+        "query_id": 5
+      },
+      {
+        "concept": "Mammals of Africa",
+        "query_id": 11
+      },
+      {
+        "concept": "Extinct animals",
+        "query_id": 57
+      },
+      {
+        "concept": "Mammals of Southern Africa",
+        "query_id": 58
+      },
+      {
+        "concept": "Mammals of North America",
+        "query_id": 71
+      },
+      {
+        "concept": "Mammals of South America",
+        "query_id": 71
+      }
+    ],
+    "38": [
+      {
+        "concept": "Novels set in Russia",
+        "query_id": 88
+      },
+      {
+        "concept": "Non-fiction books about Soviet repression",
+        "query_id": 93
+      },
+      {
+        "concept": "Gulag memoirs",
+        "query_id": 93
+      },
+      {
+        "concept": "Soviet history non-fiction",
+        "query_id": 93
+      },
+      {
+        "concept": "Belarusian books",
+        "query_id": 93
+      }
+    ],
+    "39": [
+      {
+        "concept": "Fish of Macaronesia",
+        "query_id": 6
+      },
+      {
+        "concept": "Monachinae seals",
+        "query_id": 44
+      },
+      {
+        "concept": "Birds of Macaronesia",
+        "query_id": 56
+      },
+      {
+        "concept": "Insects of the Canary Islands",
+        "query_id": 70
+      },
+      {
+        "concept": "Insects of Macaronesia",
+        "query_id": 70
+      },
+      {
+        "concept": "Insects of the Solomon Islands",
+        "query_id": 96
+      },
+      {
+        "concept": "Insects of Melanesia",
+        "query_id": 96
+      }
+    ],
+    "40": [
+      {
+        "concept": "Films set in Nizhny Novgorod",
+        "query_id": 2
+      },
+      {
+        "concept": "Russian films",
+        "query_id": 2
+      },
+      {
+        "concept": "Films based on works by Alexander Ostrovsky",
+        "query_id": 78
+      },
+      {
+        "concept": "Film adaptations of Russian plays",
+        "query_id": 78
+      },
+      {
+        "concept": "Films based on Russian literature",
+        "query_id": 78
+      },
+      {
+        "concept": "Russian drama films",
+        "query_id": 78
+      },
+      {
+        "concept": "Soviet cinema",
+        "query_id": 78
+      }
+    ],
+    "41": [
+      {
+        "concept": "Non-fiction books",
+        "query_id": 19
+      },
+      {
+        "concept": "2010s books",
+        "query_id": 19
+      },
+      {
+        "concept": "Nonfiction books",
+        "query_id": 35
+      },
+      {
+        "concept": "Books about bacon",
+        "query_id": 38
+      },
+      {
+        "concept": "Bacon cookbooks",
+        "query_id": 38
+      },
+      {
+        "concept": "Books published by Andrews McMeel Publishing",
+        "query_id": 38
+      },
+      {
+        "concept": "Books published in 2000",
+        "query_id": 95
+      },
+      {
+        "concept": "English-language books",
+        "query_id": 95
+      }
+    ],
+    "42": [
+      {
+        "concept": "Criminals in the performing arts",
+        "query_id": 41
+      }
+    ],
+    "43": [
+      {
+        "concept": "Canadian films",
+        "query_id": 1
+      },
+      {
+        "concept": "Law enforcement in Canada",
+        "query_id": 1
+      },
+      {
+        "concept": "American films",
+        "query_id": 21
+      },
+      {
+        "concept": "American films",
+        "query_id": 36
+      },
+      {
+        "concept": "American films",
+        "query_id": 67
+      },
+      {
+        "concept": "American films",
+        "query_id": 74
+      },
+      {
+        "concept": "American films",
+        "query_id": 83
+      },
+      {
+        "concept": "Canadian films",
+        "query_id": 98
+      }
+    ],
+    "44": [
+      {
+        "concept": "Plants of Mexico",
+        "query_id": 63
+      },
+      {
+        "concept": "Pantropical plant species",
+        "query_id": 63
+      },
+      {
+        "concept": "Plant genera of Madagascar",
+        "query_id": 66
+      },
+      {
+        "concept": "Flora of French Guiana",
+        "query_id": 72
+      },
+      {
+        "concept": "Endemic plants of French Guiana",
+        "query_id": 72
+      },
+      {
+        "concept": "Flora of Brazil",
+        "query_id": 72
+      }
+    ],
+    "45": [
+      {
+        "concept": "French novels",
+        "query_id": 42
+      },
+      {
+        "concept": "19th-century French novels",
+        "query_id": 42
+      },
+      {
+        "concept": "French children's novels",
+        "query_id": 42
+      }
+    ],
+    "46": [
+      {
+        "concept": "Lost films",
+        "query_id": 1
+      },
+      {
+        "concept": "Documentary films",
+        "query_id": 1
+      },
+      {
+        "concept": "Dutch films",
+        "query_id": 8
+      },
+      {
+        "concept": "1980s films",
+        "query_id": 16
+      },
+      {
+        "concept": "Films about filmmaking",
+        "query_id": 21
+      },
+      {
+        "concept": "Films based on works by Bill Finger",
+        "query_id": 28
+      },
+      {
+        "concept": "Films about performers and show business",
+        "query_id": 41
+      },
+      {
+        "concept": "Films set in the United Kingdom",
+        "query_id": 45
+      },
+      {
+        "concept": "Biographical films",
+        "query_id": 49
+      },
+      {
+        "concept": "Documentary films",
+        "query_id": 49
+      },
+      {
+        "concept": "Films about genocide",
+        "query_id": 49
+      },
+      {
+        "concept": "World War II films",
+        "query_id": 64
+      },
+      {
+        "concept": "Irish slasher films",
+        "query_id": 73
+      },
+      {
+        "concept": "Films about mental health",
+        "query_id": 74
+      },
+      {
+        "concept": "Film adaptations of Around the World in Eighty Days",
+        "query_id": 75
+      },
+      {
+        "concept": "Films based on works by Jules Verne",
+        "query_id": 75
+      },
+      {
+        "concept": "Films set in Sylhet",
+        "query_id": 75
+      },
+      {
+        "concept": "Films set in Bangladesh",
+        "query_id": 75
+      },
+      {
+        "concept": "Avant-garde films",
+        "query_id": 77
+      },
+      {
+        "concept": "Experimental films",
+        "query_id": 77
+      },
+      {
+        "concept": "Silent films",
+        "query_id": 77
+      },
+      {
+        "concept": "Short films",
+        "query_id": 77
+      },
+      {
+        "concept": "Early cinema",
+        "query_id": 77
+      },
+      {
+        "concept": "Films based on Bob Kane creations",
+        "query_id": 79
+      },
+      {
+        "concept": "Films released in 1903",
+        "query_id": 81
+      },
+      {
+        "concept": "Spanish silent short films",
+        "query_id": 81
+      },
+      {
+        "concept": "1992 films",
+        "query_id": 83
+      },
+      {
+        "concept": "Children's films",
+        "query_id": 83
+      },
+      {
+        "concept": "Urban survival films",
+        "query_id": 85
+      },
+      {
+        "concept": "Films set in 2040",
+        "query_id": 85
+      },
+      {
+        "concept": "Feature films",
+        "query_id": 87
+      },
+      {
+        "concept": "2020s films",
+        "query_id": 89
+      },
+      {
+        "concept": "2010s films",
+        "query_id": 90
+      },
+      {
+        "concept": "Films shot in South Carolina",
+        "query_id": 90
+      },
+      {
+        "concept": "1990s films",
+        "query_id": 98
+      }
+    ],
+    "47": [
+      {
+        "concept": "Novels by Hungarian authors",
+        "query_id": 17
+      },
+      {
+        "concept": "Novels published in Hungary",
+        "query_id": 17
+      },
+      {
+        "concept": "Hungarian-language novels",
+        "query_id": 17
+      }
+    ],
+    "48": [
+      {
+        "concept": "Books by Indian authors",
+        "query_id": 9
+      },
+      {
+        "concept": "Books published in India",
+        "query_id": 9
+      },
+      {
+        "concept": "Novels set in Asia",
+        "query_id": 25
+      },
+      {
+        "concept": "Books on cultural geography",
+        "query_id": 33
+      },
+      {
+        "concept": "Novels published by Shueisha",
+        "query_id": 60
+      },
+      {
+        "concept": "Novels by Yukio Mishima",
+        "query_id": 60
+      },
+      {
+        "concept": "Novels set in Vietnam",
+        "query_id": 61
+      },
+      {
+        "concept": "Vietnam War novels",
+        "query_id": 61
+      },
+      {
+        "concept": "Books by Feng Menglong",
+        "query_id": 92
+      },
+      {
+        "concept": "Chinese comedy novels",
+        "query_id": 92
+      },
+      {
+        "concept": "Ming dynasty novels",
+        "query_id": 92
+      }
+    ],
+    "49": [
+      {
+        "concept": "Endemic fauna of Albania",
+        "query_id": 43
+      },
+      {
+        "concept": "Endemic mammals of Albania",
+        "query_id": 43
+      },
+      {
+        "concept": "Endemic reptiles of Albania",
+        "query_id": 43
+      },
+      {
+        "concept": "Endemic amphibians of Albania",
+        "query_id": 43
+      },
+      {
+        "concept": "Endemic fish of Albania",
+        "query_id": 43
+      },
+      {
+        "concept": "Endemic invertebrates of Albania",
+        "query_id": 43
+      }
+    ]
+  }
+}
