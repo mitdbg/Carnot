@@ -12,11 +12,9 @@ import json
 import random
 import requests
 import re
-from collections import Counter
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 import dspy
-import numpy as np
 from sklearn.cluster import KMeans
 from sentence_transformers import SentenceTransformer
 
@@ -71,7 +69,7 @@ class QuestDatasetLoader:
 
 class QueryDecomposerWithPython(dspy.Signature):
     query = dspy.InputField(desc="Natural language retrieval tasks with implicit set operations")
-    marked_query = dspy.OutputField(
+    output = dspy.OutputField(
         desc="A Python program that decomposes the query into a sequence of smaller retrieval tasks and combines the results using set operations. The program should call the "
              "function retrieve(query_string, k) where k is the top-k results to retrieve, and rerank(documents), which takes a a collection of document IDs and reorders them according to relevance."
              "Do not write extra helper functions besides retrieve(), and rerank()."
@@ -80,74 +78,69 @@ class QueryDecomposerWithPython(dspy.Signature):
              "  <python> your code </python>"
              "  return result")
 
-class QuestQueryDecomposerWithPython(dspy.Module):
-    def __init__(self):
-        super().__init__()
-        # Use few-shot prompting instead of chain of thought for better pattern matching
-        self.decompose = dspy.Predict(QueryDecomposerWithPython)
 
-        # Create few-shot examples based on common templates
-        self.few_shot_examples = [
-            dspy.Example(
-                query="Birds of Kolombangara or of the Western Province (Solomon Islands)",
-                output="<python>birds_of_kolombangara_ids = retrieve('Birds of Kolombangara', k=100)"
-                             "western_province_birds_ids = retrieve('Birds of the Western Province (Solomon Islands)', k=100)"
-                             "result = rerank(set(birds_of_kolombangara_ids) | set(western_province_birds_ids)) </python>"
-            ),
-            dspy.Example(
-                query="Trees of South Africa that are also in the south-central Pacific",
-                output="<python> trees_sa_ids = retrieve('Trees of South Africa', k=200)"
-                             "trees_scp_ids = retrieve('south-central Pacific', k=200)"
-                             "result = rerank(set(trees_sa_ids) & set(trees_scp_ids)) </python>"
-            ),
+class QuestQueryDecomposerWithPython(dspy.Module):
+    few_shot_examples = [
+        dspy.Example(
+            query="Birds of Kolombangara or of the Western Province (Solomon Islands)",
+            output="<python>birds_of_kolombangara_ids = retrieve('Birds of Kolombangara', k=100)"
+                   "western_province_birds_ids = retrieve('Birds of the Western Province (Solomon Islands)', k=100)"
+                   "result = rerank(set(birds_of_kolombangara_ids) | set(western_province_birds_ids)) </python>"
+        ),
+        dspy.Example(
+            query="Trees of South Africa that are also in the south-central Pacific",
+            output="<python> trees_sa_ids = retrieve('Trees of South Africa', k=200)"
+                   "trees_scp_ids = retrieve('south-central Pacific', k=200)"
+                   "result = rerank(set(trees_sa_ids) & set(trees_scp_ids)) </python>"
+        ),
         dspy.Example(
             query="2010's adventure films set in the Southwestern United States but not in California",
             output="<python>adventure_films_ids = retrieve('2010s adventure films', k=100)"
-                         "sw_us_films_ids = retrieve('films set in the Southwestern United States', k=100)"
-                         "california_films_ids = retrieve('films set in California', k=1000)"
-                         "inclusive_films = set(adventure_films_ids) & set(sw_us_films_ids)"
-                         "result = rerank(inclusive_films - set(california_films_ids)) </python>"
+                   "sw_us_films_ids = retrieve('films set in the Southwestern United States', k=100)"
+                   "california_films_ids = retrieve('films set in California', k=1000)"
+                   "inclusive_films = set(adventure_films_ids) & set(sw_us_films_ids)"
+                   "result = rerank(inclusive_films - set(california_films_ids)) </python>"
         )
-        ]
+    ]
 
+    def __init__(self):
+        super().__init__()
+        self.decompose = dspy.Predict(QueryDecomposerWithPython)
 
     def forward(self, query: str):
         # Use few-shot examples to guide the prediction
-        with dspy.context(examples=self.few_shot_examples):
-            result = self.decompose(query=query)
-        return result
+        return self.decompose(query=query)
+
 
 class QueryDecomposerWithLogic(dspy.Signature):
     query = dspy.InputField(desc="Natural language query with implicit set operations")
-    marked_query = dspy.OutputField(desc="Query with semantic concepts marked using <query> tags, connected with set operations. Only use union (OR), intersection (OR), and set difference (/) in your output. Each <query> should contain a complete searchable concept, not individual words.")
+    output = dspy.OutputField(desc="Query with semantic concepts marked using <query> tags, connected with set operations. Only use union (OR), intersection (OR), and set difference (/) in your output. Each <query> should contain a complete searchable concept, not individual words.")
+
 
 class QuestQueryDecomposerWithLogic(dspy.Module):
+    few_shot_examples = [
+        dspy.Example(
+            query="Birds of Kolombangara or of the Western Province (Solomon Islands)",
+            output="<query>Birds of Kolombangara</query> OR <query>Birds of the Western Province (Solomon Islands)</query>"
+        ),
+        dspy.Example(
+            query="Trees of South Africa that are also in the south-central Pacific",
+            output="<query>Flora of the south-central Pacific</query> AND <query>Trees of South Africa</query>"
+        ),
+        dspy.Example(
+            query="2010's adventure films set in the Southwestern United States but not in California",
+            output="(<query>2010s adventure films</query> AND <query>Films set in the Southwestern United States</query>) / <query>Films set in California</query>"
+        )
+    ]
+
     def __init__(self):
         super().__init__()
-        # Use few-shot prompting instead of chain of thought for better pattern matching
         self.decompose = dspy.Predict(QueryDecomposerWithLogic)
 
-        # Create few-shot examples based on common templates
-        self.few_shot_examples = [
-            dspy.Example(
-                query="Birds of Kolombangara or of the Western Province (Solomon Islands)",
-                marked_query="<query>Birds of Kolombangara</query> OR <query>Birds of the Western Province (Solomon Islands)</query>"
-            ),
-            dspy.Example(
-                query="Trees of South Africa that are also in the south-central Pacific",
-                marked_query="<query>Flora of the south-central Pacific</query> AND <query>Trees of South Africa</query>"
-            ),
-            dspy.Example(
-                query="2010's adventure films set in the Southwestern United States but not in California",
-                marked_query="(<query>2010s adventure films</query> AND <query>Films set in the Southwestern United States</query>) / <query>Films set in California</query>"
-            )
-        ]
 
     def forward(self, query: str):
         # Use few-shot examples to guide the prediction
-        with dspy.context(examples=self.few_shot_examples):
-            result = self.decompose(query=query)
-        return result
+        return self.decompose(query=query)
 
 
 class ConceptExtractor(dspy.Signature):
@@ -168,35 +161,34 @@ class ConceptExtractor(dspy.Signature):
 
 class ClusterConceptExtractor(dspy.Module):
     """DSPy module that analyzes phrase clusters and extracts reusable metadata concepts."""
+    few_shot_examples = [
+        dspy.Example(
+            cluster_samples=["Films set in California", "Films set in New York", "Films set in Texas",
+                             "Films in London", "Films set in Paris", "Films set in Tokyo"],
+            concept_name="filming_location",
+            concept_description="The geographic location where a film is set or takes place. This field helps users filter content by specific cities, states, or countries.",
+            example_values=["California", "New York", "London", "Paris", "Tokyo"]
+        ),
+        dspy.Example(
+            cluster_samples=["1990s films", "2000s comedy films", "1980s action films",
+                             "2010s adventure films", "1970s drama films"],
+            concept_name="release_decade",
+            concept_description="The decade when the media was released or published. Useful for filtering content by time period or era.",
+            example_values=["1970s", "1980s", "1990s", "2000s", "2010s"]
+        ),
+        dspy.Example(
+            cluster_samples=["Birds of North America", "Mammals of Europe", "Reptiles of Asia",
+                             "Flora of South America", "Trees of Africa"],
+            concept_name="taxonomic_geographic_distribution",
+            concept_description="Describes the geographic distribution of biological species or taxonomic groups. Enables filtering by both organism type and geographic region.",
+            example_values=["Birds of North America", "Mammals of Europe", "Flora of South America"]
+        )
+    ]
 
     def __init__(self):
         super().__init__()
         self.extract = dspy.ChainOfThought(ConceptExtractor)
 
-        # Few-shot examples to guide concept extraction
-        self.few_shot_examples = [
-            dspy.Example(
-                cluster_samples=["Films set in California", "Films set in New York", "Films set in Texas", 
-                                "Films in London", "Films set in Paris", "Films set in Tokyo"],
-                concept_name="filming_location",
-                concept_description="The geographic location where a film is set or takes place. This field helps users filter content by specific cities, states, or countries.",
-                example_values=["California", "New York", "London", "Paris", "Tokyo"]
-            ),
-            dspy.Example(
-                cluster_samples=["1990s films", "2000s comedy films", "1980s action films", 
-                                "2010s adventure films", "1970s drama films"],
-                concept_name="release_decade",
-                concept_description="The decade when the media was released or published. Useful for filtering content by time period or era.",
-                example_values=["1970s", "1980s", "1990s", "2000s", "2010s"]
-            ),
-            dspy.Example(
-                cluster_samples=["Birds of North America", "Mammals of Europe", "Reptiles of Asia",
-                                "Flora of South America", "Trees of Africa"],
-                concept_name="taxonomic_geographic_distribution",
-                concept_description="Describes the geographic distribution of biological species or taxonomic groups. Enables filtering by both organism type and geographic region.",
-                example_values=["Birds of North America", "Mammals of Europe", "Flora of South America"]
-            )
-        ]
 
     def forward(self, cluster_samples: List[str]):
         """Extract concept metadata from a list of clustered phrases."""
@@ -204,14 +196,11 @@ class ClusterConceptExtractor(dspy.Module):
         samples_text = "\n".join([f"- {sample}" for sample in cluster_samples[:15]])  # Limit to 15 samples
 
         # Use few-shot examples to guide extraction
-        with dspy.context(examples=self.few_shot_examples):
-            result = self.extract(cluster_samples=samples_text)
-
-        return result
+        return self.extract(cluster_samples=samples_text)
 
 
 def test_llm_decomposition():
-    lm = dspy.LM('openai/gpt-5-nano', temperature=1.0, max_tokens=16000, api_key="")
+    lm = dspy.LM('openai/gpt-5-mini', temperature=1.0, max_tokens=16000, api_key="")
     dspy.configure(lm=lm)
 
     # Initialize the loader
@@ -226,11 +215,12 @@ def test_llm_decomposition():
     print(f"Testing on {len(sample_queries)} randomly sampled queries")
 
     # Initialize the query decomposer
-    decomposer = QuestQueryDecomposerWithLogic()
+    optimizer = dspy.LabeledFewShot(k=3)
+    decomposer = optimizer.compile(student=QuestQueryDecomposerWithPython(), trainset=QuestQueryDecomposerWithPython.few_shot_examples)
 
     for i, quest_query in enumerate(sample_queries):
         result = decomposer(query=quest_query.query)
-        predicted = result.marked_query
+        predicted = result.output
 
         print(f"\n--- Example {i + 1} ---")
         print(f"Query: {quest_query.query}")
@@ -277,45 +267,30 @@ def test_concept_clustering():
             clusters[label] = []
         clusters[label].append(phrase)
 
-    for cluster_id in sorted(clusters.keys()):
-        phrases_in_cluster = clusters[cluster_id]
-        sample_size = min(10, len(phrases_in_cluster))
-        sampled_phrases = random.sample(phrases_in_cluster, sample_size)
+    lm = dspy.LM('openai/gpt-5-mini', temperature=1.0, max_tokens=16000, api_key="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")
+    dspy.configure(lm=lm)
+    # Initialize the concept extractor
+    optimizer = dspy.LabeledFewShot(k=3)
+    concept_extractor = optimizer.compile(student=ClusterConceptExtractor(),
+                                          trainset=ClusterConceptExtractor.few_shot_examples)
 
-        print(f"Cluster {cluster_id} (sampled {sample_size} of {len(phrases_in_cluster)} phrases):")
+    for cluster_id, phrases in clusters.items():
+        # Use more samples for better concept extraction (up to 10)
+        sample_size = min(10, len(phrases))
+        sampled_phrases = random.sample(phrases, sample_size)
+        print(f"Cluster {cluster_id} (sampled {sample_size} of {len(phrases)} phrases):")
         for i, phrase in enumerate(sampled_phrases, 1):
-            print(f"  {i:2d}. {phrase}")
+            print(f"  {phrase}")
+        try:
+            result = concept_extractor(cluster_samples=sampled_phrases)
+            print(f"\n  📋 Concept Name: {result.concept_name}")
+            print(f"  📝 Description: {result.concept_description}")
+            print(f"  💡 Example Values: {result.example_values}")
+        except Exception as e:
+            print(f"  ⚠️  Error extracting concept: {e}")
 
-    # lm = dspy.LM('openai/gpt-5-nano', temperature=1.0, max_tokens=16000, api_key="")
-    # dspy.configure(lm=lm)
-    # # Initialize the concept extractor
-    # concept_extractor = ClusterConceptExtractor()
-    #
-    # # Extract concepts for each cluster (sample top clusters to avoid too many API calls)
-    # cluster_sizes = [(cluster_id, len(clusters[cluster_id])) for cluster_id in clusters.keys()]
-    # cluster_sizes.sort(key=lambda x: x[1], reverse=True)
-    #
-    # # Analyze top 10 largest clusters
-    # top_clusters = cluster_sizes[:10]
-    #
-    # for cluster_id, size in top_clusters:
-    #     phrases_in_cluster = clusters[cluster_id]
-    #     # Use more samples for better concept extraction (up to 15)
-    #     sample_size = min(15, len(phrases_in_cluster))
-    #     sampled_phrases = random.sample(phrases_in_cluster, sample_size)
-    #
-    #     print(f"Cluster {cluster_id} ({size} phrases):")
-    #     print(f"  Sample phrases:")
-    #     for phrase in sampled_phrases[:5]:  # Show first 5 for context
-    #         print(f"    • {phrase}")
-    #     # Extract concept using DSPy agent
-    #     try:
-    #         result = concept_extractor(cluster_samples=sampled_phrases)
-    #         print(f"\n  📋 Concept Name: {result.concept_name}")
-    #         print(f"  📝 Description: {result.concept_description}")
-    #         print(f"  💡 Example Values: {result.example_values}")
-    #     except Exception as e:
-    #         print(f"  ⚠️  Error extracting concept: {e}")
+    # TODO(Tianyu): Try to distill concepts recursively here -- many of these can clearly be further combined
+
 
 if __name__ == "__main__":
     # test_llm_decomposition()
