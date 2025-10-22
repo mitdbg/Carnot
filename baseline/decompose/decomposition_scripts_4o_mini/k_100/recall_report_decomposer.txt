@@ -1,0 +1,29 @@
+Loading gold examples from: /home/joycequ/carnot-orcd-2/train_subset.jsonl
+Loading predicted examples from: pred_retrieved_set_ops.jsonl
+
+--- Per-Query Recall @ |Pred| (Arbitrary List Size) ---
+  - Recall @394: 0.2000 (4/20) | Query: "Stoloniferous plants or crops originating from Bolivia"
+  - Recall @143: 0.2308 (3/13) | Query: "what are Novels by Robert B. Parker that are not set in Massachusetts"
+  - Recall @514: 0.0000 (0/2) | Query: "Endemic flora of Australia, Malaysia,and Fiji"
+  - Recall @14: 0.0000 (0/3) | Query: "Aquatic animals from South America that are found in Victoria(Australia)"
+  - Recall @285: 0.0000 (0/10) | Query: "Holarctic and North American desert fauna and also Vertebrates of Belize"
+  - Recall @1: 0.0000 (0/2) | Query: "Arecaceae that are trees of Indo-China"
+  - Recall @358: 0.3684 (7/19) | Query: "Pinnipeds of Antarctica or South America or Marine fauna of Antarctica"
+  - Recall @482: 0.0714 (1/14) | Query: "find me, Cisuralian animals, Paleozoic insects of Asia, or Carboniferous animals of Asia."
+  - Recall @2: 0.0000 (0/7) | Query: "romance films from New Zealand"
+  - Recall @0: 0.0000 (0/11) | Query: "1912 films set in England"
+  - Recall @14: 0.0000 (0/2) | Query: "American action films about security and surveillance also bullying"
+  - Recall @16: 0.0000 (0/10) | Query: "Neogene mammals of Africa that are Odd-toed ungulates"
+  - Recall @0: 0.0000 (0/3) | Query: "Films set in Pittsburgh that are LGBT-related romance"
+  - Recall @150: 0.5000 (1/2) | Query: "find me Epistemology books"
+  - Recall @43: 0.1667 (1/6) | Query: "Snakes of Asia that are Fauna of Oceania and Reptiles of the Philippines"
+  - Recall @400: 0.6471 (11/17) | Query: "Brazilian fantasy films,or shot in Amazonas"
+  - Recall @397: 0.8571 (12/14) | Query: "1997 anime films or slayer films"
+  - Recall @236: 0.5000 (4/8) | Query: "what are Australian travel books"
+  - Recall @187: 0.2500 (1/4) | Query: "Set in the Edo period but not Japanese historical films"
+  - Recall @483: 0.7778 (7/9) | Query: "Books about Brunei, Malaysia or historical books about the Qing dynasty"
+
+--- Summary ---
+Total queries evaluated: 20
+Average Predicted List Size (|Pred|): 205.95
+Average Recall @ |Pred|: 0.2285
