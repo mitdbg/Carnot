@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Upload, Loader2, Database, Calendar, FileText, Trash2 } from 'lucide-react'
+import { Plus, Upload, Loader2, Database, Calendar, FileText, Trash2, X, Eye } from 'lucide-react'
 import { datasetsApi, filesApi } from '../services/api'
 
 function DataManagementPage() {
@@ -11,6 +11,8 @@ function DataManagementPage() {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
+  const [selectedDataset, setSelectedDataset] = useState(null)
+  const [viewingDataset, setViewingDataset] = useState(false)
 
   useEffect(() => {
     loadData()
@@ -73,6 +75,22 @@ function DataManagementPage() {
       month: 'short',
       day: 'numeric',
     })
+  }
+
+  const handleViewDataset = async (datasetId) => {
+    try {
+      setError(null)
+      const response = await datasetsApi.get(datasetId)
+      setSelectedDataset(response.data)
+      setViewingDataset(true)
+    } catch (err) {
+      setError('Failed to load dataset details: ' + err.message)
+    }
+  }
+
+  const closeModal = () => {
+    setViewingDataset(false)
+    setSelectedDataset(null)
   }
 
   if (loading) {
@@ -188,14 +206,18 @@ function DataManagementPage() {
             {datasets.map((dataset) => (
               <div
                 key={dataset.id}
-                className="border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow duration-200"
+                className="border border-gray-200 rounded-lg p-4 hover:shadow-lg transition-shadow duration-200 cursor-pointer"
+                onClick={() => handleViewDataset(dataset.id)}
               >
                 <div className="flex items-start justify-between mb-3">
                   <h3 className="text-lg font-semibold text-gray-800 flex-1">
                     {dataset.name}
                   </h3>
                   <button
-                    onClick={() => handleDeleteDataset(dataset.id)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDeleteDataset(dataset.id)
+                    }}
                     className="text-red-500 hover:text-red-700 p-1"
                     title="Delete dataset"
                   >
@@ -217,11 +239,83 @@ function DataManagementPage() {
                     <span>{formatDate(dataset.created_at)}</span>
                   </div>
                 </div>
+                
+                <div className="mt-3 pt-3 border-t border-gray-200 text-xs text-gray-500 flex items-center gap-1">
+                  <Eye className="w-3 h-3" />
+                  <span>Click to view files</span>
+                </div>
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Dataset Details Modal */}
+      {viewingDataset && selectedDataset && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[80vh] overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex-1">
+                <h2 className="text-2xl font-bold text-gray-900">{selectedDataset.name}</h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  {selectedDataset.files.length} files • Created {formatDate(selectedDataset.created_at)}
+                </p>
+              </div>
+              <button
+                onClick={closeModal}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              {/* Annotation */}
+              <div className="mb-6">
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">Description</h3>
+                <p className="text-gray-600">{selectedDataset.annotation}</p>
+              </div>
+
+              {/* Files List */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                  Files ({selectedDataset.files.length})
+                </h3>
+                <div className="space-y-2">
+                  {selectedDataset.files.map((file) => (
+                    <div
+                      key={file.id}
+                      className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <FileText className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {file.file_name}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">
+                          {file.file_path}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-6 border-t border-gray-200 bg-gray-50">
+              <button
+                onClick={closeModal}
+                className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
