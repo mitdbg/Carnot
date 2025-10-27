@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# index_jsonl_to_chroma_fixed.py
-
 __import__('pysqlite3')
 import sys
 sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
@@ -25,7 +22,6 @@ BATCH_SIZE = 256
 CLEAR_COLLECTION = True
 DEVICE = None
 
-# ADDED: Set up a logger instance
 logger = logging.getLogger(__name__)
 
 def normalize_title_slug(s: str) -> str:

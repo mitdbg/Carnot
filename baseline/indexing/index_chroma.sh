@@ -8,4 +8,4 @@
 source venv/bin/activate
 
 # Run your application
-python3 index_chroma_verbose_resume.py
+python3 index_chroma_verbose.py
