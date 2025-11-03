@@ -1,4 +1,4 @@
-filename,contents,where_tee_times_are_set
+filename,contents,content_summary
 allen-p-inbox-42.txt,"Message-ID: <8268911.1075858645425.JavaMail.evans@thyme>
 Date: Mon, 29 Oct 2001 18:08:10 -0800 (PST)
 From: mondohed@gte.net
@@ -51,4 +51,4 @@ Stephen A. Bilby
 Director of Sales 
 The RK Group  
 (210)225-4535 sbilby@therkgroup.com  
- ","Tee times are typically set by prior arrangement at the golf courses, specifically mentioning the Quarry in San Antonio and the Shreiner Public Golf Course, with confirmation through email communication."
+ ","['The message discusses a golf event scheduled for Friday and Saturday in San Antonio, with tee times at the Quarry and Shreiner Public Golf Course, and a fee of $33.00 per person for Saturday. Participants are asked to confirm their attendance as the event is part of a wedding celebration.']"

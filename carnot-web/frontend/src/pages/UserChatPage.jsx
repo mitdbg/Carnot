@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Send, Database, CheckSquare, Square, AlertCircle, Loader2, XCircle, RotateCcw } from 'lucide-react'
+import { Send, Database, CheckSquare, Square, AlertCircle, Loader2, XCircle, RotateCcw, MessageSquare, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
 import axios from 'axios'
 
 const API_BASE_URL = 'http://localhost:8000'
@@ -11,12 +11,16 @@ function UserChatPage() {
   const [inputQuery, setInputQuery] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [sessionId, setSessionId] = useState(null)
+  const [conversations, setConversations] = useState([])
+  const [currentConversationId, setCurrentConversationId] = useState(null)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const messagesEndRef = useRef(null)
   const abortControllerRef = useRef(null)
   
   // Generate session ID on component mount
   useEffect(() => {
     generateNewSession()
+    loadConversations()
   }, [])
 
   useEffect(() => {
@@ -31,10 +35,73 @@ function UserChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
   
+  const loadConversations = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/conversations/`)
+      setConversations(response.data)
+    } catch (error) {
+      console.error('Error loading conversations:', error)
+    }
+  }
+
+  const loadConversation = async (conversationId) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/conversations/${conversationId}`)
+      const conversation = response.data
+      
+      // Set session ID and messages
+      setSessionId(conversation.session_id)
+      setCurrentConversationId(conversation.id)
+      
+      // Convert database messages to frontend format
+      const formattedMessages = conversation.messages.map(msg => ({
+        type: msg.role,
+        content: msg.content,
+        csv_file: msg.csv_file,
+        row_count: msg.row_count
+      }))
+      setMessages(formattedMessages)
+      
+      // Set selected datasets
+      if (conversation.dataset_ids) {
+        const datasetIds = conversation.dataset_ids.split(',').map(id => parseInt(id))
+        setSelectedDatasets(new Set(datasetIds))
+      }
+      
+      console.log('Loaded conversation:', conversationId)
+    } catch (error) {
+      console.error('Error loading conversation:', error)
+    }
+  }
+
+  const deleteConversation = async (conversationId, e) => {
+    e.stopPropagation() // Prevent loading the conversation
+    
+    if (!window.confirm('Are you sure you want to delete this conversation?')) {
+      return
+    }
+    
+    try {
+      await axios.delete(`${API_BASE_URL}/api/conversations/${conversationId}`)
+      
+      // If we deleted the current conversation, create a new session
+      if (conversationId === currentConversationId) {
+        generateNewSession()
+      }
+      
+      // Reload conversations list
+      loadConversations()
+    } catch (error) {
+      console.error('Error deleting conversation:', error)
+    }
+  }
+  
   const generateNewSession = () => {
     const newSessionId = crypto.randomUUID()
     setSessionId(newSessionId)
     setMessages([])
+    setCurrentConversationId(null)
+    setSelectedDatasets(new Set())
     console.log('New session created:', newSessionId)
   }
 
@@ -148,6 +215,8 @@ function UserChatPage() {
                   csv_file: data.csv_file,
                   row_count: data.row_count
                 }])
+                // Reload conversations after query completes
+                loadConversations()
               } else if (data.type === 'error') {
                 setMessages(prev => [...prev, {
                   type: 'error',
@@ -190,18 +259,8 @@ function UserChatPage() {
       case 'assistant':
         return (
           <div key={index} className="flex justify-start mb-4">
-            <div className="bg-gray-100 text-gray-800 rounded-lg px-4 py-2 max-w-[70%]">
-              <div className="whitespace-pre-wrap">{message.content}</div>
-              {message.files && message.files.length > 0 && (
-                <div className="mt-2 pt-2 border-t border-gray-300">
-                  <p className="text-xs text-gray-600 mb-1">Files:</p>
-                  {message.files.map((file, i) => (
-                    <div key={i} className="text-xs text-gray-700 font-mono">
-                      {file.filename}
-                    </div>
-                  ))}
-                </div>
-              )}
+            <div className="bg-gray-100 p-3 rounded-lg max-w-[70%] whitespace-pre-wrap">
+              {message.content}
             </div>
           </div>
         )
@@ -252,9 +311,80 @@ function UserChatPage() {
     }
   }
 
+  const formatDate = (dateString) => {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now - date
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMins / 60)
+    const diffDays = Math.floor(diffHours / 24)
+    
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins}m ago`
+    if (diffHours < 24) return `${diffHours}h ago`
+    if (diffDays < 7) return `${diffDays}d ago`
+    return date.toLocaleDateString()
+  }
+
   return (
     <div className="h-[calc(100vh-4rem)] flex">
-      {/* Left side - Chat */}
+      {/* Left sidebar - Conversation history */}
+      <div className={`${sidebarCollapsed ? 'w-16' : 'w-64'} bg-gray-50 border-r border-gray-200 flex flex-col transition-all duration-300`}>
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+          {!sidebarCollapsed && <h2 className="text-lg font-bold text-gray-800">Conversations</h2>}
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="p-1 hover:bg-gray-200 rounded transition-colors"
+            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {sidebarCollapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+          </button>
+        </div>
+        
+        {!sidebarCollapsed && (
+          <div className="flex-1 overflow-y-auto p-2">
+            {conversations.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center mt-4">No conversations yet</p>
+            ) : (
+              <div className="space-y-2">
+                {conversations.map(conv => (
+                  <div
+                    key={conv.id}
+                    onClick={() => loadConversation(conv.id)}
+                    className={`p-3 rounded-lg cursor-pointer transition-colors group hover:bg-gray-200 ${
+                      conv.id === currentConversationId ? 'bg-primary-100 border border-primary-300' : 'bg-white border border-gray-200'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <MessageSquare className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                          <p className="text-sm font-medium text-gray-800 truncate">
+                            {conv.title || 'Untitled'}
+                          </p>
+                        </div>
+                        <p className="text-xs text-gray-500">{formatDate(conv.updated_at)}</p>
+                        {conv.message_count > 0 && (
+                          <p className="text-xs text-gray-400 mt-1">{conv.message_count} messages</p>
+                        )}
+                      </div>
+                      <button
+                        onClick={(e) => deleteConversation(conv.id, e)}
+                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-100 rounded transition-all"
+                        title="Delete conversation"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Middle - Chat */}
       <div className="flex-1 flex flex-col border-r border-gray-200">
         {/* Chat header */}
         <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
@@ -301,100 +431,77 @@ function UserChatPage() {
               type="text"
               value={inputQuery}
               onChange={(e) => setInputQuery(e.target.value)}
-              placeholder="Ask a question about your data..."
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              placeholder="Type your query here..."
+              className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
               disabled={isLoading}
             />
-            {isLoading ? (
+            <button
+              type="submit"
+              className="bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 disabled:bg-primary-300 disabled:cursor-not-allowed transition-colors"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4" />
+                  Send
+                </>
+              )}
+            </button>
+            {isLoading && (
               <button
                 type="button"
                 onClick={handleCancel}
-                className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 flex items-center gap-2 transition-colors"
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
               >
                 <XCircle className="w-4 h-4" />
                 Cancel
               </button>
-            ) : (
-              <button
-                type="submit"
-                disabled={!inputQuery.trim() || selectedDatasets.size === 0}
-                className="bg-primary-500 text-white px-6 py-2 rounded-lg hover:bg-primary-600 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2 transition-colors"
-              >
-                <Send className="w-4 h-4" />
-                Send
-              </button>
             )}
           </form>
-          
-          {selectedDatasets.size === 0 && (
-            <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
-              <AlertCircle className="w-3 h-3" />
-              Select at least one dataset to enable queries
-            </p>
-          )}
         </div>
       </div>
 
       {/* Right side - Dataset selection */}
-      <div className="w-80 bg-white flex flex-col">
-        <div className="border-b border-gray-200 px-4 py-4">
-          <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-            <Database className="w-5 h-5" />
-            Datasets
-          </h2>
-          <p className="text-xs text-gray-600 mt-1">
-            {selectedDatasets.size} of {datasets.length} selected
+      <div className="w-1/3 bg-white border-l border-gray-200 flex flex-col">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-xl font-bold text-gray-800">Datasets</h2>
+          <p className="text-sm text-gray-600 mt-1">
+            Select datasets to query
           </p>
         </div>
-
-        <div className="flex-1 overflow-y-auto px-4 py-4">
+        <div className="flex-1 overflow-y-auto p-6">
           {datasets.length === 0 ? (
-            <div className="text-center py-8">
-              <Database className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-              <p className="text-sm text-gray-500">No datasets available</p>
-              <p className="text-xs text-gray-400 mt-1">
-                Create a dataset first
-              </p>
-            </div>
+            <p className="text-gray-500">No datasets available.</p>
           ) : (
-            <div className="space-y-2">
+            <ul className="space-y-3">
               {datasets.map(dataset => (
-                <div
+                <li
                   key={dataset.id}
-                  onClick={() => toggleDataset(dataset.id)}
-                  className={`
-                    border rounded-lg p-3 cursor-pointer transition-all
-                    ${selectedDatasets.has(dataset.id)
-                      ? 'border-primary-500 bg-primary-50'
-                      : 'border-gray-200 hover:border-gray-300 bg-white'
-                    }
-                  `}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
                 >
-                  <div className="flex items-start gap-2">
-                    <div className="mt-0.5">
-                      {selectedDatasets.has(dataset.id) ? (
-                        <CheckSquare className="w-5 h-5 text-primary-500" />
-                      ) : (
-                        <Square className="w-5 h-5 text-gray-400" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-sm text-gray-800 truncate">
-                        {dataset.name}
-                      </h3>
-                      {dataset.annotation && (
-                        <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                          {dataset.annotation}
-                        </p>
-                      )}
-                      <p className="text-xs text-gray-500 mt-1">
-                        {dataset.file_count} file{dataset.file_count !== 1 ? 's' : ''}
-                      </p>
-                    </div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-800">{dataset.name}</p>
+                    <p className="text-sm text-gray-600">{dataset.annotation}</p>
                   </div>
-                </div>
+                  <button
+                    onClick={() => toggleDataset(dataset.id)}
+                    className="p-2 rounded-full text-gray-500 hover:bg-gray-200 transition-colors"
+                    title={selectedDatasets.has(dataset.id) ? 'Deselect dataset' : 'Select dataset'}
+                  >
+                    {selectedDatasets.has(dataset.id) ? (
+                      <CheckSquare className="w-5 h-5 text-primary-500" />
+                    ) : (
+                      <Square className="w-5 h-5" />
+                    )}
+                  </button>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </div>
       </div>

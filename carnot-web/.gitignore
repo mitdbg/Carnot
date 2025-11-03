@@ -41,4 +41,5 @@ frontend/build/
 # Uploaded files
 uploaded_files/
 carnot_web.db
+sessions/
 

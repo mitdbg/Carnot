@@ -5,7 +5,7 @@ from typing import List, Optional, Dict
 import json
 import asyncio
 from sqlalchemy import select
-from app.database import AsyncSessionLocal, Dataset, DatasetFile
+from app.database import AsyncSessionLocal, Dataset, DatasetFile, Conversation, Message
 import os
 import carnot
 import pickle
@@ -41,6 +41,58 @@ def cleanup_old_sessions():
         del active_sessions[session_id]
         print(f"DEBUG: Cleaned up expired session {session_id}", flush=True)
 
+async def get_or_create_conversation(session_id: str, query: str, dataset_ids: List[int]) -> int:
+    """Get existing conversation or create a new one. Returns conversation_id."""
+    async with AsyncSessionLocal() as db:
+        # Check if conversation exists
+        result = await db.execute(
+            select(Conversation).where(Conversation.session_id == session_id)
+        )
+        conversation = result.scalar_one_or_none()
+        
+        if conversation:
+            return conversation.id
+        
+        # Create new conversation with auto-generated title from query
+        # Use first 50 chars of query as title
+        title = query[:50] + "..." if len(query) > 50 else query
+        dataset_ids_str = ",".join(map(str, dataset_ids))
+        
+        new_conversation = Conversation(
+            session_id=session_id,
+            title=title,
+            dataset_ids=dataset_ids_str
+        )
+        db.add(new_conversation)
+        await db.commit()
+        await db.refresh(new_conversation)
+        
+        print(f"DEBUG: Created conversation {new_conversation.id} for session {session_id}", flush=True)
+        return new_conversation.id
+
+async def save_message(conversation_id: int, role: str, content: str, csv_file: Optional[str] = None, row_count: Optional[int] = None):
+    """Save a message to the database"""
+    async with AsyncSessionLocal() as db:
+        message = Message(
+            conversation_id=conversation_id,
+            role=role,
+            content=content,
+            csv_file=csv_file,
+            row_count=row_count
+        )
+        db.add(message)
+        
+        # Update conversation timestamp
+        result = await db.execute(
+            select(Conversation).where(Conversation.id == conversation_id)
+        )
+        conversation = result.scalar_one_or_none()
+        if conversation:
+            conversation.updated_at = datetime.utcnow()
+        
+        await db.commit()
+        print(f"DEBUG: Saved {role} message to conversation {conversation_id}", flush=True)
+
 async def stream_query_execution(query: str, dataset_ids: List[int], session_id: Optional[str] = None):
     """
     Stream progress updates and execute Carnot query on selected datasets.
@@ -57,6 +109,10 @@ async def stream_query_execution(query: str, dataset_ids: List[int], session_id:
             print(f"DEBUG: Created new session {session_id}", flush=True)
         else:
             print(f"DEBUG: Continuing session {session_id}", flush=True)
+        
+        # Get or create conversation and save user message
+        conversation_id = await get_or_create_conversation(session_id, query, dataset_ids)
+        await save_message(conversation_id, 'user', query)
         
         # Yield initial status with session_id
         yield f"data: {json.dumps({'type': 'status', 'message': 'Starting query execution...', 'session_id': session_id})}\n\n"
@@ -269,9 +325,18 @@ async def stream_query_execution(query: str, dataset_ids: List[int], session_id:
                     result_text += f"\n\n... and {len(df) - 10} more rows"
                 
                 print(f"DEBUG: Sending results for {len(df)} rows to frontend", flush=True)
+                
+                # Save result message to database
+                await save_message(conversation_id, 'result', result_text, csv_filename, len(df))
+                
                 yield f"data: {json.dumps({'type': 'result', 'message': result_text, 'csv_file': csv_filename, 'row_count': len(df), 'session_id': session_id})}\n\n"
             else:
-                yield f"data: {json.dumps({'type': 'result', 'message': 'No results found for your query.', 'session_id': session_id})}\n\n"
+                no_results_msg = 'No results found for your query.'
+                
+                # Save result message to database
+                await save_message(conversation_id, 'result', no_results_msg)
+                
+                yield f"data: {json.dumps({'type': 'result', 'message': no_results_msg, 'session_id': session_id})}\n\n"
             
             # Keep the CSV file for review (do not clean up)
                 
@@ -279,7 +344,12 @@ async def stream_query_execution(query: str, dataset_ids: List[int], session_id:
             print(f"DEBUG: Error processing CSV: {e}", flush=True)
             import traceback
             traceback.print_exc()
-            yield f"data: {json.dumps({'type': 'error', 'message': f'Error processing results: {str(e)}'})}\n\n"
+            error_msg = f'Error processing results: {str(e)}'
+            
+            # Save error message to database
+            await save_message(conversation_id, 'error', error_msg)
+            
+            yield f"data: {json.dumps({'type': 'error', 'message': error_msg})}\n\n"
         
         yield f"data: {json.dumps({'type': 'done', 'message': 'Query execution complete'})}\n\n"
         
@@ -287,6 +357,14 @@ async def stream_query_execution(query: str, dataset_ids: List[int], session_id:
         import traceback
         error_msg = f"Error executing query: {str(e)}"
         traceback.print_exc()
+        
+        # Try to save error message if conversation_id exists
+        try:
+            if 'conversation_id' in locals():
+                await save_message(conversation_id, 'error', error_msg)
+        except:
+            pass  # If saving fails, just continue
+        
         yield f"data: {json.dumps({'type': 'error', 'message': error_msg})}\n\n"
 
 @router.post("/execute")

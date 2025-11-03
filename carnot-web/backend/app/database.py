@@ -44,6 +44,27 @@ class UploadedFile(Base):
     original_name = Column(String, nullable=False)
     upload_date = Column(DateTime, default=datetime.utcnow)
 
+class Conversation(Base):
+    __tablename__ = "conversations"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(String, unique=True, nullable=False, index=True)
+    title = Column(String, nullable=True)  # Auto-generated from first query
+    dataset_ids = Column(String, nullable=True)  # Comma-separated dataset IDs
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+class Message(Base):
+    __tablename__ = "messages"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    conversation_id = Column(Integer, ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False)
+    role = Column(String, nullable=False)  # 'user', 'assistant', 'status', 'error', 'result'
+    content = Column(Text, nullable=False)
+    csv_file = Column(String, nullable=True)  # For result messages
+    row_count = Column(Integer, nullable=True)  # For result messages
+    created_at = Column(DateTime, default=datetime.utcnow)
+
 # Dependency to get database session
 async def get_db():
     async with AsyncSessionLocal() as session:
