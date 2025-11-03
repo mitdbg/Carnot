@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import files, datasets, search
+from app.routes import files, datasets, search, query
 from app.database import init_db
 
 app = FastAPI(title="Carnot Web API")
@@ -23,6 +23,7 @@ async def startup():
 app.include_router(files.router, prefix="/api/files", tags=["files"])
 app.include_router(datasets.router, prefix="/api/datasets", tags=["datasets"])
 app.include_router(search.router, prefix="/api/search", tags=["search"])
+app.include_router(query.router, prefix="/api/query", tags=["query"])
 
 @app.get("/")
 async def root():
