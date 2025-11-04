@@ -289,7 +289,7 @@ function UserChatPage() {
         return (
           <div key={index} className="flex justify-start mb-4">
             <div className="bg-green-50 border border-green-200 rounded-lg p-4 max-w-[80%]">
-              <pre className="text-sm text-gray-700 whitespace-pre-wrap mb-3 overflow-auto max-h-80">
+              <pre className="text-sm text-gray-700 whitespace-pre-wrap mb-3 overflow-auto max-h-[600px]">
                 {message.content}
               </pre>
               {message.csv_file && (

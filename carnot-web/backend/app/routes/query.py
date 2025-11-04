@@ -315,14 +315,24 @@ async def stream_query_execution(query: str, dataset_ids: List[int], session_id:
             
             # Send summary and download link
             if not df.empty:
-                # Show first few rows as preview
-                preview = df.head(10).to_string(index=False, max_colwidth=50)
-                result_text = f"Query completed successfully!\n\n"
-                result_text += f"Results: {len(df)} rows, {len(df.columns)} columns\n"
-                result_text += f"Saved to: {csv_filename}\n\n"
-                result_text += f"Preview (first 10 rows):\n{preview}"
-                if len(df) > 10:
-                    result_text += f"\n\n... and {len(df) - 10} more rows"
+                # Extract just the second column (first result column, skip "context" column)
+                if len(df.columns) >= 2:
+                    result_column = df.iloc[:, 1]  # Second column (index 1)
+                    result_column_name = df.columns[1]
+                    print(f"DEBUG: Extracting column: {result_column_name}", flush=True)
+                    
+                    # Show ALL rows with FULL text (no truncation)
+                    all_values = result_column.tolist()
+                    results_list = "\n".join([f"  {i+1}. {str(val)}" for i, val in enumerate(all_values)])
+                    
+                    result_text = f"Query completed successfully!\n\n"
+                    result_text += f"Found {len(df)} result(s):\n\n"
+                    result_text += results_list
+                else:
+                    # Fallback if CSV structure is unexpected - show full DataFrame
+                    result_text = f"Query completed successfully!\n\n"
+                    result_text += f"Results ({len(df)} rows):\n\n"
+                    result_text += df.to_string(index=False)
                 
                 print(f"DEBUG: Sending results for {len(df)} rows to frontend", flush=True)
                 
