@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Send, Database, CheckSquare, Square, AlertCircle, Loader2, XCircle, RotateCcw, MessageSquare, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Send, Database, CheckSquare, Square, AlertCircle, Loader2, XCircle, RotateCcw, MessageSquare, Trash2, ChevronLeft, ChevronRight, Search } from 'lucide-react'
 import axios from 'axios'
 
 const API_BASE_URL = 'http://localhost:8000'
@@ -14,6 +14,7 @@ function UserChatPage() {
   const [conversations, setConversations] = useState([])
   const [currentConversationId, setCurrentConversationId] = useState(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [datasetSearchQuery, setDatasetSearchQuery] = useState('')
   const messagesEndRef = useRef(null)
   const abortControllerRef = useRef(null)
   
@@ -125,6 +126,16 @@ function UserChatPage() {
       return newSet
     })
   }
+
+  // Filter datasets based on search query
+  const filteredDatasets = datasets.filter(dataset => {
+    if (!datasetSearchQuery.trim()) return true
+    const query = datasetSearchQuery.toLowerCase()
+    return (
+      dataset.name.toLowerCase().includes(query) ||
+      dataset.annotation.toLowerCase().includes(query)
+    )
+  })
 
   const handleCancel = () => {
     if (abortControllerRef.current) {
@@ -470,16 +481,29 @@ function UserChatPage() {
       <div className="w-1/3 bg-white border-l border-gray-200 flex flex-col">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-800">Datasets</h2>
-          <p className="text-sm text-gray-600 mt-1">
+          <p className="text-sm text-gray-600 mt-1 mb-3">
             Select datasets to query
           </p>
+          {/* Search bar */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              value={datasetSearchQuery}
+              onChange={(e) => setDatasetSearchQuery(e.target.value)}
+              placeholder="Search datasets..."
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+            />
+          </div>
         </div>
         <div className="flex-1 overflow-y-auto p-6">
           {datasets.length === 0 ? (
             <p className="text-gray-500">No datasets available.</p>
+          ) : filteredDatasets.length === 0 ? (
+            <p className="text-gray-500">No datasets match your search.</p>
           ) : (
             <ul className="space-y-3">
-              {datasets.map(dataset => (
+              {filteredDatasets.map(dataset => (
                 <li
                   key={dataset.id}
                   className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
