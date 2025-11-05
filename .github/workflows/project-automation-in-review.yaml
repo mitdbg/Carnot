@@ -9,11 +9,18 @@ jobs:
     if: |
       github.event.pull_request.base.ref == 'dev' ||
       github.event.pull_request.base.ref == 'main'
+
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+
     runs-on: ubuntu-latest
     steps:
       - name: Move linked issues to In Review when PR targets dev or main
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.CARNOT_PROJECT_TOKEN }}
           script: |
             const projectId = "PVT_kwDOAAnpb84BHVLK";
             const statusFieldId = "PVTSSF_lADOAAnpb84BHVLKzg4HfRU";
