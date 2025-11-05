@@ -1,4 +1,4 @@
-name: Project Automation
+name: Project Automation -- In Staging and Done
 
 on:
   pull_request:
