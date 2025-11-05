@@ -48,7 +48,6 @@ jobs:
 
               const issueNodeId = issue.data.node_id;
 
-              // fetch first 100 items and filter client-side
               const result = await github.graphql(`
                 query($projectId: ID!) {
                   node(id: $projectId) {
@@ -71,11 +70,12 @@ jobs:
               const item = items.find(i => i.content?.id === issueNodeId);
 
               if (!item) {
-                console.log(\`Issue #\${issueNumber} is not in the project, skipping.\`);
+                console.log("Issue #" + issueNumber + " is not in the project, skipping.");
                 continue;
               }
 
-              console.log(\`Updating project item \${item.id} for issue #\${issueNumber} → In Review\`);
+              console.log("Updating project item " + item.id +
+                " for issue #" + issueNumber + " to In Review");
 
               await github.graphql(`
                 mutation($itemId: ID!, $statusFieldId: ID!, $inReviewOptionId: String!) {
