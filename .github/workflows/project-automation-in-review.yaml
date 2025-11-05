@@ -25,7 +25,7 @@ jobs:
           script: |
             const projectId = "PVT_kwDOAAnpb84BHVLK";
             const statusFieldId = "PVTSSF_lADOAAnpb84BHVLKzg4HfRU";
-            const inReviewOptionId = "PVTFO_rev789";
+            const inReviewOptionId = "23eec10f";
 
             const pr = context.payload.pull_request;
             const body = pr.body || "";
