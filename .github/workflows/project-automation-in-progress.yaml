@@ -18,28 +18,39 @@ jobs:
 
             const issue = context.payload.issue;
 
-            // Get project item for this issue
-            const items = await github.graphql(`
-              query($projectId: ID!, $issueId: ID!) {
+            // Fetch all project items and find the one for this issue
+            const result = await github.graphql(`
+              query($projectId: ID!) {
                 node(id: $projectId) {
                   ... on ProjectV2 {
-                    items(first: 50, filterBy: {contentId: $issueId}) {
+                    items(first: 200) {
                       nodes {
                         id
+                        content {
+                          ... on Issue {
+                            id
+                            number
+                          }
+                        }
                       }
                     }
                   }
                 }
               }
-            `, {
-              projectId,
-              issueId: issue.node_id
-            });
+            `, { projectId });
 
-            const itemId = items.node.items.nodes[0]?.id;
-            if (!itemId) { return; }
+            const item = result.node.items.nodes.find(i =>
+              i.content?.id === issue.node_id
+            );
 
-            // Set status = In Progress
+            if (!item) {
+              console.log("Issue not in this project, skipping.");
+              return;
+            }
+
+            const itemId = item.id;
+
+            // Update Status field → In Progress
             await github.graphql(`
               mutation($itemId: ID!, $statusFieldId: ID!, $inProgressOptionId: String!) {
                 updateProjectV2ItemFieldValue(input: {
@@ -47,10 +58,14 @@ jobs:
                   fieldId: $statusFieldId,
                   projectId: "${projectId}",
                   value: { singleSelectOptionId: $inProgressOptionId }
-                }) { clientMutationId }
+                }) {
+                  clientMutationId
+                }
               }
             `, {
               itemId,
               statusFieldId,
               inProgressOptionId
             });
+
+            console.log(`Moved Issue #${issue.number} to In Progress`);
