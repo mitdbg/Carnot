@@ -23,12 +23,6 @@ jobs:
             const todoOptionId = "f75ad846";
             const inProgressOptionId = "47fc9ee4";
 
-            script: |
-            const projectId = "PVT_kwDOAAnpb84BHVLK";
-            const statusFieldId = "PVTSSF_lADOAAnpb84BHVLKzg4HfRU";
-            const todoOptionId = "f75ad846";
-            const inProgressOptionId = "47fc9ee4";
-
             const issue = context.payload.issue;
 
             // --- Step 1: Find the project item for this issue ---
