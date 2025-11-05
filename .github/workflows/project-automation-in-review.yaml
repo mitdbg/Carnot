@@ -2,7 +2,7 @@ name: Project Automation -- In Review
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, edited, synchronize, reopened]
 
 jobs:
   pr-linked-set-in-review:
