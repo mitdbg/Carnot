@@ -1,0 +1,51 @@
+name: Project Automation -- In Staging and Done
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [dev, main]
+
+jobs:
+  move-to-staging:
+    if: github.event.pull_request.merged == true && startsWith(github.ref, 'refs/heads/dev')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Move linked issues to In Staging
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const pr = github.event.pull_request;
+            for (const issue of pr.body.matchAll(/#(\d+)/g)) {
+              const issue_number = issue[1];
+              await github.rest.projectsV2.items.update({
+                project_id: PVT_kwDOAAnpb84BHVLK,
+                item_id: await github.rest.projectsV2.items.getForIssue({
+                  issue_number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                }).then(r => r.data[0].id),
+                status: "In Staging"
+              });
+            }
+
+  move-to-done:
+    if: github.event.pull_request.merged == true && startsWith(github.ref, 'refs/heads/main')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Move linked issues to Done
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const pr = github.event.pull_request;
+            for (const issue of pr.body.matchAll(/#(\d+)/g)) {
+              const issue_number = issue[1];
+              await github.rest.projectsV2.items.update({
+                project_id: <PROJECT_ID>,
+                item_id: await github.rest.projectsV2.items.getForIssue({
+                  issue_number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                }).then(r => r.data[0].id),
+                status: "Done"
+              });
+            }

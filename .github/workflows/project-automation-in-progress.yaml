@@ -1,0 +1,56 @@
+name: Project Automation -- In Progress
+
+on:
+  issues:
+    types: [assigned]
+
+jobs:
+  issue-assigned-move-to-in-progress:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Move issue to In Progress when assigned
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const projectId = "PVT_kwDOAAnpb84BHVLK";
+            const statusFieldId = "PVTSSF_lADOAAnpb84BHVLKzg4HfRU";
+            const inProgressOptionId = "47fc9ee4";
+
+            const issue = context.payload.issue;
+
+            // Get project item for this issue
+            const items = await github.graphql(`
+              query($projectId: ID!, $issueId: ID!) {
+                node(id: $projectId) {
+                  ... on ProjectV2 {
+                    items(first: 50, filterBy: {contentId: $issueId}) {
+                      nodes {
+                        id
+                      }
+                    }
+                  }
+                }
+              }
+            `, {
+              projectId,
+              issueId: issue.node_id
+            });
+
+            const itemId = items.node.items.nodes[0]?.id;
+            if (!itemId) { return; }
+
+            // Set status = In Progress
+            await github.graphql(`
+              mutation($itemId: ID!, $statusFieldId: ID!, $inProgressOptionId: String!) {
+                updateProjectV2ItemFieldValue(input: {
+                  itemId: $itemId,
+                  fieldId: $statusFieldId,
+                  projectId: "${projectId}",
+                  value: { singleSelectOptionId: $inProgressOptionId }
+                }) { clientMutationId }
+              }
+            `, {
+              itemId,
+              statusFieldId,
+              inProgressOptionId
+            });
