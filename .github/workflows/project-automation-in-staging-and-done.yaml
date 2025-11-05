@@ -8,44 +8,186 @@ on:
 jobs:
   move-to-staging:
     if: github.event.pull_request.merged == true && startsWith(github.ref, 'refs/heads/dev')
+
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+
     runs-on: ubuntu-latest
     steps:
-      - name: Move linked issues to In Staging
-        uses: actions/github-script@v6
+      - name: Move linked issues to "In Staging"
+        uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.CARNOT_PROJECT_TOKEN }}
           script: |
-            const pr = github.event.pull_request;
-            for (const issue of pr.body.matchAll(/#(\d+)/g)) {
-              const issue_number = issue[1];
-              await github.rest.projectsV2.items.update({
-                project_id: PVT_kwDOAAnpb84BHVLK,
-                item_id: await github.rest.projectsV2.items.getForIssue({
-                  issue_number,
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                }).then(r => r.data[0].id),
-                status: "In Staging"
+            const projectId = "PVT_kwDOAAnpb84BHVLK"; // Your ProjectV2 ID
+            const pr = context.payload.pull_request;
+            const body = pr.body || "";
+
+            // Extract linked issue numbers (#123)
+            const matches = [...body.matchAll(/#(\d+)/g)];
+            if (!matches.length) {
+              console.log("No linked issues found in PR body");
+              return;
+            }
+
+            for (const match of matches) {
+              const issueNumber = Number(match[1]);
+              console.log(`Processing issue #${issueNumber}`);
+
+              // GraphQL: get issue node ID, project item, and status field/options
+              const result = await github.graphql(`
+                query($owner: String!, $repo: String!, $issueNumber: Int!, $projectId: ID!) {
+                  repository(owner: $owner, name: $repo) {
+                    issue(number: $issueNumber) {
+                      id
+                      projectItems(first: 10) { nodes { id } }
+                    }
+                  }
+                  node(id: $projectId) {
+                    ... on ProjectV2 {
+                      fields(first: 50) {
+                        nodes {
+                          ... on ProjectV2SingleSelectField {
+                            id
+                            name
+                            options { id name }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              `, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issueNumber,
+                projectId
               });
+
+              const issue = result.repository.issue;
+              const itemId = issue.projectItems.nodes[0]?.id;
+              if (!itemId) {
+                console.log(`⚠️ Issue #${issueNumber} not found in project`);
+                continue;
+              }
+
+              const statusField = result.node.fields.nodes.find(f => f?.name === "Status");
+              const stagingOption = statusField?.options.find(o => o.name === "In Staging");
+
+              if (!statusField || !stagingOption) {
+                console.log("❌ 'Status' field or 'In Staging' option not found");
+                continue;
+              }
+
+              await github.graphql(`
+                mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                  updateProjectV2ItemFieldValue(input: {
+                    projectId: $projectId,
+                    itemId: $itemId,
+                    fieldId: $fieldId,
+                    value: { singleSelectOptionId: $optionId }
+                  }) { clientMutationId }
+                }
+              `, {
+                projectId,
+                itemId,
+                fieldId: statusField.id,
+                optionId: stagingOption.id
+              });
+
+              console.log(`✅ Issue #${issueNumber} moved to "In Staging"`);
             }
 
   move-to-done:
     if: github.event.pull_request.merged == true && startsWith(github.ref, 'refs/heads/main')
+
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+
     runs-on: ubuntu-latest
     steps:
-      - name: Move linked issues to Done
-        uses: actions/github-script@v6
+      - name: Move linked issues to "Done"
+        uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.CARNOT_PROJECT_TOKEN }}
           script: |
-            const pr = github.event.pull_request;
-            for (const issue of pr.body.matchAll(/#(\d+)/g)) {
-              const issue_number = issue[1];
-              await github.rest.projectsV2.items.update({
-                project_id: <PROJECT_ID>,
-                item_id: await github.rest.projectsV2.items.getForIssue({
-                  issue_number,
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                }).then(r => r.data[0].id),
-                status: "Done"
+            const projectId = "PVT_kwDOAAnpb84BHVLK"; // Your ProjectV2 ID
+            const pr = context.payload.pull_request;
+            const body = pr.body || "";
+
+            const matches = [...body.matchAll(/#(\d+)/g)];
+            if (!matches.length) {
+              console.log("No linked issues found in PR body");
+              return;
+            }
+
+            for (const match of matches) {
+              const issueNumber = Number(match[1]);
+              console.log(`Processing issue #${issueNumber}`);
+
+              const result = await github.graphql(`
+                query($owner: String!, $repo: String!, $issueNumber: Int!, $projectId: ID!) {
+                  repository(owner: $owner, name: $repo) {
+                    issue(number: $issueNumber) {
+                      id
+                      projectItems(first: 10) { nodes { id } }
+                    }
+                  }
+                  node(id: $projectId) {
+                    ... on ProjectV2 {
+                      fields(first: 50) {
+                        nodes {
+                          ... on ProjectV2SingleSelectField {
+                            id
+                            name
+                            options { id name }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              `, {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issueNumber,
+                projectId
               });
+
+              const issue = result.repository.issue;
+              const itemId = issue.projectItems.nodes[0]?.id;
+              if (!itemId) {
+                console.log(`⚠️ Issue #${issueNumber} not found in project`);
+                continue;
+              }
+
+              const statusField = result.node.fields.nodes.find(f => f?.name === "Status");
+              const doneOption = statusField?.options.find(o => o.name === "Done");
+
+              if (!statusField || !doneOption) {
+                console.log("❌ 'Status' field or 'Done' option not found");
+                continue;
+              }
+
+              await github.graphql(`
+                mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                  updateProjectV2ItemFieldValue(input: {
+                    projectId: $projectId,
+                    itemId: $itemId,
+                    fieldId: $fieldId,
+                    value: { singleSelectOptionId: $optionId }
+                  }) { clientMutationId }
+                }
+              `, {
+                projectId,
+                itemId,
+                fieldId: statusField.id,
+                optionId: doneOption.id
+              });
+
+              console.log(`✅ Issue #${issueNumber} moved to "Done"`);
             }
