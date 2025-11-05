@@ -4,6 +4,12 @@ on:
   issues:
     types: [assigned]
 
+permissions:
+  issues: write
+  pull-requests: write
+  projects: write
+  contents: read
+
 jobs:
   issue-assigned-move-to-in-progress:
     runs-on: ubuntu-latest
