@@ -6,11 +6,17 @@ on:
 
 jobs:
   issue-assigned-move-to-in-progress:
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+
     runs-on: ubuntu-latest
     steps:
       - name: Move issue to In Progress when assigned
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.CARNOT_PROJECT_TOKEN }}
           script: |
             const projectId = "PVT_kwDOAAnpb84BHVLK";
             const statusFieldId = "PVTSSF_lADOAAnpb84BHVLKzg4HfRU";
@@ -23,7 +29,7 @@ jobs:
               query($projectId: ID!) {
                 node(id: $projectId) {
                   ... on ProjectV2 {
-                    items(first: 200) {
+                    items(first: 100) {
                       nodes {
                         id
                         content {
