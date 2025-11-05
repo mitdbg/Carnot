@@ -7,8 +7,8 @@ on:
 jobs:
   pr-linked-set-in-review:
     if: |
-      github.event.pull_request.base.ref == 'dev' ||
-      github.event.pull_request.base.ref == 'main'
+      (github.event.pull_request.base.ref == 'dev' || github.event.pull_request.base.ref == 'main') &&
+      !(github.event.pull_request.base.ref == 'main' && github.event.pull_request.head.ref == 'dev')
 
     permissions:
       contents: read
