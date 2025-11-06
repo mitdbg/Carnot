@@ -1,6 +1,7 @@
 import logging
 import os
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import List, Optional, Tuple
 
 import carnot
@@ -147,15 +148,4 @@ def read_snippet(path: Path, length: int = 200) -> Optional[str]:
         return content[:length] + ("..." if len(content) > length else "")
     except OSError:
         return None
-
-
-class TemporaryDirectory:
-    def __enter__(self):
-        from tempfile import TemporaryDirectory as _TemporaryDirectory
-
-        self._tempdir = _TemporaryDirectory()
-        return self._tempdir.__enter__()
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        return self._tempdir.__exit__(exc_type, exc_val, exc_tb)
 

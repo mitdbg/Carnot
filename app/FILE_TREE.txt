@@ -1,7 +1,7 @@
 Carnot Web Application - Complete File Structure
 ================================================
 
-carnot-web/
+app/
 │
 ├── README.md                          # Main project documentation
 ├── QUICK_START.md                     # 5-minute quick start guide
@@ -190,7 +190,7 @@ Getting Started
 ===============
 
 1. Setup (one-time):
-   cd carnot-web/backend && python -m venv venv && source venv/bin/activate && pip install -r requirements.txt
+   cd app/backend && python -m venv venv && source venv/bin/activate && pip install -r requirements.txt
    cd ../frontend && npm install
 
 2. Run:

@@ -6,7 +6,7 @@ Get up and running in 5 minutes using your existing `.venv312`!
 
 ### Step 1: Backend Setup (using your existing .venv312)
 ```bash
-cd carnot-web/backend
+cd app/backend
 source ../.venv312/bin/activate   # Use existing venv312
 pip install -r requirements.txt
 cd ..
@@ -14,7 +14,7 @@ cd ..
 
 ### Step 2: Frontend Setup
 ```bash
-cd carnot-web/frontend
+cd app/frontend
 npm install
 cd ..
 ```
@@ -26,7 +26,7 @@ cd ..
 The startup script will automatically find and use your `.venv312`:
 
 ```bash
-cd carnot-web
+cd app
 ./start.sh
 ```
 
@@ -34,14 +34,14 @@ cd carnot-web
 
 **Terminal 1 - Backend:**
 ```bash
-cd carnot-web/backend
+cd app/backend
 source ../.venv312/bin/activate
 uvicorn app.main:app --reload --port 8000
 ```
 
 **Terminal 2 - Frontend:**
 ```bash
-cd carnot-web/frontend
+cd app/frontend
 npm run dev
 ```
 

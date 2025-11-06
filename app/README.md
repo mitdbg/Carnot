@@ -69,7 +69,7 @@ The web app will be available at http://localhost:5173
 ## Project Structure
 
 ```
-carnot-web/
+app/
 ├── backend/
 │   ├── app/
 │   │   ├── main.py           # FastAPI application

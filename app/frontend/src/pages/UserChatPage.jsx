@@ -63,13 +63,10 @@ function UserChatPage() {
       }))
       setMessages(formattedMessages)
       
-      // Set selected datasets
       if (conversation.dataset_ids) {
         const datasetIds = conversation.dataset_ids.split(',').map(id => parseInt(id))
         setSelectedDatasets(new Set(datasetIds))
       }
-      
-      console.log('Loaded conversation:', conversationId)
     } catch (error) {
       console.error('Error loading conversation:', error)
     }
@@ -103,7 +100,6 @@ function UserChatPage() {
     setMessages([])
     setCurrentConversationId(null)
     setSelectedDatasets(new Set())
-    console.log('New session created:', newSessionId)
   }
 
   const loadDatasets = async () => {
@@ -211,7 +207,6 @@ function UserChatPage() {
               // Update session_id if received from server
               if (data.session_id && data.session_id !== sessionId) {
                 setSessionId(data.session_id)
-                console.log('Session ID updated:', data.session_id)
               }
               
               if (data.type === 'status') {
@@ -241,9 +236,7 @@ function UserChatPage() {
         }
       }
     } catch (error) {
-      if (error.name === 'AbortError') {
-        console.log('Request aborted')
-      } else {
+      if (error.name !== 'AbortError') {
         console.error('Error executing query:', error)
         setMessages(prev => [...prev, {
           type: 'error',

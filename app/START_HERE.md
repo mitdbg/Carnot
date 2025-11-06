@@ -40,7 +40,7 @@ Already have Python 3.8+ and Node.js 16+?
 
 ```bash
 # Setup (one-time)
-cd carnot-web/backend
+cd app/backend
 python -m venv venv
 source venv/bin/activate  # macOS/Linux (Windows: venv\Scripts\activate)
 pip install -r requirements.txt
@@ -59,7 +59,7 @@ Then open: **http://localhost:5173**
 ## 📂 Project Structure Overview
 
 ```
-carnot-web/
+app/
 ├── backend/          # FastAPI Python server
 │   └── app/
 │       ├── routes/   # API endpoints
@@ -221,12 +221,12 @@ Everything you need is here. The application is:
 
 ```bash
 # Start backend (Terminal 1)
-cd carnot-web/backend
+cd app/backend
 source venv/bin/activate
 uvicorn app.main:app --reload --port 8000
 
 # Start frontend (Terminal 2)
-cd carnot-web/frontend
+cd app/frontend
 npm run dev
 
 # Or use startup script

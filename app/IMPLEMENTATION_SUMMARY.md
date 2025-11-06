@@ -7,7 +7,7 @@ A fully functional web application has been created for the Carnot engine with a
 ## 📁 Project Structure
 
 ```
-carnot-web/
+app/
 ├── backend/                    # FastAPI Backend
 │   ├── app/
 │   │   ├── main.py            # FastAPI application entry point

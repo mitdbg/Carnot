@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Carnot Web - Startup Script
-# This script starts both the backend and frontend servers
+# Carnot App - Startup Script
+# Starts both the backend and frontend servers
 
-echo "🚀 Starting Carnot Web Application..."
+echo "🚀 Starting Carnot Application..."
 echo ""
 
 # Function to cleanup background processes on exit

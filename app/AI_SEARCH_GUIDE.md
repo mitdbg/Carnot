@@ -80,7 +80,7 @@ search_ctx = ctx.search(query)
 
 ## Configuration
 
-Located in: `carnot-web/backend/app/routes/search.py`
+Located in: `app/backend/app/routes/search.py`
 
 ```python
 # Adjust model for speed vs quality tradeoff

@@ -19,7 +19,7 @@ Don't have them?
 
 ### Step 1: Backend Setup
 ```bash
-cd carnot-web/backend
+cd app/backend
 python -m venv venv
 source venv/bin/activate          # macOS/Linux
 # OR
@@ -31,7 +31,7 @@ cd ..
 
 ### Step 2: Frontend Setup
 ```bash
-cd carnot-web/frontend
+cd app/frontend
 npm install
 cd ..
 ```
@@ -42,13 +42,13 @@ cd ..
 
 **macOS/Linux:**
 ```bash
-cd carnot-web
+cd app
 ./start.sh
 ```
 
 **Windows:**
 ```cmd
-cd carnot-web
+cd app
 start.bat
 ```
 
@@ -56,7 +56,7 @@ start.bat
 
 **Terminal 1 - Backend:**
 ```bash
-cd carnot-web/backend
+cd app/backend
 source venv/bin/activate    # macOS/Linux
 # OR
 venv\Scripts\activate       # Windows
@@ -66,7 +66,7 @@ uvicorn app.main:app --reload --port 8000
 
 **Terminal 2 - Frontend:**
 ```bash
-cd carnot-web/frontend
+cd app/frontend
 npm run dev
 ```
 
@@ -142,14 +142,14 @@ const API_BASE_URL = 'http://localhost:8001/api'
 
 ### Reset Database
 ```bash
-cd carnot-web/backend
+cd app/backend
 rm carnot_web.db
 # Restart backend - database will be recreated
 ```
 
 ### Clear Uploaded Files
 ```bash
-cd carnot-web/backend
+cd app/backend
 rm -rf uploaded_files/*
 ```
 
