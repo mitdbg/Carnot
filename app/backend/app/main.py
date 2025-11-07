@@ -1,9 +1,19 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import files, datasets, search, query, conversations
-from app.database import init_db
 
-app = FastAPI(title="Carnot Web API")
+from app.database import init_db
+from app.routes import conversations, datasets, files, query, search
+
+
+# Initialize database
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db()
+    yield
+
+app = FastAPI(title="Carnot Web API", lifespan=lifespan)
 
 # Configure CORS
 app.add_middleware(
@@ -13,11 +23,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Initialize database
-@app.on_event("startup")
-async def startup():
-    await init_db()
 
 # Include routers
 app.include_router(files.router, prefix="/api/files", tags=["files"])
