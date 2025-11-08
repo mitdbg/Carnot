@@ -19,6 +19,7 @@ class DirectoryContents(BaseModel):
 class DatasetFileCreate(BaseModel):
     file_path: str
     file_name: str
+    is_directory: bool = False
 
 class DatasetCreate(BaseModel):
     name: str
@@ -65,6 +66,8 @@ class UploadResponse(BaseModel):
     file_path: str
     original_name: str
     message: str
+    extracted_to: Optional[str] = None
+    extracted_files: Optional[List[str]] = None
 
 # Search schemas
 class SearchQuery(BaseModel):

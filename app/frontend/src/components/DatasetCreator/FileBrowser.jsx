@@ -33,15 +33,18 @@ function FileBrowser({ selectedFiles, onFileToggle }) {
     }
   }
 
+  const makeSelectionKey = (item) => `${item.path}||${item.name}||${item.is_directory ? 'dir' : 'file'}`
+
   const handleCheckboxChange = (item) => {
-    if (!item.is_directory) {
-      onFileToggle(item.path, item.name)
-    }
+    onFileToggle({
+      path: item.path,
+      name: item.name,
+      is_directory: item.is_directory,
+    })
   }
 
   const isFileSelected = (item) => {
-    if (item.is_directory) return false
-    const key = `${item.path}||${item.name}`
+    const key = makeSelectionKey(item)
     return selectedFiles.has(key)
   }
 
@@ -62,6 +65,28 @@ function FileBrowser({ selectedFiles, onFileToggle }) {
     return currentPath.split('/').filter(Boolean)
   }
 
+  const handleSelectAll = () => {
+    items.forEach((item) => {
+      if (item.name === '..') {
+        return
+      }
+      if (!isFileSelected(item)) {
+        handleCheckboxChange(item)
+      }
+    })
+  }
+
+  const handleClearSelection = () => {
+    items.forEach((item) => {
+      if (item.name === '..') {
+        return
+      }
+      if (isFileSelected(item)) {
+        handleCheckboxChange(item)
+      }
+    })
+  }
+
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex items-center justify-between mb-4">
@@ -69,6 +94,22 @@ function FileBrowser({ selectedFiles, onFileToggle }) {
           <Folder className="w-5 h-5" />
           File Browser
         </h2>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleSelectAll}
+            className="text-sm px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 transition-colors"
+            type="button"
+          >
+            Select All
+          </button>
+          <button
+            onClick={handleClearSelection}
+            className="text-sm px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 transition-colors"
+            type="button"
+          >
+            Clear Selection
+          </button>
+        </div>
       </div>
 
       {/* Breadcrumb Navigation */}
@@ -133,16 +174,13 @@ function FileBrowser({ selectedFiles, onFileToggle }) {
                 key={index}
                 className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
               >
-                {/* Checkbox (only for files) */}
-                {!item.is_directory && (
-                  <input
-                    type="checkbox"
-                    checked={isFileSelected(item)}
-                    onChange={() => handleCheckboxChange(item)}
-                    className="w-4 h-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
-                  />
-                )}
-                {item.is_directory && <div className="w-4" />}
+                {/* Checkbox for files and directories */}
+                <input
+                  type="checkbox"
+                  checked={isFileSelected(item)}
+                  onChange={() => handleCheckboxChange(item)}
+                  className="w-4 h-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
+                />
 
                 {/* Icon and Name */}
                 <button

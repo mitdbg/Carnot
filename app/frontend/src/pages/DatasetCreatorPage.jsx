@@ -8,30 +8,46 @@ import { datasetsApi } from '../services/api'
 
 function DatasetCreatorPage() {
   const navigate = useNavigate()
-  const [selectedFiles, setSelectedFiles] = useState(new Set())
+  const [selectedFiles, setSelectedFiles] = useState(() => new Map())
   const [datasetName, setDatasetName] = useState('')
   const [annotation, setAnnotation] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  const handleFileToggle = (filePath, fileName) => {
-    const key = `${filePath}||${fileName}`
-    const newSelected = new Set(selectedFiles)
-    if (newSelected.has(key)) {
-      newSelected.delete(key)
-    } else {
-      newSelected.add(key)
-    }
-    setSelectedFiles(newSelected)
+  const buildSelectionKey = (filePath, fileName, isDirectory) =>
+    `${filePath}||${fileName}||${isDirectory ? 'dir' : 'file'}`
+
+  const handleFileToggle = (item) => {
+    const { path: filePath, name: fileName, is_directory: isDirectory = false } = item
+    const key = buildSelectionKey(filePath, fileName, isDirectory)
+    setSelectedFiles((prev) => {
+      const newSelected = new Map(prev)
+      if (newSelected.has(key)) {
+        newSelected.delete(key)
+      } else {
+        newSelected.set(key, {
+          file_path: filePath,
+          file_name: fileName,
+          is_directory: isDirectory,
+        })
+      }
+      return newSelected
+    })
   }
 
   const handleChatbotSelect = (files) => {
-    const newSelected = new Set(selectedFiles)
-    files.forEach((file) => {
-      const key = `${file.file_path}||${file.file_name}`
-      newSelected.add(key)
+    setSelectedFiles((prev) => {
+      const newSelected = new Map(prev)
+      files.forEach((file) => {
+        const key = buildSelectionKey(file.file_path, file.file_name, false)
+        newSelected.set(key, {
+          file_path: file.file_path,
+          file_name: file.file_name,
+          is_directory: false,
+        })
+      })
+      return newSelected
     })
-    setSelectedFiles(newSelected)
   }
 
   const handleSaveDataset = async () => {
@@ -54,10 +70,11 @@ function DatasetCreatorPage() {
       setError(null)
 
       // Convert selected files to API format
-      const files = Array.from(selectedFiles).map((key) => {
-        const [file_path, file_name] = key.split('||')
-        return { file_path, file_name }
-      })
+      const files = Array.from(selectedFiles.values()).map(({ file_path, file_name, is_directory }) => ({
+        file_path,
+        file_name,
+        is_directory,
+      }))
 
       await datasetsApi.create({
         name: datasetName,
@@ -121,7 +138,7 @@ function DatasetCreatorPage() {
       {/* Selected Files Counter */}
       <div className="bg-primary-50 border border-primary-200 px-4 py-3 rounded-lg">
         <p className="text-primary-800">
-          <span className="font-semibold">{selectedFiles.size}</span> file(s) selected
+          <span className="font-semibold">{selectedFiles.size}</span> item(s) selected
         </p>
       </div>
 

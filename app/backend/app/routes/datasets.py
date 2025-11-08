@@ -1,13 +1,76 @@
+import os
+from pathlib import Path
+from typing import List, Tuple, Iterable, Set
+
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
-from app.models.schemas import (
-    DatasetCreate, DatasetResponse, DatasetDetailResponse, DatasetUpdate
-)
+
 from app.database import get_db, Dataset, DatasetFile
-from typing import List
+from app.models.schemas import (
+    DatasetCreate,
+    DatasetResponse,
+    DatasetDetailResponse,
+    DatasetUpdate,
+)
 
 router = APIRouter()
+
+PROJECT_ROOT = Path(__file__).resolve().parents[4]
+DATA_DIR = PROJECT_ROOT / "data"
+UPLOAD_DIR = Path(os.getcwd()) / "uploaded_files"
+ROOT_DIRECTORIES = {
+    "uploaded_files": UPLOAD_DIR,
+    "data": DATA_DIR,
+}
+
+
+def _normalize_relative_path(path: str) -> str:
+    normalized = path.replace("\\", "/").strip("/")
+    if not normalized:
+        raise HTTPException(status_code=400, detail="Invalid path provided")
+    return normalized
+
+
+def _resolve_relative_path(relative_path: str) -> Tuple[str, Path, Path]:
+    normalized = _normalize_relative_path(relative_path)
+    parts = normalized.split("/", 1)
+    root_name = parts[0]
+    if root_name not in ROOT_DIRECTORIES:
+        raise HTTPException(status_code=400, detail=f"Unsupported root in path: {relative_path}")
+
+    base_root = ROOT_DIRECTORIES[root_name]
+    remainder = parts[1] if len(parts) > 1 else ""
+    absolute_path = base_root / remainder if remainder else base_root
+    return root_name, absolute_path, base_root
+
+
+def _gather_files_from_entry(relative_path: str, is_directory: bool) -> Iterable[Tuple[str, str]]:
+    root_name, absolute_path, root_base = _resolve_relative_path(relative_path)
+
+    if not absolute_path.exists():
+        raise HTTPException(status_code=404, detail=f"Path not found: {relative_path}")
+
+    results: List[Tuple[str, str]] = []
+
+    if absolute_path.is_dir():
+        for path in absolute_path.rglob("*"):
+            if path.is_file():
+                relative_suffix = path.relative_to(root_base)
+                full_relative = Path(root_name) / relative_suffix
+                results.append((str(full_relative).replace(os.sep, "/"), path.name))
+    elif absolute_path.is_file():
+        relative_suffix = absolute_path.relative_to(root_base)
+        full_relative = Path(root_name) / relative_suffix
+        results.append((str(full_relative).replace(os.sep, "/"), absolute_path.name))
+    else:
+        raise HTTPException(status_code=400, detail=f"Unsupported path type: {relative_path}")
+
+    if not results and is_directory:
+        raise HTTPException(status_code=400, detail=f"No files found in directory: {relative_path}")
+
+    results.sort(key=lambda entry: entry[0])
+    return results
 
 @router.get("/", response_model=List[DatasetResponse])
 async def list_datasets(db: AsyncSession = Depends(get_db)):
@@ -67,16 +130,29 @@ async def create_dataset(
         db.add(db_dataset)
         await db.flush()
         
-        # Add files
+        # Add files (expand directories if needed)
+        seen_paths: Set[str] = set()
         dataset_files = []
+
         for file in dataset.files:
-            db_file = DatasetFile(
-                dataset_id=db_dataset.id,
-                file_path=file.file_path,
-                file_name=file.file_name
+            entries = _gather_files_from_entry(
+                file.file_path,
+                getattr(file, "is_directory", False),
             )
-            db.add(db_file)
-            dataset_files.append(db_file)
+            for relative_path, file_name in entries:
+                if relative_path in seen_paths:
+                    continue
+                seen_paths.add(relative_path)
+                db_file = DatasetFile(
+                    dataset_id=db_dataset.id,
+                    file_path=relative_path,
+                    file_name=file_name,
+                )
+                db.add(db_file)
+                dataset_files.append(db_file)
+
+        if not dataset_files:
+            raise HTTPException(status_code=400, detail="No valid files found in selection")
         
         await db.commit()
         await db.refresh(db_dataset)

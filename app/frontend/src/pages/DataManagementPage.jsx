@@ -36,20 +36,32 @@ function DataManagementPage() {
   }
 
   const handleFileUpload = async (e) => {
-    const file = e.target.files[0]
-    if (!file) return
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
 
     try {
       setUploading(true)
       setError(null)
-      await filesApi.upload(file)
-      setSuccess('File uploaded successfully!')
-      setTimeout(() => setSuccess(null), 3000)
+      const messages = []
+
+      for (const file of files) {
+        const response = await filesApi.upload(file)
+        const data = response.data || {}
+        if (data.extracted_to) {
+          messages.push(`${data.original_name} extracted to ${data.extracted_to}`)
+        } else {
+          messages.push(`${data.original_name} uploaded successfully`)
+        }
+      }
+
+      setSuccess(messages.join(' • '))
+      setTimeout(() => setSuccess(null), 4000)
       loadData()
     } catch (err) {
       setError('Failed to upload file: ' + err.message)
     } finally {
       setUploading(false)
+      e.target.value = ''
     }
   }
 
@@ -145,6 +157,7 @@ function DataManagementPage() {
             className="hidden"
             onChange={handleFileUpload}
             disabled={uploading}
+            multiple
           />
           <label
             htmlFor="file-upload"
