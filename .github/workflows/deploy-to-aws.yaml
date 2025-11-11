@@ -1,0 +1,26 @@
+name: Deploy to AWS
+
+# on:
+#   pull_request:
+#     types: [closed]
+#     branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git clone the repository
+        uses: actions/checkout@v5
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@main
+        with:
+          role-to-assume: arn:aws:iam::422297141788:role/CarnotGithubRole
+          aws-region: us-east-1
+      - name: Additional steps
+        run: |
+          # Your commands that require AWS credentials
+          aws sts get-caller-identity 
