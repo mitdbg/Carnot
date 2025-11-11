@@ -17,12 +17,30 @@ jobs:
     steps:
       - name: Git clone the repository
         uses: actions/checkout@v5
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.13.5
+
+      - name: Terraform Init
+        id: init
+        run: cd deploy && terraform init
+
+      - name: Terraform Validate
+        id: validate
+        run: cd deploy && terraform validate
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@main
         with:
           role-to-assume: arn:aws:iam::422297141788:role/CarnotGithubRole
           aws-region: us-east-1
-      - name: Additional steps
-        run: |
-          # Your commands that require AWS credentials
-          aws sts get-caller-identity 
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+
+      # - name: Additional steps
+      #   run: |
+      #     # Your commands that require AWS credentials
+      #     aws sts get-caller-identity 
