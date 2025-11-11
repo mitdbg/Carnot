@@ -38,7 +38,7 @@ jobs:
           aws-region: us-east-1
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve
+        run: cd deploy && terraform apply -auto-approve
 
       # - name: Additional steps
       #   run: |
