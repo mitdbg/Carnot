@@ -1,5 +1,12 @@
 name: Deploy to AWS
 
+on:
+  push:
+    branches: [feature-31/create-deploy-scripts]
+  # pull_request:
+  #   types: [closed]
+  #   branches: [main]
+
 permissions:
   id-token: write
   contents: read
