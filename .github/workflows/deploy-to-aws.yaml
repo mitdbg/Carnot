@@ -37,9 +37,11 @@ jobs:
           role-to-assume: arn:aws:iam::422297141788:role/CarnotGithubRole
           aws-region: us-east-1
 
+      # TODO: remove import
       - name: Copy Terraform State File
         run: |
           aws s3 cp s3://carnot-research/tf/terraform.tfstate deploy/terraform.tfstate || echo "No existing state file found."
+          terraform import aws_key_pair.deployer_key carnot-deployer-key
 
       - name: Terraform Apply
         run: |
