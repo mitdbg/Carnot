@@ -15,11 +15,10 @@ data "aws_ami" "ubuntu" {
 
 resource "aws_instance" "app_server" {
   ami           = data.aws_ami.ubuntu.id
-  instance_type = "t2.micro"
+  instance_type = var.instance_type
   subnet_id     = "subnet-27021a61"
 
   tags = {
-    Name = "carnot-web-app"
+    Name = var.instance_name
   }
 }
-

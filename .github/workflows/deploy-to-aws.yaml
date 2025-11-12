@@ -37,10 +37,12 @@ jobs:
           role-to-assume: arn:aws:iam::422297141788:role/CarnotGithubRole
           aws-region: us-east-1
 
-      - name: Terraform Apply
-        run: cd deploy && terraform apply -auto-approve
+      - name: Copy Terraform State File
+        run: |
+          aws s3 cp s3://carnot-research/tf/terraform.tfstate deploy/terraform.tfstate || echo "No existing state file found."
 
-      # - name: Additional steps
-      #   run: |
-      #     # Your commands that require AWS credentials
-      #     aws sts get-caller-identity 
+      - name: Terraform Apply
+        run: |
+          cd deploy
+          terraform apply -auto-approve
+          aws s3 cp terraform.tfstate s3://carnot-research/tf/terraform.tfstate
