@@ -10,7 +10,7 @@ import sys
 from typing import Dict, List, Set
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
-project_root = os.path.abspath(os.path.join(script_dir, '..'))
+project_root = os.path.abspath(os.path.join(script_dir, '..', '..'))
 PERSIST_DIR = os.path.join(project_root, "chroma_quest_limited_2")
 
 try:
@@ -50,54 +50,52 @@ def initialize_retriever():
     collection = client.get_collection(name=COLLECTION_NAME)
     print("--- Retriever Initialized ---")
 
-# --- Heuristic for over-retrieval ---
-# To find K unique documents, we must retrieve more than K chunks.
-# A multiplier of 10 is a common, conservative choice for dense vector stores.
-CHUNK_MULTIPLIER = 10 
+# --- Heuristic for over-retrieval (REMOVED) ---
+# Since we have 1 chunk per document, no over-retrieval is needed.
 
-def retrieve(query: str, k: int) -> Set[str]:
+def retrieve(query: str, k: int) -> Dict[str, str]:
     """
-    Retrieves enough chunks to find k unique documents for a single query and 
-    returns the set of those unique document IDs (titles).
+    Retrieves the top k unique documents for a single query.
+    (Assumes 1 chunk per document in the collection).
 
     Args:
         query (str): The query text to search for.
         k (int): The target number of unique documents (titles) to return.
 
     Returns:
-        A set of unique document IDs (titles) that contain the retrieved chunks.
+        A dictionary where keys are unique document IDs (titles) and
+        values are the text of the document chunk.
     """
     if not retriever_model or not collection:
         raise RuntimeError("Retriever not initialized. Call initialize_retriever() first.")
     
     if k <= 0:
-        return set()
-
-    # Calculate the number of chunks to retrieve (over-retrieve)
-    n_chunks = k * CHUNK_MULTIPLIER
+        return {}
     
     query_embedding = retriever_model.encode(
         query, convert_to_numpy=True, normalize_embeddings=True
     ).tolist()
 
-    # Query the collection with a large n_results
+    # Query the collection: ask for exactly k results.
     results = collection.query(
         query_embeddings=[query_embedding], 
-        n_results=n_chunks, 
-        include=["metadatas"] # Only retrieve metadatas
+        n_results=k,
+        include=["metadatas", "documents"]
     )
     
-    unique_doc_titles = set()
+    unique_docs: Dict[str, str] = {}
     
-    # Extract unique document titles until we reach the target k
-    if results.get("metadatas") and results["metadatas"][0]:
-        chunk_metadatas = results["metadatas"][0]
-        for meta in chunk_metadatas:
-            # Assumes the document ID is stored in the 'title' key of the metadata
-            if "title" in meta:
-                unique_doc_titles.add(meta["title"])
-                # Stop as soon as we have enough unique documents
-                if len(unique_doc_titles) >= k:
-                    break
+    # Extract documents and their chunk text directly
+    if (results.get("metadatas") and results.get("documents") and
+        results["metadatas"][0] and results["documents"][0]):
         
-    return unique_doc_titles
+        chunk_metadatas = results["metadatas"][0]
+        chunk_documents = results["documents"][0]
+
+        # Iterate over the k results and build the dictionary.
+        for meta, doc_text in zip(chunk_metadatas, chunk_documents):
+            title = meta.get("title")
+            if title:
+                unique_docs[title] = doc_text
+        
+    return unique_docs

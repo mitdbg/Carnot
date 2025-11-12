@@ -9,7 +9,7 @@ from tqdm import tqdm
 # Add project root to path to allow importing retriever
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
-from retrieve import initialize_retriever, retrieve
+from retrieve_verbose import initialize_retriever, retrieve
 
 # Import all generated strategy functions
 from query_1 import execute_query as execute_query_1
@@ -39,11 +39,11 @@ def main():
     initialize_retriever()
 
     # Get the list of queries from the gold file
-    gold_file_path = "../../../train_subset.jsonl"
+    gold_file_path = "../../../data/train_subset.jsonl"
     with open(gold_file_path, "r", encoding="utf-8") as f:
         queries = [json.loads(line) for line in f if line.strip()]
 
-    output_path = "pred_retrieved_set_ops.jsonl"
+    output_path = "pred_retrieved_set_ops_limited.jsonl"
     if os.path.exists(output_path):
         os.remove(output_path) # Clear old results
 

@@ -19,12 +19,12 @@ from tqdm import tqdm
 
 # --- Configuration ---
 # NOTE: The path uses ../ to access the file from a directory above (assuming the script is run from a subfolder).
-INPUT_QUERIES_PATH = "../train_subset.jsonl"
-OUTPUT_STRATEGIES_DIR = "decomposition_scripts"
+INPUT_QUERIES_PATH = "../data/train_subset3.jsonl"
+OUTPUT_STRATEGIES_DIR = "decomposition_scripts_limited"
 
 # Get API key from environment variable
 # If the key is not found, an error will occur during DSPy configuration
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") 
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 LLM_MODEL = 'gpt-5-mini' # Can be changed to 'gpt-4o' for better results if budget permits
 TARGET_KS = [100] # 20, 100
