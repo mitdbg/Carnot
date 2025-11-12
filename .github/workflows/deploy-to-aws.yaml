@@ -41,7 +41,7 @@ jobs:
       - name: Copy Terraform State File
         run: |
           aws s3 cp s3://carnot-research/tf/terraform.tfstate deploy/terraform.tfstate || echo "No existing state file found."
-          terraform import aws_key_pair.deployer_key carnot-deployer-key
+          cd deploy && terraform import aws_key_pair.deployer_key carnot-deployer-key
 
       - name: Terraform Apply
         run: |
