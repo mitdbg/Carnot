@@ -25,11 +25,11 @@ jobs:
 
       - name: Terraform Init
         id: init
-        run: cd deploy && terraform init
+        run: cd deploy/terraform && terraform init
 
       - name: Terraform Validate
         id: validate
-        run: cd deploy && terraform validate
+        run: cd deploy/terraform && terraform validate
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@main
@@ -43,10 +43,33 @@ jobs:
       # terraform import aws_iam_instance_profile.carnot_web_app_profile CarnotWebAppInstanceProfile
       - name: Copy Terraform State File
         run: |
-          aws s3 cp s3://carnot-research/tf/terraform.tfstate deploy/terraform.tfstate || echo "No existing state file found."
+          aws s3 cp s3://carnot-research/tf/terraform.tfstate deploy/terraform/terraform.tfstate || echo "No existing state file found."
 
-      - name: Terraform Apply
+      - name: Terraform Apply (Setup Infrastructure)
         run: |
-          cd deploy
+          cd deploy/terraform
           terraform apply -auto-approve
           aws s3 cp terraform.tfstate s3://carnot-research/tf/terraform.tfstate
+
+      - name: Deploy Application to EC2 Instance
+        env:
+          # EC2_PUBLIC_IP: ${{ steps.init.outputs.ec2_public_ip }}
+          CARNOT_DB_PASSWORD: ${{ secrets.CARNOT_DB_PASSWORD }}
+          CARNOT_DB_USER: ${{ secrets.CARNOT_DB_USER }}
+          CARNOT_DB_NAME: ${{ secrets.CARNOT_DB_NAME }}
+          CARNOT_DEPLOY_KEY: ${{ secrets.CARNOT_DEPLOY_KEY }}
+        run: |
+          cp -r app/backend deploy/compose/backend
+          cp -r app/frontend deploy/compose/frontend
+          cd deploy/compose
+          mkdir secrets
+          echo "$CARNOT_DB_PASSWORD" > secrets/db_password.txt
+          echo "$CARNOT_DB_USER" > secrets/db_user.txt
+          echo "$CARNOT_DB_NAME" > secrets/db_name.txt
+          chmod 600 secrets/db_*.txt
+          cd ../..
+          echo "Deploying to EC2 Instance at IP: $(terraform -chdir=deploy/terraform output -raw ec2_public_ip)"
+          echo "$CARNOT_DEPLOY_KEY" > deploy/terraform/deployer_key.pem
+          chmod 400 deploy/terraform/deployer_key.pem
+          scp -r -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem deploy/compose ubuntu@$(terraform -chdir=deploy/terraform output -raw ec2_public_ip):~/
+          ssh -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem ubuntu@$(terraform -chdir=deploy/terraform output -raw ec2_public_ip) << 'docker compose up -d --build'

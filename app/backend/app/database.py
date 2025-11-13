@@ -1,11 +1,23 @@
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy.orm import declarative_base
-from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey
 from datetime import datetime
-import os
+
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import declarative_base
+
+
+# read secrets
+def read_secret(secret_name: str) -> str:
+    with open(f"/run/secrets/{secret_name}.txt") as secret_file:
+        return secret_file.read().strip()
+
+DB_USER = read_secret("db_user")
+DB_PASSWORD = read_secret("db_password")
+DB_NAME = read_secret("db_name")
+DB_HOST = "db"
+DB_PORT = 5432
 
 # Database URL
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./carnot_web.db")
+DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 # Create async engine
 engine = create_async_engine(DATABASE_URL, echo=True)
