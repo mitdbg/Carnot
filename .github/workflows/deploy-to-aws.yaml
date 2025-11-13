@@ -48,7 +48,6 @@ jobs:
         working-directory: deploy/terraform
         run: |
           terraform import aws_lb.app_alb arn:aws:elasticloadbalancing:us-east-1:422297141788:loadbalancer/app/app-alb/67dd29ff9c3f620e
-          terraform import aws_ebs_volume.app_pg_data_volume vol-0338ec9add867b6ff
           terraform apply -auto-approve
 
       - name: Upload Terraform State File Even On Failure
