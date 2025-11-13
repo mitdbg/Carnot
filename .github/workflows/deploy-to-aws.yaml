@@ -48,6 +48,7 @@ jobs:
       - name: Terraform Apply (Setup Infrastructure)
         run: |
           cd deploy/terraform
+          terraform apply -refresh-only -auto-approve
           terraform apply -auto-approve
           aws s3 cp terraform.tfstate s3://carnot-research/tf/terraform.tfstate
 
