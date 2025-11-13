@@ -24,12 +24,14 @@ jobs:
           terraform_version: 1.13.5
 
       - name: Terraform Init
+        working-directory: deploy/terraform
         id: init
-        run: cd deploy/terraform && terraform init
+        run: terraform init
 
       - name: Terraform Validate
+        working-directory: deploy/terraform
         id: validate
-        run: cd deploy/terraform && terraform validate
+        run: terraform validate
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@main
@@ -37,19 +39,23 @@ jobs:
           role-to-assume: arn:aws:iam::422297141788:role/CarnotGithubRole
           aws-region: us-east-1
 
-      # cd deploy
-      # terraform import aws_key_pair.deployer_key carnot-deployer-key
-      # terraform import aws_iam_role.role CarnotWebAppRole
-      # terraform import aws_iam_instance_profile.carnot_web_app_profile CarnotWebAppInstanceProfile
       - name: Copy Terraform State File
+        working-directory: deploy/terraform
         run: |
-          aws s3 cp s3://carnot-research/tf/terraform.tfstate deploy/terraform/terraform.tfstate || echo "No existing state file found."
+          aws s3 cp s3://carnot-research/tf/terraform.tfstate . || echo "No existing state file found."
 
       - name: Terraform Apply (Setup Infrastructure)
+        working-directory: deploy/terraform
         run: |
-          cd deploy/terraform
-          terraform apply -refresh-only -auto-approve
+          terraform import aws_security_group.alb_sg alb_sg
+          terraform import aws_lb_target_group.app_tg app-tg
           terraform apply -auto-approve
+
+      - name: Upload Terraform State File Even On Failure
+        if: always()
+        working-directory: deploy/terraform
+        run: |
+          echo "Uploading terraform.tfstate to S3"
           aws s3 cp terraform.tfstate s3://carnot-research/tf/terraform.tfstate
 
       - name: Deploy Application to EC2 Instance
