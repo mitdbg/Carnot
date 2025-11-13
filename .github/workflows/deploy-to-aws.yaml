@@ -44,10 +44,10 @@ jobs:
         run: |
           aws s3 cp s3://carnot-research/tf/terraform.tfstate . || echo "No existing state file found."
 
+      # terraform import aws_lb.app_alb arn:aws:elasticloadbalancing:us-east-1:422297141788:loadbalancer/app/app-alb/67dd29ff9c3f620e
       - name: Terraform Apply (Setup Infrastructure)
         working-directory: deploy/terraform
         run: |
-          terraform import aws_lb.app_alb arn:aws:elasticloadbalancing:us-east-1:422297141788:loadbalancer/app/app-alb/67dd29ff9c3f620e
           terraform apply -auto-approve
 
       - name: Upload Terraform State File Even On Failure
