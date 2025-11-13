@@ -47,8 +47,8 @@ jobs:
       - name: Terraform Apply (Setup Infrastructure)
         working-directory: deploy/terraform
         run: |
-          terraform import aws_security_group.alb_sg alb_sg
-          terraform import aws_lb_target_group.app_tg app-tg
+          terraform import aws_security_group.alb_sg sg-0765114460aa00c6b
+          terraform import aws_lb_target_group.app_tg arn:aws:elasticloadbalancing:us-east-1:422297141788:targetgroup/app-tg/bc3194a579c32aad
           terraform apply -auto-approve
 
       - name: Upload Terraform State File Even On Failure
