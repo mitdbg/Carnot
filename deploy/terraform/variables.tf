@@ -7,7 +7,7 @@ variable "instance_name" {
 variable "instance_type" {
   description = "The EC2 instance's type."
   type        = string
-  default     = "m5.xlarge"
+  default     = "m5.large"
 }
 
 variable "subnet_id" {
