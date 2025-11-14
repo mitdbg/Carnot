@@ -31,7 +31,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - /mnt/pg-data:/var/lib/postgresql/data
+      - /mnt/pg-data/data:/var/lib/postgresql/data
     secrets:
       - db_password
       - db_user

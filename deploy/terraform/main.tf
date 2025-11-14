@@ -222,6 +222,7 @@ resource "aws_instance" "app_server" {
     sudo mkdir -p /mnt/pg-data
     sudo mount /dev/xvdf /mnt/pg-data
     echo "/dev/xvdf /mnt/pg-data ext4 defaults,nofail 0 2" | sudo tee -a /etc/fstab # Add to fstab for persistent mounts
+    sudo mkdir -p /mnt/pg-data/data
     sudo chown -R 999:999 /mnt/pg-data # Change ownership to postgres user (UID 999)
 
     # Install Docker
