@@ -67,12 +67,11 @@ jobs:
       - name: Build & Push Docker Images to Docker Hub
         working-directory: deploy/compose
         run: |
-          # Build images defined in docker-compose
-          docker compose build
+          # Build frontend image
+          docker build -f Dockerfile-frontend -t ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend .
 
-          # Tag images
-          docker tag compose-web-frontend:latest ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend
-          docker tag compose-web-backend:latest  ${{ vars.DOCKERHUB_USERNAME }}/carnot:backend
+          # Build backend image
+          docker build -f Dockerfile-backend -t ${{ vars.DOCKERHUB_USERNAME }}/carnot:backend .
 
           # Push both images
           docker push ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend
