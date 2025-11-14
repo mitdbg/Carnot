@@ -9,6 +9,10 @@ services:
   web-backend:
     build:
       dockerfile: Dockerfile-backend
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_USER_FILE: /run/secrets/db_user
+      POSTGRES_DB_FILE: /run/secrets/db_name
     ports:
       - "8000:8000"
     depends_on:
