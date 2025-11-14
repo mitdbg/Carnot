@@ -7,7 +7,7 @@ from sqlalchemy.orm import declarative_base
 
 # read secrets
 def read_secret(secret_name: str) -> str:
-    with open(f"/run/secrets/{secret_name}.txt") as secret_file:
+    with open(f"/run/secrets/{secret_name}") as secret_file:
         return secret_file.read().strip()
 
 DB_USER = read_secret("db_user")
