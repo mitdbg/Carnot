@@ -74,7 +74,7 @@ jobs:
           echo "$CARNOT_DB_NAME" > secrets/db_name.txt
           chmod 600 secrets/db_*.txt
           cd ../..
-          cat deploy/terraform/outputs.tf
+          ls deploy/terraform/
           ec2_public_ip=$(terraform -chdir=deploy/terraform output -raw ec2_public_ip)
           echo "Deploying to EC2 Instance at IP: ${ec2_public_ip}"
           echo "$CARNOT_DEPLOY_KEY" > deploy/terraform/deployer_key.pem
