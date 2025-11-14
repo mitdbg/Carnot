@@ -65,8 +65,18 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build & Push Docker Images to Docker Hub
-        working-directory: deploy/compose
+        # working-directory: deploy/compose
         run: |
+          # Copy relevant source files to build context
+          cp -r app/frontend deploy/compose/frontend
+          cp -r app/backend deploy/compose/backend
+          cp -r src deploy/compose/src
+          cp pyproject.toml deploy/compose/pyproject.toml
+          cp README.md deploy/compose/README.md
+
+          # navigate to build context
+          cd deploy/compose
+
           # Build frontend image
           docker build -f Dockerfile-frontend -t ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend .
 
