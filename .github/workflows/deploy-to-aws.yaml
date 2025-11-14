@@ -45,7 +45,6 @@ jobs:
         run: |
           aws s3 cp s3://carnot-research/tf/terraform.tfstate . || echo "No existing state file found."
 
-      # terraform import aws_lb.app_alb arn:aws:elasticloadbalancing:us-east-1:422297141788:loadbalancer/app/app-alb/67dd29ff9c3f620e
       - name: Terraform Apply (Setup Infrastructure)
         working-directory: deploy/terraform
         id: apply
@@ -59,6 +58,26 @@ jobs:
           echo "Uploading terraform.tfstate to S3"
           aws s3 cp terraform.tfstate s3://carnot-research/tf/terraform.tfstate
 
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build & Push Docker Images to Docker Hub
+        working-directory: deploy/compose
+        run: |
+          # Build images defined in docker-compose
+          docker compose build
+
+          # Tag images
+          docker tag compose-web-frontend:latest ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend
+          docker tag compose-web-backend:latest  ${{ vars.DOCKERHUB_USERNAME }}/carnot:backend
+
+          # Push both images
+          docker push ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend
+          docker push ${{ vars.DOCKERHUB_USERNAME }}/carnot:backend
+
       - name: Deploy Application to EC2 Instance
         env:
           CARNOT_DB_PASSWORD: ${{ secrets.CARNOT_DB_PASSWORD }}
@@ -66,21 +85,25 @@ jobs:
           CARNOT_DB_NAME: ${{ secrets.CARNOT_DB_NAME }}
           CARNOT_DEPLOY_KEY: ${{ secrets.CARNOT_DEPLOY_KEY }}
         run: |
-          cp -r app/backend deploy/compose/backend
-          cp -r app/frontend deploy/compose/frontend
-          cp -r src deploy/compose/src
-          cp pyproject.toml deploy/compose/pyproject.toml
-          cp README.md deploy/compose/README.md
-          cd deploy/compose
-          mkdir secrets
-          echo "$CARNOT_DB_PASSWORD" > secrets/db_password.txt
-          echo "$CARNOT_DB_USER" > secrets/db_user.txt
-          echo "$CARNOT_DB_NAME" > secrets/db_name.txt
-          chmod 600 secrets/db_*.txt
-          cd ../..
           ec2_public_ip=$(terraform -chdir=deploy/terraform output -raw ec2_public_ip)
-          echo "Deploying to EC2 Instance at IP: $ec2_public_ip"
+          echo "Deploying to EC2 Instance at $ec2_public_ip"
+
+          # Prepare deploy directory
+          mkdir -p deploy/compose/secrets
+          echo "$CARNOT_DB_PASSWORD" > deploy/compose/secrets/db_password.txt
+          echo "$CARNOT_DB_USER" > deploy/compose/secrets/db_user.txt
+          echo "$CARNOT_DB_NAME" > deploy/compose/secrets/db_name.txt
+          chmod 600 deploy/compose/secrets/db_*.txt
+
+          # Copy compose bundle to EC2
           echo "$CARNOT_DEPLOY_KEY" > deploy/terraform/deployer_key.pem
           chmod 400 deploy/terraform/deployer_key.pem
-          scp -r -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem deploy/compose ubuntu@$ec2_public_ip:~/
-          ssh -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem ubuntu@$ec2_public_ip "cd compose; docker compose up -d --build"
+          scp -r -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem deploy/compose ubuntu@$ec2_public_ip:~/compose
+
+          # Login & deploy using pulled images
+          ssh -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem ubuntu@$ec2_public_ip "
+            cd compose
+            docker login -u '${{ vars.DOCKERHUB_USERNAME }}' -p '${{ secrets.DOCKERHUB_TOKEN }}'
+            docker compose pull
+            docker compose up -d
+          "

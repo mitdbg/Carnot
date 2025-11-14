@@ -1,14 +1,13 @@
 services:
   web-frontend:
-    build:
-      dockerfile: Dockerfile-frontend
+    image: carnotresearch/carnot:frontend
     ports:
       - "5173:5173"
     depends_on:
       - web-backend
+
   web-backend:
-    build:
-      dockerfile: Dockerfile-backend
+    image: carnotresearch/carnot:backend
     environment:
       POSTGRES_PASSWORD_FILE: /run/secrets/db_password
       POSTGRES_USER_FILE: /run/secrets/db_user
@@ -21,6 +20,7 @@ services:
       - db_name
     depends_on:
       - db
+
   db:
     image: postgres:13-alpine
     restart: always
