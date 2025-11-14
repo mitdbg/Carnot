@@ -22,6 +22,7 @@ jobs:
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.13.5
+          # terraform_wrapper: false
 
       - name: Terraform Init
         working-directory: deploy/terraform
@@ -47,6 +48,7 @@ jobs:
       # terraform import aws_lb.app_alb arn:aws:elasticloadbalancing:us-east-1:422297141788:loadbalancer/app/app-alb/67dd29ff9c3f620e
       - name: Terraform Apply (Setup Infrastructure)
         working-directory: deploy/terraform
+        id: apply
         run: |
           terraform apply -auto-approve
 
@@ -59,7 +61,7 @@ jobs:
 
       - name: Deploy Application to EC2 Instance
         env:
-          # EC2_PUBLIC_IP: ${{ steps.init.outputs.ec2_public_ip }}
+          EC2_PUBLIC_IP: ${{ steps.apply.outputs.ec2_public_ip }}
           CARNOT_DB_PASSWORD: ${{ secrets.CARNOT_DB_PASSWORD }}
           CARNOT_DB_USER: ${{ secrets.CARNOT_DB_USER }}
           CARNOT_DB_NAME: ${{ secrets.CARNOT_DB_NAME }}
@@ -74,8 +76,9 @@ jobs:
           echo "$CARNOT_DB_NAME" > secrets/db_name.txt
           chmod 600 secrets/db_*.txt
           cd ../..
-          ec2_public_ip=$(terraform -chdir=deploy/terraform output -raw ec2_public_ip)
-          echo "$CARNOT_DEPLOY_KEY" > deploy/terraform/deployer_key.pem
-          chmod 400 deploy/terraform/deployer_key.pem
-          scp -r -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem deploy/compose ubuntu@$ec2_public_ip:~/
+          echo "Deploying to EC2 Instance at IP: $EC2_PUBLIC_IP"
+          # ec2_public_ip=$(terraform -chdir=deploy/terraform output -raw ec2_public_ip)
+          # echo "$CARNOT_DEPLOY_KEY" > deploy/terraform/deployer_key.pem
+          # chmod 400 deploy/terraform/deployer_key.pem
+          # scp -r -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem deploy/compose ubuntu@$ec2_public_ip:~/
           # ssh -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem ubuntu@184.73.85.3 << "docker compose -f docker-compose.yml up -d --build"
