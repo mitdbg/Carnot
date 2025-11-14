@@ -3,7 +3,7 @@ name = "carnot-ai"
 version = "0.1.0"
 description = "Carnot is an optimized system for Deep Research."
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 keywords = ["deep research", "optimization", "llm", "AI programming", "query engine"]
 authors = [
     {name="MIT DSG", email="mdrusso@csail.mit.edu"},
