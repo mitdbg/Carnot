@@ -15,6 +15,10 @@ services:
       POSTGRES_DB_FILE: /run/secrets/db_name
     ports:
       - "8000:8000"
+    secrets:
+      - db_password
+      - db_user
+      - db_name
     depends_on:
       - db
   db:
@@ -28,6 +32,10 @@ services:
       - "5432:5432"
     volumes:
       - /mnt/pg-data:/var/lib/postgresql/data
+    secrets:
+      - db_password
+      - db_user
+      - db_name
 
 secrets:
   db_password:
