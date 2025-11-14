@@ -3,6 +3,6 @@ FROM node:lts-alpine
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
-COPY . .
+COPY ./frontend .
 EXPOSE 5173
 CMD ["npm", "run", "dev", ">", "frontend.log", "2>&1"]
