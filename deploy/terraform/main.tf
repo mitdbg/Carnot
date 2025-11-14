@@ -213,6 +213,10 @@ resource "aws_instance" "app_server" {
     aws_security_group.allow_ssh.id,
     aws_security_group.allow_app.id
   ]
+  root_block_device {
+    volume_size = 20 # desired size in GB
+    volume_type = "gp2"
+  }
 
   # mount the EBS volume at /mnt/pg-data and install docker compose
   user_data = <<-EOF
