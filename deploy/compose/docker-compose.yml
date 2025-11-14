@@ -19,21 +19,18 @@ services:
     image: postgres:13-alpine
     restart: always
     environment:
-      - POSTGRES_PASSWORD_FILE: /run/secrets/db_password
-      - POSTGRES_USER_FILE: /run/secrets/db_user
-      - POSTGRES_DB_FILE: /run/secrets/db_name
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_USER_FILE: /run/secrets/db_user
+      POSTGRES_DB_FILE: /run/secrets/db_name
     ports:
       - "5432:5432"
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - /mnt/pg-data:/var/lib/postgresql/data
 
 secrets:
   db_password:
-    file: db_password.txt
+    file: secrets/db_password.txt
   db_user:
-    file: db_user.txt
+    file: secrets/db_user.txt
   db_name:
-    file: db_name.txt
-
-volumes:
-  db_data:
+    file: secrets/db_name.txt
