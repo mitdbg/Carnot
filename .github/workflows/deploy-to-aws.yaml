@@ -75,8 +75,9 @@ jobs:
           chmod 600 secrets/db_*.txt
           cd ../..
           ls deploy/terraform/
-          terraform -chdir=deploy/terraform output -raw ec2_public_ip
-          # echo "$CARNOT_DEPLOY_KEY" > deploy/terraform/deployer_key.pem
-          # chmod 400 deploy/terraform/deployer_key.pem
-          # scp -r -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem deploy/compose ubuntu@$ec2_public_ip:~/
-          # ssh -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem ubuntu@$ec2_public_ip << 'docker compose up -d --build'
+          ec2_public_ip=$(terraform -chdir=deploy/terraform output -raw ec2_public_ip)
+          echo "Deploying to EC2 Instance at IP: ${ec2_public_ip}"
+          echo "$CARNOT_DEPLOY_KEY" > deploy/terraform/deployer_key.pem
+          chmod 400 deploy/terraform/deployer_key.pem
+          scp -r -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem deploy/compose ubuntu@184.73.85.3:~/
+          ssh -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem ubuntu@184.73.85.3 << "docker compose -f docker-compose.yml up -d --build"
