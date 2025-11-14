@@ -4,6 +4,10 @@ WORKDIR /code
 RUN apk add --no-cache gcc musl-dev linux-headers
 COPY ./backend/requirements.txt requirements.txt
 RUN pip install -r requirements.txt
+COPY ./src ./src
+COPY ./pyproject.toml .
+COPY ./README.md .
+RUN pip install .
 EXPOSE 8000
 COPY ./backend .
 CMD ["uvicorn", "app.main:app", "--reload", "--port", "8000"]

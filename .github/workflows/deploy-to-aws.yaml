@@ -68,6 +68,9 @@ jobs:
         run: |
           cp -r app/backend deploy/compose/backend
           cp -r app/frontend deploy/compose/frontend
+          cp -r src deploy/compose/src
+          cp pyproject.toml deploy/compose/pyproject.toml
+          cp README.md deploy/compose/README.md
           cd deploy/compose
           mkdir secrets
           echo "$CARNOT_DB_PASSWORD" > secrets/db_password.txt
