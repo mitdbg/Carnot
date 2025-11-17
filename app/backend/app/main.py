@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routes import files, datasets, search, query, conversations
+
 from app.database import init_db
+from app.routes import conversations, datasets, files, query, search
 
 app = FastAPI(title="Carnot Web API")
 

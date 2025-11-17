@@ -5,21 +5,21 @@ import tarfile
 import zipfile
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Tuple, List
 
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db, UploadedFile
+from app.database import File as FileRecord
+from app.database import get_db
 from app.models.schemas import DirectoryContents, FileItem, UploadResponse
-from app.services.file_service import FileService
 
 router = APIRouter()
 
 # Base upload directory
-UPLOAD_DIR = os.path.join(os.getcwd(), "uploaded_files")
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+UPLOAD_DIR = os.getenv("UPLOAD_DIR", os.path.join(os.getcwd(), "uploaded_files"))
+if UPLOAD_DIR.startswith("file://") or "://" not in UPLOAD_DIR:
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
 UPLOAD_DIR_PATH = Path(UPLOAD_DIR)
 
 ARCHIVE_EXTENSIONS = (
@@ -67,8 +67,8 @@ def _safe_join(base: Path, target: Path) -> Path:
     resolved_target = target.resolve()
     try:
         resolved_target.relative_to(resolved_base)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Archive contains unsafe paths")
+    except ValueError as err:
+        raise HTTPException(status_code=400, detail="Archive contains unsafe paths") from err
     return resolved_target
 
 
@@ -95,7 +95,7 @@ def _extract_tar(archive_path: Path, destination: Path) -> None:
         raise HTTPException(status_code=400, detail=f"Invalid TAR archive: {exc}") from exc
 
 
-def _extract_archive(archive_path: Path) -> Tuple[Optional[str], Optional[List[str]]]:
+def _extract_archive(archive_path: Path) -> tuple[str | None, list[str] | None]:
     filename = archive_path.name
     lower = filename.lower()
     if not any(lower.endswith(ext) for ext in ARCHIVE_EXTENSIONS):
@@ -109,7 +109,7 @@ def _extract_archive(archive_path: Path) -> Tuple[Optional[str], Optional[List[s
     else:
         _extract_tar(archive_path, extraction_dir)
 
-    extracted_files: List[str] = []
+    extracted_files: list[str] = []
     for path in extraction_dir.rglob("*"):
         if path.is_file():
             relative_path = Path("uploaded_files") / path.relative_to(UPLOAD_DIR_PATH)
@@ -119,7 +119,7 @@ def _extract_archive(archive_path: Path) -> Tuple[Optional[str], Optional[List[s
     return extracted_to, extracted_files
 
 @router.get("/browse", response_model=DirectoryContents)
-async def browse_directory(path: Optional[str] = None):
+async def browse_directory(path: str | None = None):
     """
     Browse directory contents (uploaded files and user's data directory)
     """
@@ -174,9 +174,7 @@ async def browse_directory(path: Optional[str] = None):
             is_dir = os.path.isdir(entry_path)
             
             # Build relative path
-            if path.startswith("uploaded_files"):
-                relative_path = os.path.join(path, entry)
-            elif path.startswith("data"):
+            if path.startswith("uploaded_files") or path.startswith("data"):
                 relative_path = os.path.join(path, entry)
             else:
                 relative_path = entry
@@ -210,7 +208,7 @@ async def browse_directory(path: Optional[str] = None):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error browsing directory: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error browsing directory: {str(e)}") from e
 
 @router.post("/upload", response_model=UploadResponse)
 async def upload_file(
@@ -240,9 +238,9 @@ async def upload_file(
             shutil.copyfileobj(file.file, buffer)
         
         # Store in database
-        uploaded_file = UploadedFile(
+        uploaded_file = FileRecord(
             file_path=file_path,
-            original_name=original_filename
+            file_name=original_filename
         )
         db.add(uploaded_file)
         await db.commit()
@@ -269,7 +267,7 @@ async def upload_file(
         )
     
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error uploading file: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error uploading file: {str(e)}") from e
 
 @router.get("/uploaded")
 async def list_uploaded_files(db: AsyncSession = Depends(get_db)):
@@ -277,17 +275,17 @@ async def list_uploaded_files(db: AsyncSession = Depends(get_db)):
     List all uploaded files
     """
     try:
-        result = await db.execute(select(UploadedFile).order_by(UploadedFile.upload_date.desc()))
+        result = await db.execute(select(FileRecord).order_by(FileRecord.upload_date.desc()))
         files = result.scalars().all()
         return [
             {
                 "id": f.id,
                 "file_path": f.file_path,
-                "original_name": f.original_name,
+                "file_name": f.file_name,
                 "upload_date": f.upload_date
             }
             for f in files
         ]
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error listing files: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error listing files: {str(e)}") from e
 

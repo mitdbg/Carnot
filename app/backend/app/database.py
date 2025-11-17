@@ -1,8 +1,9 @@
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy.orm import declarative_base
-from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey
-from datetime import datetime
 import os
+from datetime import datetime
+
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import declarative_base
 
 # Database URL
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./carnot_web.db")
@@ -28,21 +29,19 @@ class Dataset(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-class DatasetFile(Base):
-    __tablename__ = "dataset_files"
-    
-    id = Column(Integer, primary_key=True, index=True)
-    dataset_id = Column(Integer, ForeignKey("datasets.id", ondelete="CASCADE"), nullable=False)
-    file_path = Column(String, nullable=False)
-    file_name = Column(String, nullable=False)
-
-class UploadedFile(Base):
-    __tablename__ = "uploaded_files"
+class File(Base):
+    __tablename__ = "files"
     
     id = Column(Integer, primary_key=True, index=True)
     file_path = Column(String, unique=True, nullable=False)
-    original_name = Column(String, nullable=False)
+    file_name = Column(String, nullable=False)
     upload_date = Column(DateTime, default=datetime.utcnow)
+
+class DatasetFile(Base):
+    __tablename__ = "dataset_files"
+    
+    dataset_id = Column(Integer, ForeignKey("datasets.id", ondelete="CASCADE"), nullable=False, primary_key=True)
+    file_id = Column(Integer, ForeignKey("files.id", ondelete="CASCADE"), nullable=False, primary_key=True)
 
 class Conversation(Base):
     __tablename__ = "conversations"

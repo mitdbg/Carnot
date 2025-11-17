@@ -1,33 +1,34 @@
+from datetime import datetime
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from typing import List, Optional
-from datetime import datetime
-from sqlalchemy import select, func, desc
+from sqlalchemy import desc, func, select
+
 from app.database import AsyncSessionLocal, Conversation, Message
 
 router = APIRouter()
 
 class ConversationCreate(BaseModel):
     session_id: str
-    title: Optional[str] = None
-    dataset_ids: Optional[str] = None
+    title: str | None = None
+    dataset_ids: str | None = None
 
 class ConversationUpdate(BaseModel):
-    title: Optional[str] = None
+    title: str | None = None
 
 class MessageCreate(BaseModel):
     conversation_id: int
     role: str
     content: str
-    csv_file: Optional[str] = None
-    row_count: Optional[int] = None
+    csv_file: str | None = None
+    row_count: int | None = None
 
 class MessageResponse(BaseModel):
     id: int
     role: str
     content: str
-    csv_file: Optional[str] = None
-    row_count: Optional[int] = None
+    csv_file: str | None = None
+    row_count: int | None = None
     created_at: datetime
 
     class Config:
@@ -36,8 +37,8 @@ class MessageResponse(BaseModel):
 class ConversationResponse(BaseModel):
     id: int
     session_id: str
-    title: Optional[str]
-    dataset_ids: Optional[str]
+    title: str | None
+    dataset_ids: str | None
     message_count: int
     created_at: datetime
     updated_at: datetime
@@ -48,16 +49,16 @@ class ConversationResponse(BaseModel):
 class ConversationDetailResponse(BaseModel):
     id: int
     session_id: str
-    title: Optional[str]
-    dataset_ids: Optional[str]
+    title: str | None
+    dataset_ids: str | None
     created_at: datetime
     updated_at: datetime
-    messages: List[MessageResponse]
+    messages: list[MessageResponse]
 
     class Config:
         from_attributes = True
 
-@router.get("/", response_model=List[ConversationResponse])
+@router.get("/", response_model=list[ConversationResponse])
 async def list_conversations():
     """Get all conversations with message counts"""
     async with AsyncSessionLocal() as db:

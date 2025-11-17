@@ -190,7 +190,7 @@ function DataManagementPage() {
                   className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-3 py-2 rounded"
                 >
                   <FileText className="w-4 h-4" />
-                  <span className="flex-1">{file.original_name}</span>
+                  <span className="flex-1">{file.file_name}</span>
                   <span className="text-xs text-gray-400">
                     {formatDate(file.upload_date)}
                   </span>

@@ -3,22 +3,24 @@ import json
 import logging
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional
 from uuid import uuid4
 
-import carnot
 import pandas as pd
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy import select
 
+import carnot
 from app.database import (
     AsyncSessionLocal,
     Conversation,
     Dataset,
     DatasetFile,
     Message,
+)
+from app.database import (
+    File as FileRecord,
 )
 
 router = APIRouter()
@@ -28,13 +30,44 @@ SESSION_TIMEOUT = timedelta(minutes=30)
 PROJECT_ROOT = Path(__file__).resolve().parents[4]
 BACKEND_ROOT = Path(__file__).resolve().parents[2]
 WEB_ROOT = Path(__file__).resolve().parents[3]
-active_sessions: Dict[str, Dict] = {}
+active_sessions: dict[str, dict] = {}
+
+
+def extract_plan_from_output(output) -> str | None:
+    """Extract the CodeAgent planning steps from the DataRecordCollection."""
+    try:
+        data_records = getattr(output, "data_records", None)
+        if not data_records:
+            return None
+
+        seen: set[str] = set()
+        ordered_plans: list[str] = []
+
+        for record in data_records:
+            try:
+                context_obj = record["context"]
+            except Exception:
+                context_obj = None
+
+            plan_value = getattr(context_obj, "plan", None) if context_obj is not None else None
+            if isinstance(plan_value, str):
+                plan_str = plan_value.strip()
+                if plan_str and plan_str not in seen:
+                    ordered_plans.append(plan_str)
+                    seen.add(plan_str)
+
+        if ordered_plans:
+            return "\n\n".join(ordered_plans)
+    except Exception:
+        logger.debug("Failed to extract plan from output", exc_info=True)
+
+    return None
 
 
 class QueryRequest(BaseModel):
     query: str
-    dataset_ids: List[int]
-    session_id: Optional[str] = None
+    dataset_ids: list[int]
+    session_id: str | None = None
 
 
 def cleanup_old_sessions() -> None:
@@ -49,7 +82,7 @@ def cleanup_old_sessions() -> None:
 
 
 async def get_or_create_conversation(
-    session_id: str, query: str, dataset_ids: List[int]
+    session_id: str, query: str, dataset_ids: list[int]
 ) -> int:
     async with AsyncSessionLocal() as db:
         result = await db.execute(
@@ -77,8 +110,8 @@ async def save_message(
     conversation_id: int,
     role: str,
     content: str,
-    csv_file: Optional[str] = None,
-    row_count: Optional[int] = None,
+    csv_file: str | None = None,
+    row_count: int | None = None,
 ) -> None:
     async with AsyncSessionLocal() as db:
         message = Message(
@@ -100,7 +133,7 @@ async def save_message(
         await db.commit()
 
 
-def resolve_file_path(path: str) -> Optional[Path]:
+def resolve_file_path(path: str) -> Path | None:
     candidates = [
         Path(path),
         PROJECT_ROOT / path,
@@ -113,7 +146,7 @@ def resolve_file_path(path: str) -> Optional[Path]:
 
 
 async def stream_query_execution(
-    query: str, dataset_ids: List[int], session_id: Optional[str] = None
+    query: str, dataset_ids: list[int], session_id: str | None = None
 ):
     try:
         cleanup_old_sessions()
@@ -141,7 +174,9 @@ async def stream_query_execution(
                     return
 
                 files_result = await db.execute(
-                    select(DatasetFile).where(DatasetFile.dataset_id == dataset_id)
+                    select(FileRecord)
+                    .join(DatasetFile, FileRecord.id == DatasetFile.file_id)
+                    .where(DatasetFile.dataset_id == dataset_id)
                 )
                 files = files_result.scalars().all()
                 datasets.append([file.file_path for file in files])
@@ -235,6 +270,12 @@ async def stream_query_execution(
             "session_dir": str(session_dir),
         }
 
+        plan_text = extract_plan_from_output(output)
+        if plan_text:
+            await save_message(conversation_id, "plan", plan_text)
+            yield f"data: {json.dumps({'type': 'plan', 'message': plan_text, 'session_id': session_id})}\n\n"
+            await asyncio.sleep(0.1)
+
         yield f"data: {json.dumps({'type': 'status', 'message': 'Processing results...'})}\n\n"
         await asyncio.sleep(0.1)
 
@@ -315,9 +356,9 @@ async def download_query_results(filename: str):
         raise HTTPException(status_code=400, detail="Invalid filename")
     
     # Get the backend directory path
-    file_path = os.path.join(os.path.dirname(__file__), "../..", filename)
+    file_path = BACKEND_ROOT / filename
     
-    if not os.path.exists(file_path):
+    if not file_path.exists():
         raise HTTPException(status_code=404, detail="File not found")
     
     return FileResponse(
