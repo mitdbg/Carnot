@@ -107,7 +107,7 @@ jobs:
           # Copy compose bundle to EC2
           echo "$CARNOT_DEPLOY_KEY" > deploy/terraform/deployer_key.pem
           chmod 400 deploy/terraform/deployer_key.pem
-          scp -r -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem deploy/compose ubuntu@$ec2_public_ip:~/compose
+          scp -r -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem deploy/compose ubuntu@$ec2_public_ip:~/
 
           # Shutdown current docker containers
           ssh -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem ubuntu@$ec2_public_ip "

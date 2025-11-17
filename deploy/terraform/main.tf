@@ -77,8 +77,8 @@ resource "aws_security_group" "allow_app" {
 
   ingress {
     description = "Allow ALB access to web service"
-    from_port   = 5173
-    to_port     = 5173
+    from_port   = 80
+    to_port     = 80
     protocol    = "tcp"
     security_groups = [aws_security_group.alb_sg.id]
   }
