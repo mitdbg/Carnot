@@ -2,7 +2,7 @@ services:
   web-frontend:
     image: carnotresearch/carnot:frontend
     ports:
-      - "5173:5173"
+      - "80:80"
     depends_on:
       - web-backend
 
