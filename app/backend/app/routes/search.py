@@ -12,9 +12,18 @@ from app.models.schemas import SearchQuery, SearchResult
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-DATA_ROOT = Path(__file__).resolve().parents[4] / "data"
-UPLOAD_ROOT = Path.cwd() / "uploaded_files"
 SKIP_SUFFIXES = {".pdf", ".jpg", ".jpeg", ".png", ".gif", ".zip", ".exe", ".bin"}
+IS_REMOTE_ENV = os.getenv("REMOTE_ENV", "false").lower() == "true"
+if IS_REMOTE_ENV:
+    COMPANY_ENV = os.getenv("COMPANY_ENV", "dev")
+    DATA_ROOT = Path(f"s3://carnot-research/{COMPANY_ENV}/data")
+    UPLOAD_ROOT = Path(f"s3://carnot-research/{COMPANY_ENV}/uploaded_files")
+else:
+    PROJECT_ROOT = Path(__file__).resolve().parents[4]
+    DATA_DIR = os.path.join(PROJECT_ROOT, "data")
+    UPLOAD_DIR = os.path.join(PROJECT_ROOT, "uploaded_files")
+    os.makedirs(DATA_DIR, exist_ok=True)
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 @router.post("/", response_model=List[SearchResult])

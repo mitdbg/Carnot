@@ -17,8 +17,8 @@ router = APIRouter()
 IS_REMOTE_ENV = os.getenv("REMOTE_ENV", "false").lower() == "true"
 if IS_REMOTE_ENV:
     COMPANY_ENV = os.getenv("COMPANY_ENV", "dev")
-    DATA_DIR = f"s3://carnot-research/{COMPANY_ENV}/data/"
-    UPLOAD_DIR = f"s3://carnot-research/{COMPANY_ENV}/uploaded_files/"
+    DATA_DIR = Path(f"s3://carnot-research/{COMPANY_ENV}/data/")
+    UPLOAD_DIR = Path(f"s3://carnot-research/{COMPANY_ENV}/uploaded_files/")
 else:
     PROJECT_ROOT = Path(__file__).resolve().parents[4]
     DATA_DIR = os.path.join(PROJECT_ROOT, "data")

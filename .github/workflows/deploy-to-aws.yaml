@@ -109,6 +109,14 @@ jobs:
           chmod 400 deploy/terraform/deployer_key.pem
           scp -r -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem deploy/compose ubuntu@$ec2_public_ip:~/compose
 
+          # Shutdown current docker containers
+          ssh -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem ubuntu@$ec2_public_ip "
+            cd compose
+            docker compose down
+            docker rmi -f $(docker images -aq)
+            docker system prune -af
+          "
+
           # Login & deploy using pulled images
           ssh -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem ubuntu@$ec2_public_ip "
             cd compose

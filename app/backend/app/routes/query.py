@@ -26,7 +26,8 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 SESSION_TIMEOUT = timedelta(minutes=30)
-if os.getenv("REMOTE_ENV").lower() == "true":
+IS_REMOTE_ENV = os.getenv("REMOTE_ENV", "false").lower() == "true"
+if IS_REMOTE_ENV:
     COMPANY_ENV = os.getenv("COMPANY_ENV", "dev")
     PROJECT_ROOT = Path(f"s3://carnot-research/{COMPANY_ENV}/")
     BACKEND_ROOT = Path(f"s3://carnot-research/{COMPANY_ENV}/backend/")  # TODO
