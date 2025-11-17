@@ -1,18 +1,19 @@
 import asyncio
 import json
 import logging
+import os
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional
 from uuid import uuid4
 
-import carnot
 import pandas as pd
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy import select
 
+import carnot
 from app.database import (
     AsyncSessionLocal,
     Conversation,
@@ -25,9 +26,15 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 SESSION_TIMEOUT = timedelta(minutes=30)
-PROJECT_ROOT = Path(__file__).resolve().parents[4]
-BACKEND_ROOT = Path(__file__).resolve().parents[2]
-WEB_ROOT = Path(__file__).resolve().parents[3]
+if os.getenv("REMOTE_ENV").lower() == "true":
+    COMPANY_ENV = os.getenv("COMPANY_ENV", "dev")
+    PROJECT_ROOT = Path(f"s3://carnot-research/{COMPANY_ENV}/")
+    BACKEND_ROOT = Path(f"s3://carnot-research/{COMPANY_ENV}/backend/")  # TODO
+    WEB_ROOT = Path(f"s3://carnot-research/{COMPANY_ENV}/frontend/")  # TODO
+else:
+    PROJECT_ROOT = Path(__file__).resolve().parents[4]
+    BACKEND_ROOT = Path(__file__).resolve().parents[2]
+    WEB_ROOT = Path(__file__).resolve().parents[3]
 active_sessions: Dict[str, Dict] = {}
 
 
@@ -163,21 +170,20 @@ async def stream_query_execution(
         ):
             session_exists = False
 
-        sessions_dir = BACKEND_ROOT / "sessions"
-        sessions_dir.mkdir(exist_ok=True)
-
-        session_dir = sessions_dir / session_id
-        session_dir.mkdir(exist_ok=True)
+        session_dir = BACKEND_ROOT / "sessions" / session_id
+        session_dir.mkdir(parents=True, exist_ok=True)
 
         yield f"data: {json.dumps({'type': 'status', 'message': 'Preparing data context...'})}\n\n"
         await asyncio.sleep(0.1)
 
+        # NOTE: this uses BACKEND_ROOT
+        # NOTE: this copies files to a session-specific directory; we cannot make copies of large datasets
         temp_dir = session_dir
 
         if not session_exists:
             text_file_count = 0
             for file_path in all_files:
-                resolved = resolve_file_path(file_path)
+                resolved = resolve_file_path(file_path) # NOTE: resolves file paths in WEB_ROOT and PROJECT_ROOT
                 if not resolved:
                     continue
 
@@ -238,6 +244,7 @@ async def stream_query_execution(
         yield f"data: {json.dumps({'type': 'status', 'message': 'Processing results...'})}\n\n"
         await asyncio.sleep(0.1)
 
+        # NOTE: stores results in CSV in S3
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         csv_filename = f"query_results_{timestamp}.csv"
         csv_path = BACKEND_ROOT / csv_filename
