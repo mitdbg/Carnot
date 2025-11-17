@@ -181,6 +181,10 @@ resource "aws_lb_target_group" "app_tg" {
     path = "/"
     port = "80"
   }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "aws_lb_target_group_attachment" "app_attachment" {
