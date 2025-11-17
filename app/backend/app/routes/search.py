@@ -2,11 +2,10 @@ import logging
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import List, Optional, Tuple
 
-import carnot
 from fastapi import APIRouter, HTTPException
 
+import carnot
 from app.models.schemas import SearchQuery, SearchResult
 
 router = APIRouter()
@@ -17,17 +16,17 @@ UPLOAD_ROOT = Path.cwd() / "uploaded_files"
 SKIP_SUFFIXES = {".pdf", ".jpg", ".jpeg", ".png", ".gif", ".zip", ".exe", ".bin"}
 
 
-@router.post("/", response_model=List[SearchResult])
+@router.post("/", response_model=list[SearchResult])
 async def search_files(query: SearchQuery):
     try:
         search_path = query.path or ""
         search_dirs = determine_search_dirs(search_path)
 
-        results: List[SearchResult] = []
+        results: list[SearchResult] = []
         for search_dir, label in search_dirs:
             results.extend(run_semantic_search(query.query, search_dir, label))
 
-        unique: List[SearchResult] = []
+        unique: list[SearchResult] = []
         seen_paths = set()
         for result in results:
             if result.file_path not in seen_paths:
@@ -41,8 +40,8 @@ async def search_files(query: SearchQuery):
         raise HTTPException(status_code=500, detail=f"Error searching files: {exc}") from exc
 
 
-def determine_search_dirs(search_path: str) -> List[Tuple[Path, str]]:
-    search_dirs: List[Tuple[Path, str]] = []
+def determine_search_dirs(search_path: str) -> list[tuple[Path, str]]:
+    search_dirs: list[tuple[Path, str]] = []
 
     if search_path.startswith("data"):
         path = DATA_ROOT / search_path.replace("data/", "").strip("/")
@@ -61,13 +60,13 @@ def determine_search_dirs(search_path: str) -> List[Tuple[Path, str]]:
     return search_dirs
 
 
-def run_semantic_search(query_text: str, search_dir: Path, label: str) -> List[SearchResult]:
+def run_semantic_search(query_text: str, search_dir: Path, label: str) -> list[SearchResult]:
     text_results = semantic_search_with_context(query_text, search_dir, label)
     return text_results
 
 
-def semantic_search_with_context(query_text: str, search_dir: Path, label: str) -> List[SearchResult]:
-    results: List[SearchResult] = []
+def semantic_search_with_context(query_text: str, search_dir: Path, label: str) -> list[SearchResult]:
+    results: list[SearchResult] = []
 
     with TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
@@ -142,7 +141,7 @@ def copy_text_files(source_root: Path, destination_root: Path) -> int:
     return copied
 
 
-def read_snippet(path: Path, length: int = 200) -> Optional[str]:
+def read_snippet(path: Path, length: int = 200) -> str | None:
     try:
         content = path.read_text(encoding="utf-8", errors="ignore")
         return content[:length] + ("..." if len(content) > length else "")

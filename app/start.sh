@@ -18,19 +18,8 @@ trap cleanup EXIT INT TERM
 
 # Get absolute path to script directory
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+VENV_PATH="$SCRIPT_DIR/../.venv312"
 
-# Check if virtual environment exists (either in backend or parent directory)
-if [ -d "$SCRIPT_DIR/backend/venv" ]; then
-    VENV_PATH="$SCRIPT_DIR/backend/venv"
-elif [ -d "$SCRIPT_DIR/../.venv312" ]; then
-    VENV_PATH="$SCRIPT_DIR/../.venv312"
-elif [ -d "$SCRIPT_DIR/../.venv311" ]; then
-    VENV_PATH="$SCRIPT_DIR/../.venv311"
-else
-    echo "❌ Backend virtual environment not found!"
-    echo "Please activate your Python virtual environment and run: pip install -r backend/requirements.txt"
-    exit 1
-fi
 
 echo "Using virtual environment: $VENV_PATH"
 

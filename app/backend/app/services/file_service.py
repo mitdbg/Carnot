@@ -1,12 +1,12 @@
 import os
-from typing import List, Optional
 from datetime import datetime
+
 
 class FileService:
     """Service for file operations"""
     
     @staticmethod
-    def list_directory(path: str) -> List[dict]:
+    def list_directory(path: str) -> list[dict]:
         """List contents of a directory"""
         if not os.path.exists(path):
             raise FileNotFoundError(f"Directory not found: {path}")
