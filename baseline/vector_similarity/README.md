@@ -1,4 +1,4 @@
-The subset of QUEST data used is `data/train_subset3.jsonl`, 20 random queries from `train.jsonl` in the QUEST dataset (https://storage.googleapis.com/gresearch/quest/train.jsonl).
+The subset of QUEST data used is `data/train_subset_2.jsonl`, 20 random non-union queries from `train.jsonl` in the QUEST dataset (https://storage.googleapis.com/gresearch/quest/train.jsonl).
 
 In `first_512_tokens`, it shows the chunk retrieved from the quest collection where only the first 512 tokens of each document were embedded [results not here].
 

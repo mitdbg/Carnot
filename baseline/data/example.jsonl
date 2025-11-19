@@ -1,0 +1,61 @@
+{
+    "query": "Non Horror demon novels.",
+    "docs": ["List of the Lost", "Blood Price", "The Black Spider", "The Castle in the Forest", "The Devil in Love (novel)", "Melmoth the Wanderer", "Practical Demonkeeping", "Artemis Fowl and the Lost Colony", "The Black Tattoo", "Good Omens", "Eric (novel)"], "original_query": "<mark>Demon novels</mark> that are not <mark>Horror novel series</mark>",
+    "scores": null,
+    "metadata": {
+        "template": "_ that are not _", 
+        "domain": "books", 
+        "fluency": ["Fluent: It is clear, and grammatically correct."], 
+        "meaning": ["Same Meaning: The paraphrased query asks for the same set of items as the original query. All the highlighted clauses are included."], "naturalness": ["Yes - A user could plausibly issue this query."],
+        "relevance_ratings": {
+            "List of the Lost": ["Definitely relevant"],
+            "Blood Price": ["Definitely relevant"],
+            "The Black Spider": ["Likely relevant"],
+            "The Castle in the Forest": ["Likely relevant"],
+            "The Devil in Love (novel)": ["Definitely relevant"],
+            "Melmoth the Wanderer": ["Definitely relevant"],
+            "Practical Demonkeeping": ["Likely relevant"],
+            "Artemis Fowl and the Lost Colony": ["Definitely relevant"],
+            "The Black Tattoo": ["Definitely relevant"],
+            "Good Omens": ["Likely relevant"],
+            "Eric (novel)": ["Definitely relevant"]},
+            "evidence_ratings": {"List of the Lost": ["Complete"],
+            "Blood Price": ["Complete"],
+            "The Black Spider": ["Partial"],
+            "The Castle in the Forest": ["Partial"],
+            "The Devil in Love (novel)": ["Complete"],
+            "Melmoth the Wanderer": ["Complete"],
+            "Practical Demonkeeping": ["Partial"],
+            "Artemis Fowl and the Lost Colony": ["Complete"],
+            "The Black Tattoo": ["Complete"],
+            "Good Omens": ["Partial"],
+            "Eric (novel)": ["Complete"]
+        },
+        "attributions": {
+            "List of the Lost": [{"Non Horror demon novels.": "The book is about a 1970s relay team in Boston who accidentally kill a homeless person, whose death brings misfortune to the team."}],
+            "Blood Price": [{"Non Horror demon novels.": "He tells her that the killer is a demon, that she actually did see him disappear."}],
+            "The Black Spider": [{"demon": "The hunter used his demonic powers to instill a curse in the kiss, which would ensure his payment."}],
+            "The Castle in the Forest": [{"Non Horror demon novels.": "'''''The Castle in the Forest''''' is the last novel by writer Norman Mailer, published in the year of his death, 2007. It is the story of Adolf Hitler's childhood as seen through the eyes of Dieter, a demon sent to put him on his destructive path. The novel explores the idea that Hitler was the product of incest. It forms a thematic contrast with the writer's immediately previous novel ''The Gospel According to the Son'' (1999), which deals with the early life of Jesus. It received a good deal of praise, including a glowing review from Lee Siegel of ''The New York Times Book Review'', and was the ''New York Times'' Bestseller for 2007."}],
+            "The Devil in Love (novel)": [{"Non Horror demon novels.": "Author of ''The Devil in Love, Jacques Cazotte''\n'''''The Devil in Love''''' (, 1772) is an occult romance by Jacques Cazotte which tells of a demon, or devil, who falls in love with a young Spanish nobleman named Don Alvaro, an amateur human dabbler, and attempts, in the guise of a young woman, to win his affections."}],
+            "Melmoth the Wanderer": [{"Non Horror demon novels.": "'''''Melmoth the Wanderer''''' is an 1820 Gothic novel by Irish playwright, novelist and clergyman Charles Maturin. The novel's titular character is a scholar who sold his soul to the devil in exchange for 150 extra years of life, and searches the world for someone who will take over the pact for him, in a manner reminiscent of the Wandering Jew."}],
+            "Practical Demonkeeping": [{"Non Horror demon novels": "His first novel, it deals with a demon from Hell and his master."}],
+            "Artemis Fowl and the Lost Colony": [{"Non Horror demon novels.": "In Barcelona, Spain, Artemis Fowl II and Butler, his bodyguard, wait for a demon. They suddenly encounter a demon who transports Artemis through time."}],
+            "The Black Tattoo": [{"Non Horror demon novels.": "'''''The Black Tattoo''''' is a young adult fantasy novel by Sam Enthoven, published in 2006. It deals with a boy, Charlie, becoming possessed by a demon that manifests itself in the form of a black tattoo on his body."}],
+            "Good Omens": [{"demon novels.": "There are attempts by the angel Aziraphale and the demon Crowley to sabotage the coming of the end times, having grown accustomed to their comfortable surroundings in England."}],
+            "Eric (novel)": [{"demon novels.": "the Demon King"}]
+        }
+    }
+}
+
+{
+    "query": "what are Oceanian realm fauna that are also both Birds of North America and Fauna of Europe", "docs": ["Sooty tern", "Bulwer's petrel", "Black noddy", "Bar-tailed godwit", "Masked booby", "Red-footed booby", "Roseate tern"],
+    "original_query": "<mark>Oceanian realm fauna</mark> that are also both <mark>Birds of North America</mark> and <mark>Fauna of Europe</mark>",
+    "scores": null,
+    "metadata": {
+        "template": "_ that are also both _ and _",
+        "relevance_ratings": null,
+        "evidence_ratings": null,
+        "attributions": null,
+        "domain": "animals"
+    }
+}
