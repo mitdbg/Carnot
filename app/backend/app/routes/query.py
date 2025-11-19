@@ -284,8 +284,42 @@ async def stream_query_execution(
         csv_path = BACKEND_ROOT / csv_filename
 
         try:
+            # First, save to our timestamp-based file
             output.to_df().to_csv(csv_path, index=False)
             df = pd.read_csv(csv_path)
+
+            # Try to extract the actual filename from Carnot's output
+            csv_filename_from_output = None
+            if not df.empty:
+                # Check all columns for CSV filename mentions
+                import re
+                # Pattern to match CSV filenames (e.g., "filtered_enron_emails.csv" or "output.csv")
+                csv_pattern = r'\b([a-zA-Z0-9_\-]+\.csv)\b'
+                for col in df.columns:
+                    for value in df[col]:
+                        if isinstance(value, str):
+                            # Look for any CSV filename in the text
+                            matches = re.findall(csv_pattern, value, re.IGNORECASE)
+                            if matches:
+                                # Use the last match (most likely the output file)
+                                csv_filename_from_output = matches[-1]
+                                break
+                    if csv_filename_from_output:
+                        break
+                
+                # If we found a filename, check if that file exists and use it
+                if csv_filename_from_output:
+                    actual_csv_path = BACKEND_ROOT / csv_filename_from_output
+                    if actual_csv_path.exists() and actual_csv_path != csv_path:
+                        # Use the file that Carnot created
+                        csv_filename = csv_filename_from_output
+                        csv_path = actual_csv_path
+                        df = pd.read_csv(csv_path)  # Re-read from the actual file
+                    else:
+                        # File doesn't exist, rename our file to match
+                        csv_path.rename(actual_csv_path)
+                        csv_path = actual_csv_path
+                        csv_filename = csv_filename_from_output
 
             if df.empty:
                 message_text = "No results found for your query."
@@ -351,8 +385,12 @@ async def download_query_results(filename: str):
     """
     Download a query results CSV file
     """
-    # Security: only allow downloading query_results_* files
-    if not filename.startswith("query_results_") or not filename.endswith(".csv"):
+    # Security: only allow downloading CSV files from backend directory
+    if not filename.endswith(".csv"):
+        raise HTTPException(status_code=400, detail="Invalid filename - must be a CSV file")
+    
+    # Prevent directory traversal
+    if "/" in filename or ".." in filename:
         raise HTTPException(status_code=400, detail="Invalid filename")
     
     # Get the backend directory path
