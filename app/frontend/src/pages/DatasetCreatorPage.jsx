@@ -14,7 +14,13 @@ function DatasetCreatorPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  const handleFileToggle = (filePath, fileName) => {
+  const handleFileToggle = (filePath, fileName, newSet = null) => {
+    if (newSet !== null) {
+      // Allow passing a new set directly (for bulk operations)
+      setSelectedFiles(newSet)
+      return
+    }
+    
     const key = `${filePath}||${fileName}`
     const newSelected = new Set(selectedFiles)
     if (newSelected.has(key)) {

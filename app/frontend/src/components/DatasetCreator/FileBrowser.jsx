@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { ChevronRight, ChevronDown, Folder, File, Loader2, Home } from 'lucide-react'
+import { ChevronRight, ChevronDown, Folder, File, Loader2, Home, CheckSquare, Square } from 'lucide-react'
 import { filesApi } from '../../services/api'
 
 function FileBrowser({ selectedFiles, onFileToggle }) {
@@ -8,6 +8,7 @@ function FileBrowser({ selectedFiles, onFileToggle }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [expandedDirs, setExpandedDirs] = useState(new Set())
+  const [directorySelectionState, setDirectorySelectionState] = useState(new Map()) // path -> boolean
 
   useEffect(() => {
     loadDirectory(currentPath)
@@ -33,8 +34,12 @@ function FileBrowser({ selectedFiles, onFileToggle }) {
     }
   }
 
-  const handleCheckboxChange = (item) => {
-    if (!item.is_directory) {
+  const handleCheckboxChange = (item, event) => {
+    event.stopPropagation() // Prevent navigation when clicking checkbox
+    
+    if (item.is_directory) {
+      handleDirectoryToggle(item)
+    } else {
       onFileToggle(item.path, item.name)
     }
   }
@@ -43,6 +48,181 @@ function FileBrowser({ selectedFiles, onFileToggle }) {
     if (item.is_directory) return false
     const key = `${item.path}||${item.name}`
     return selectedFiles.has(key)
+  }
+
+  const checkDirectorySelection = async (directoryPath) => {
+    // Check if all files in this directory (and subdirectories) are selected
+    try {
+      const allFiles = await getAllFilesInDirectory(directoryPath)
+      if (allFiles.length === 0) return false
+      const allSelected = allFiles.every(file => {
+        const key = `${file.path}||${file.name}`
+        return selectedFiles.has(key)
+      })
+      setDirectorySelectionState(prev => new Map(prev).set(directoryPath, allSelected))
+      return allSelected
+    } catch (err) {
+      return false
+    }
+  }
+
+  // Update directory selection states when selectedFiles or items change
+  useEffect(() => {
+    const updateDirectoryStates = async () => {
+      const newState = new Map()
+      for (const item of items) {
+        if (item.is_directory) {
+          try {
+            const allFiles = await getAllFilesInDirectory(item.path)
+            if (allFiles.length > 0) {
+              const allSelected = allFiles.every(file => {
+                const key = `${file.path}||${file.name}`
+                return selectedFiles.has(key)
+              })
+              newState.set(item.path, allSelected)
+            } else {
+              newState.set(item.path, false)
+            }
+          } catch (err) {
+            newState.set(item.path, false)
+          }
+        }
+      }
+      setDirectorySelectionState(newState)
+    }
+    if (items.length > 0) {
+      updateDirectoryStates()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedFiles, items])
+
+  const getAllFilesInDirectory = async (dirPath) => {
+    const allFiles = []
+    
+    const loadDirRecursive = async (path) => {
+      try {
+        const response = await filesApi.browse(path)
+        const items = response.data.items
+        
+        for (const item of items) {
+          if (item.is_directory) {
+            // Recursively load subdirectory
+            const subPath = path ? `${path}/${item.name}` : item.name
+            await loadDirRecursive(subPath)
+          } else {
+            // Add file to list
+            allFiles.push({
+              path: item.path,
+              name: item.name
+            })
+          }
+        }
+      } catch (err) {
+        console.error(`Failed to load directory ${path}:`, err)
+      }
+    }
+    
+    await loadDirRecursive(dirPath)
+    return allFiles
+  }
+
+  const handleDirectoryToggle = async (directory) => {
+    const allFiles = await getAllFilesInDirectory(directory.path)
+    const allSelected = allFiles.every(file => {
+      const key = `${file.path}||${file.name}`
+      return selectedFiles.has(key)
+    })
+    
+    const newSelected = new Set(selectedFiles)
+    
+    if (allSelected) {
+      // Deselect all files in directory
+      allFiles.forEach(file => {
+        const key = `${file.path}||${file.name}`
+        newSelected.delete(key)
+      })
+    } else {
+      // Select all files in directory
+      allFiles.forEach(file => {
+        const key = `${file.path}||${file.name}`
+        newSelected.add(key)
+      })
+    }
+    
+    onFileToggle(null, null, newSelected)
+  }
+
+  const getCurrentDirectoryFiles = () => {
+    return items.filter(item => !item.is_directory)
+  }
+
+  const getCurrentDirectoryFolders = () => {
+    return items.filter(item => item.is_directory)
+  }
+
+  const areAllItemsSelected = async () => {
+    const files = getCurrentDirectoryFiles()
+    const folders = getCurrentDirectoryFolders()
+    
+    if (files.length === 0 && folders.length === 0) return false
+    
+    // Check all files are selected
+    const allFilesSelected = files.length === 0 || files.every(file => isFileSelected(file))
+    
+    // Check all folders are fully selected
+    let allFoldersSelected = true
+    for (const folder of folders) {
+      const folderSelected = await checkDirectorySelection(folder.path)
+      if (!folderSelected) {
+        allFoldersSelected = false
+        break
+      }
+    }
+    
+    return allFilesSelected && allFoldersSelected
+  }
+
+  const handleSelectAll = async () => {
+    const files = getCurrentDirectoryFiles()
+    const folders = getCurrentDirectoryFolders()
+    const allSelected = await areAllItemsSelected()
+    
+    const newSelected = new Set(selectedFiles)
+    
+    if (allSelected) {
+      // Deselect all files in current directory
+      files.forEach(file => {
+        const key = `${file.path}||${file.name}`
+        newSelected.delete(key)
+      })
+      
+      // Deselect all folders (and their contents)
+      for (const folder of folders) {
+        const allFiles = await getAllFilesInDirectory(folder.path)
+        allFiles.forEach(file => {
+          const key = `${file.path}||${file.name}`
+          newSelected.delete(key)
+        })
+      }
+    } else {
+      // Select all files in current directory
+      files.forEach(file => {
+        const key = `${file.path}||${file.name}`
+        newSelected.add(key)
+      })
+      
+      // Select all folders (and their contents)
+      for (const folder of folders) {
+        const allFiles = await getAllFilesInDirectory(folder.path)
+        allFiles.forEach(file => {
+          const key = `${file.path}||${file.name}`
+          newSelected.add(key)
+        })
+      }
+    }
+    
+    // Update all at once
+    onFileToggle(null, null, newSelected)
   }
 
   const navigateUp = () => {
@@ -69,6 +249,30 @@ function FileBrowser({ selectedFiles, onFileToggle }) {
           <Folder className="w-5 h-5" />
           File Browser
         </h2>
+        {items.length > 0 && (
+          <button
+            onClick={handleSelectAll}
+            className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-lg transition-colors border border-primary-200"
+          >
+            {(() => {
+              const files = getCurrentDirectoryFiles()
+              const folders = getCurrentDirectoryFolders()
+              const allFilesSelected = files.length === 0 || files.every(f => isFileSelected(f))
+              const allFoldersSelected = folders.length === 0 || folders.every(f => directorySelectionState.get(f.path) === true)
+              return allFilesSelected && allFoldersSelected
+            })() ? (
+              <>
+                <CheckSquare className="w-4 h-4" />
+                Deselect All
+              </>
+            ) : (
+              <>
+                <Square className="w-4 h-4" />
+                Select All
+              </>
+            )}
+          </button>
+        )}
       </div>
 
       {/* Breadcrumb Navigation */}
@@ -133,22 +337,26 @@ function FileBrowser({ selectedFiles, onFileToggle }) {
                 key={index}
                 className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
               >
-                {/* Checkbox (only for files) */}
-                {!item.is_directory && (
-                  <input
-                    type="checkbox"
-                    checked={isFileSelected(item)}
-                    onChange={() => handleCheckboxChange(item)}
-                    className="w-4 h-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
-                  />
-                )}
-                {item.is_directory && <div className="w-4" />}
+                {/* Checkbox (for both files and directories) */}
+                <input
+                  type="checkbox"
+                  checked={item.is_directory 
+                    ? (directorySelectionState.get(item.path) || false)
+                    : isFileSelected(item)}
+                  onChange={(e) => handleCheckboxChange(item, e)}
+                  className="w-4 h-4 text-primary-600 rounded border-gray-300 focus:ring-primary-500"
+                />
 
                 {/* Icon and Name */}
                 <button
                   onClick={() => handleItemClick(item)}
                   className="flex items-center gap-2 flex-1 text-left"
                   disabled={!item.is_directory}
+                  onMouseEnter={() => {
+                    if (item.is_directory) {
+                      checkDirectorySelection(item.path)
+                    }
+                  }}
                 >
                   {item.is_directory ? (
                     <>
