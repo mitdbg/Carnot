@@ -23,12 +23,10 @@ from typing import Dict, Iterable, List
 import numpy as np
 import os
 
-# --- Hardcoded File Paths ---
-GOLD_FILE_PATH = "../data/train_subset3.jsonl"
-PRED_FILE_PATH = "../semantic/pred_unranked_limited_subset3.jsonl"
-OUTPUT_REPORT_PATH = "../semantic/results/recall_report_limited_subset3.txt"
+GOLD_FILE_PATH = "../data/train_subset2.jsonl"
+PRED_FILE_PATH = "../semantic/pred_unranked_limited_subset2.jsonl"
+OUTPUT_REPORT_PATH = "../semantic/results/recall_report_limited_subset2.txt"
 
-# MODIFIED: Calculate recall for multiple values of K.
 K_VALUES = [20, 50, 100]
 
 def read_jsonl(path: str) -> Iterable[Dict]:
@@ -51,12 +49,10 @@ def main():
         print(f"Error: Prediction file not found at '{PRED_FILE_PATH}'")
         return
 
-    # Ensure the output directory exists before trying to write to it.
     output_dir = os.path.dirname(OUTPUT_REPORT_PATH)
     if output_dir:
         os.makedirs(output_dir, exist_ok=True)
 
-    # Open the output report file for writing
     with open(OUTPUT_REPORT_PATH, "w", encoding="utf-8") as f_report:
 
         def log_and_print(message: str):
@@ -91,7 +87,6 @@ def main():
                 gold_docs = set(gold_example.get("docs", []))
                 
                 recall_strings = []
-                # MODIFIED: Loop through each K value to calculate recall.
                 for k in K_VALUES:
                     predicted_docs_at_k = set(all_predicted_docs[:k])
                     covered_docs = gold_docs.intersection(predicted_docs_at_k)
@@ -104,15 +99,12 @@ def main():
                     recall_values[k].append(recall)
                     recall_strings.append(f"@{k}={recall:.2f}")
 
-                # Create a single log line summarizing recalls for all K's for the query.
                 recall_summary = ", ".join(recall_strings)
-                # For the parenthetical, show coverage at the largest K value.
                 covered_at_max_k = len(gold_docs.intersection(set(all_predicted_docs[:max(K_VALUES)])))
                 log_line = f"  - Recalls: {recall_summary} ({covered_at_max_k}/{len(gold_docs)}) | Query: \"{query}\""
             
             log_and_print(log_line)
 
-        # Check if any queries were processed using the first K value's list.
         if not recall_values[K_VALUES[0]]:
             log_and_print("\nNo valid queries were processed. Cannot calculate average recall.")
             return
@@ -121,7 +113,6 @@ def main():
         num_evaluated = len(recall_values[K_VALUES[0]])
         log_and_print(f"Total queries evaluated: {num_evaluated}")
 
-        # MODIFIED: Loop through the K values to print the final average for each.
         for k in K_VALUES:
             average_recall = np.mean(recall_values[k])
             log_and_print(f"Average Recall @ {k}: {average_recall:.4f}")

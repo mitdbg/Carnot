@@ -10,7 +10,7 @@
     - Use gpt-4o-mini to decompose the query into subqueries connected with operators
         - E.g. "Stoloniferous plants or crops originating from Bolivia" -> retrieve("crops from Bolivia", 100) | retrieve("stoloniferous plants", 100)
         - E.g. "Neogene mammals of Africa that are Odd-toed ungulates" -> retrieve("Neogene mammals of Africa", 100) & retrieve("Odd-toed ungulates", 100)
-    - Details of such decomposition and results are documented in `decompose`
+    - Generate decompositions with `decompose/generate_decompositions.py`
 
 2. Retrieval (@ k)
     - Retrieve with query / subquery (vector similarity)

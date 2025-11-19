@@ -13,14 +13,12 @@ from tqdm import tqdm
 import chromadb
 from sentence_transformers import SentenceTransformer
 
-# --- Configuration ---
 MODEL_NAME = "BAAI/bge-small-en-v1.5"
 PERSIST_DIR = "./chroma_quest"
 COLLECTION_NAME = "quest_documents"
-DEVICE = None # Or "cuda" if you have a GPU
+DEVICE = None # "cuda"
 
-# --- Input/Output Files ---
-INPUT_QUERIES_PATH = "data/train_subset3.jsonl"
+INPUT_QUERIES_PATH = "data/train_subset2.jsonl"
 OUTPUT_PREDICTIONS_PATH = "pred_unranked.jsonl"
 
 def read_jsonl(path: str) -> Iterable[Dict]:

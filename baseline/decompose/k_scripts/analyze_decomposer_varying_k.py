@@ -8,7 +8,6 @@ GOLD_FILE_PATH = "../../train_subset.jsonl"
 PRED_FILE_PATH = "pred_query_10_varying_k_modified.jsonl" 
 OUTPUT_CSV_PATH = "query_10_varying_k_results_modified.csv" 
 
-# --- Constants ---
 QUERY_INDEX = 10
 
 def read_jsonl(path: str) -> Iterable[Dict[str, Any]]:
@@ -27,13 +26,9 @@ def calculate_recall(gold_docs: set, predicted_docs: List[str]) -> float:
     """Calculates Recall @ |Pred|."""
     predicted_docs_set = set(predicted_docs)
     
-    # Gold docs size must be non-zero for meaningful recall
     gold_size = len(gold_docs)
     
     if gold_size == 0:
-        # If the gold set is empty, recall is 1.0 if the predicted set is also empty, 
-        # but since we are evaluating retrieval, it usually implies the query is skipped.
-        # Based on the provided script's logic, we return 1.0 for an empty gold set.
         return 1.0
     
     covered_docs = gold_docs.intersection(predicted_docs_set)
@@ -72,10 +67,8 @@ def main():
     with open(OUTPUT_CSV_PATH, "w", newline="", encoding="utf-8") as f_csv:
         csv_writer = csv.writer(f_csv)
         
-        # --- CHANGED: Updated CSV header ---
         csv_writer.writerow(["query", "k1", "k2", "recall_docs_1", "recall_docs_2", "recall_final"])
-        
-        # --- CHANGED: Added trackers for all recalls ---
+
         total_recall_1 = 0.0
         total_recall_2 = 0.0
         total_recall_final = 0.0
@@ -87,7 +80,6 @@ def main():
             k1 = pred_example.get("k1")
             k2 = pred_example.get("k2")
             
-            # --- CHANGED: Get all three document lists ---
             predicted_docs_1 = pred_example.get("docs_1", [])
             predicted_docs_2 = pred_example.get("docs_2", [])
             final_docs = pred_example.get("docs", []) # This is the final merged list
@@ -96,12 +88,10 @@ def main():
                 print(f"Warning: Skipping entry missing k1 or k2: {pred_example}")
                 continue
 
-            # --- CHANGED: Calculate all three recall scores ---
             recall_1 = calculate_recall(gold_docs_set, predicted_docs_1)
             recall_2 = calculate_recall(gold_docs_set, predicted_docs_2)
             recall_final = calculate_recall(gold_docs_set, final_docs)
             
-            # --- CHANGED: Write the new, expanded row to CSV ---
             csv_writer.writerow([
                 query_text, 
                 k1, 
@@ -111,7 +101,6 @@ def main():
                 f"{recall_final:.6f}"
             ])
             
-            # --- CHANGED: Update all three totals ---
             total_recall_1 += recall_1
             total_recall_2 += recall_2
             total_recall_final += recall_final
@@ -120,7 +109,6 @@ def main():
         print("\n--- Summary ---")
         print(f"Total combinations evaluated: {processed_count}")
 
-        # --- CHANGED: Print all three averages ---
         if processed_count > 0:
             avg_recall_1 = total_recall_1 / processed_count
             avg_recall_2 = total_recall_2 / processed_count

@@ -8,7 +8,7 @@ from itertools import product
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from semantic.title_chunk.retrieve_limited_verbose import initialize_retriever, retrieve
+from retrieve_limited_verbose import initialize_retriever, retrieve
 
 query_num = 10
 from query_10.query_10 import execute_query
