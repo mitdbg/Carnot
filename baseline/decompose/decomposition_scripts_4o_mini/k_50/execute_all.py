@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# execute_all.py for k=50 - RETRIEVAL ONLY (NO TRUNCATION)
 
 import json
 import sys
@@ -8,8 +7,7 @@ from tqdm import tqdm
 
 # Add project root to path to allow importing retriever
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-
-from retrieve_verbose import initialize_retriever, retrieve
+from retrieve import initialize_retriever, retrieve
 
 # Import all generated strategy functions
 from query_1 import execute_query as execute_query_1

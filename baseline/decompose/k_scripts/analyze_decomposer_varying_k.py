@@ -5,7 +5,6 @@ from typing import Dict, Iterable, List, Any
 import numpy as np
 
 GOLD_FILE_PATH = "../../train_subset.jsonl"
-# This path should match the output of the variable-k execution script
 PRED_FILE_PATH = "pred_query_10_varying_k_modified.jsonl" 
 OUTPUT_CSV_PATH = "query_10_varying_k_results_modified.csv" 
 

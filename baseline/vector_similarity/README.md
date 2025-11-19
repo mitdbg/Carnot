@@ -1,7 +1,5 @@
 The subset of QUEST data used is `data/train_subset_2.jsonl`, 20 random non-union queries from `train.jsonl` in the QUEST dataset (https://storage.googleapis.com/gresearch/quest/train.jsonl).
 
-In `first_512_tokens`, it shows the chunk retrieved from the quest collection where only the first 512 tokens of each document were embedded [results not here].
-
 In `full_document`, it shows the chunks retrieved from the quest collection where the full document was embedded.
 - The recall results are in `semantic/results/recall_report_subset3.txt`. The top 50 results were retrieved.
 

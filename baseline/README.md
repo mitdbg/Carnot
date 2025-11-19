@@ -1,7 +1,7 @@
 # Baseline Experiments with QUEST
 
 ## Experiment Setup
-1. Indexed with Chroma
+1. Indexed with Chroma (`indexing/index_chroma.py`)
     - 512 tokens with 80-token overlap / index only first 512 tokens (same as QUEST)
     - Embedded in batches of 256 chunks
     - Embedding model: `bge-small-en-v1.5`
