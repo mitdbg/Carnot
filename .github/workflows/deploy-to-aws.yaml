@@ -102,6 +102,13 @@ jobs:
       - name: Terraform Apply (env)
         working-directory: deploy/terraform/env
         run: terraform apply -var="subdomain=$SUBDOMAIN" -auto-approve
+
+      - name: Store EC2 Public IP
+        working-directory: deploy/terraform/env
+        id: ec2-ip
+        run: |
+          ec2_public_ip=$(terraform output -raw ec2_public_ip)
+          echo "EC2_PUBLIC_IP=$ec2_public_ip" >> $GITHUB_ENV
       ######################################################################
 
       - name: Login to Docker Hub
@@ -139,8 +146,7 @@ jobs:
           CARNOT_DB_NAME: ${{ secrets.CARNOT_DB_NAME }}
           CARNOT_DEPLOY_KEY: ${{ secrets.CARNOT_DEPLOY_KEY }}
         run: |
-          ec2_public_ip=$(terraform -chdir=deploy/terraform output -raw ec2_public_ip)
-          echo "Deploying to EC2 Instance at $ec2_public_ip"
+          echo "Deploying to EC2 Instance at $EC2_PUBLIC_IP"
 
           # Prepare deploy directory
           mkdir -p deploy/compose/secrets
@@ -152,10 +158,10 @@ jobs:
           # Copy compose bundle to EC2
           echo "$CARNOT_DEPLOY_KEY" > deploy/terraform/deployer_key.pem
           chmod 400 deploy/terraform/deployer_key.pem
-          scp -r -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem deploy/compose ubuntu@$ec2_public_ip:~/
+          scp -r -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem deploy/compose ubuntu@$EC2_PUBLIC_IP:~/
 
           # Shutdown current docker containers
-          ssh -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem ubuntu@$ec2_public_ip "
+          ssh -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem ubuntu@$EC2_PUBLIC_IP "
             cd compose
             docker compose down
             docker rmi -f $(docker images -aq)
@@ -163,7 +169,7 @@ jobs:
           "
 
           # Login & deploy using pulled images
-          ssh -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem ubuntu@$ec2_public_ip "
+          ssh -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem ubuntu@$EC2_PUBLIC_IP "
             cd compose
             export API_BASE_URL="http://$SUBDOMAIN.carnot-research.org:8000/api"
             export BASE_URL="http://$SUBDOMAIN.carnot-research.org:8000"
