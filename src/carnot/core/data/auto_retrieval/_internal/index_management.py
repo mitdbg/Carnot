@@ -8,7 +8,7 @@ import os
 import logging
 import chromadb
 from enum import Enum
-from typing import Any, Dict, Iterable, List, Mapping, Sequence, Set, Tuple
+from typing import Any, Dict, Iterable, List, Mapping, Sequence, Set, Tuple, Optional
 from collections import defaultdict
 
 from sentence_transformers import SentenceTransformer
@@ -31,7 +31,7 @@ class BaseVectorIndex(ABC):
         pass
 
     @abstractmethod
-    def query(self, query_embedding: Sequence[float], top_k: int, include: Sequence[str]) -> Sequence[Tuple[str, float]]:
+    def query(self, query_embedding: Sequence[float], top_k: int, include: Sequence[str], filters: Optional[Mapping[str, Any]] = None) -> Sequence[Tuple[str, float]]:
         """Return (doc_id, score) tuples of the top-k nearest neighbors."""
         pass
 
@@ -288,17 +288,18 @@ class ChromaVectorIndex(BaseVectorIndex, BaseDocumentCatalog):
 
     # ---------- BaseVectorIndex API ----------
 
-    def query(self, query_embedding: Sequence[float], top_k: int, include: Sequence[str] = ["documents", "metadatas", "distances"]) -> Tuple[Sequence[str], Sequence[str], Sequence[Mapping[str, Any]], Sequence[float]]:
+    def query(self, query_embedding: Sequence[float], top_k: int, include: Sequence[str] = ["documents", "metadatas", "distances"], filters: Optional[Mapping[str, Any]] = None) -> Tuple[Sequence[str], Sequence[str], Sequence[Mapping[str, Any]], Sequence[float]]:
         """
         Query Chroma for nearest neighbors given a precomputed embedding.
 
         Returns a list of (id, distance) pairs.
         """
-        logger.info(f"ChromaVectorIndex: querying with top_k={top_k}")
+        logger.info(f"ChromaVectorIndex: querying with top_k={top_k}, filters={filters}")
         results = self._collection.query(
             query_embeddings=[list(query_embedding)],
             n_results=top_k,
             include=include,
+            where=filters,
         )
 
         ids = results.get("ids", [[]])[0]
