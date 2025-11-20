@@ -1,19 +1,47 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Any, Mapping
-
+from typing import Any, Dict, Optional
+import yaml
 
 @dataclass
 class Config:
     """Top-level configuration for SearchClient and internal modules."""
-    chroma_uri: str
-    collection_name: str
-    space_budget_mb: int
-    max_latency_ms: int
-    # add more fields as needed
+    # Chroma settings
+    chroma_persist_dir: str
+    chroma_collection_name: str
+    embedding_model_name: str = "BAAI/bge-small-en-v1.5"
+    
+    # Data settings
+    quest_documents_path: str = ""
+    
+    # Chunking settings
+    index_first_512: bool = True
+    chunk_tokens: int = 512
+    overlap_tokens: int = 80
+    
+    # Batching
+    batch_size: int = 64
+    
+    # Concept generation (optional)
+    concept_generation_mode: str = "two_stage"
+    concept_cluster_count: int = 50
+    concept_embedding_model: str = "all-MiniLM-L6-v2"
 
+    # Other
+    dataset_name: str = "quest"
+    chroma_uri: Optional[str] = None
+    space_budget_mb: int = 1000
+    max_latency_ms: int = 100
+
+    @classmethod
+    def from_dict(cls, d: Dict[str, Any]) -> "Config":
+        # Filter for known fields to avoid errors with extra config keys
+        known_fields = cls.__annotations__.keys()
+        filtered = {k: v for k, v in d.items() if k in known_fields}
+        return cls(**filtered)
 
 def load_config(path: str) -> Config:
-    """Load a Config object from a YAML/JSON file."""
-    # TODO: parse YAML/JSON here
-    pass
+    """Load a Config object from a YAML file."""
+    with open(path, "r") as f:
+        raw = yaml.safe_load(f)
+    return Config.from_dict(raw)
