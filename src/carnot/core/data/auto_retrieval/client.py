@@ -1,8 +1,9 @@
 from __future__ import annotations
-from typing import List
+from typing import List, Dict, Any, Optional
 
 from .config import Config, load_config
 from .types import Query, SearchResult
+from .quest_data_prep import prepare_quest_documents
 from ._internal.index_management import IndexManagementPipeline
 from ._internal.query_planning import QueryPlanner, LogicalPlan
 from ._internal.query_optimization import QueryOptimizer, PhysicalPlan
@@ -43,10 +44,48 @@ class SearchClient:
             executor=executor,
         )
 
-    def search(self, text: str, top_k: int = 10) -> List[SearchResult]:
-        """Run a search query end-to-end and return the top-k results."""
-        query = Query(text=text)
-        logical_plan: LogicalPlan = self._planner.plan(query)
-        physical_plan: PhysicalPlan = self._optimizer.optimize(logical_plan)
-        results = self._executor.execute(physical_plan, top_k=top_k)
-        return results
+    def search(self, text: str, top_k: int = 10, filters: Optional[Dict[str, Any]] = None) -> List[SearchResult]:
+        # 1. Access the vector index from the pipeline
+        vector_index = self._index_pipeline.get_vector_index()
+        
+        # 2. Embed the query text
+        if hasattr(vector_index, "_embed_fn"):
+            query_embedding = vector_index._embed_fn([text])[0]
+        else:
+            raise NotImplementedError(
+                "Vector index does not expose an embedding function."
+            )
+            
+        # 3. Query the index
+        # Returns (ids, documents, metadatas, distances)
+        results = vector_index.query(query_embedding, top_k=top_k, filters=filters)
+    
+        res_ids, res_docs, res_metas, res_dists = results
+        
+        out: List[SearchResult] = []
+        for i in range(len(res_ids)):
+            meta = dict(res_metas[i]) if res_metas[i] else {}
+            if "text" not in meta:
+                meta["text"] = res_docs[i]
+                
+            out.append(
+                SearchResult(
+                    doc_id=res_ids[i],
+                    score=res_dists[i],
+                    metadata=meta,
+                )
+            )
+        return out
+
+    def ingest_dataset(self, path: str) -> None:
+        """
+        Load a dataset and ingest it into the index pipeline. This prepares the documents and adds them to the Chroma collection.
+        """
+        docs = prepare_quest_documents(
+            path,
+            index_first_512=self._config.index_first_512,
+            chunk_size=self._config.chunk_size,
+            overlap=self._config.overlap,
+            tokenizer_model=self._config.tokenizer_model,
+        )
+        self._index_pipeline.add_documents(docs)
