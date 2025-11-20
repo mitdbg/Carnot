@@ -31,26 +31,26 @@ jobs:
         id: subdomain
         run: |
           if [[ "${GITHUB_BASE_REF}" == "main" ]]; then
-            echo "dev" >> $SUBDOMAIN
+            echo "SUBDOMAIN=dev" >> $GITHUB_ENV
           elif [[ "${GITHUB_BASE_REF}" == "wl-prod" ]]; then
-            echo "${{ secrets.WL_PROD }}" >> $SUBDOMAIN
+            echo "SUBDOMAIN=${{ secrets.WL_PROD }}" >> $GITHUB_ENV
           elif [[ "${GITHUB_BASE_REF}" == "wm-prod" ]]; then
-            echo "${{ secrets.WM_PROD }}" >> $SUBDOMAIN
+            echo "SUBDOMAIN=${{ secrets.WM_PROD }}" >> $GITHUB_ENV
           else
-            echo "dev" >> $SUBDOMAIN
+            echo "SUBDOMAIN=dev" >> $GITHUB_ENV
           fi
       
       - name: Determine environment
         id: environment
         run: |
           if [[ "${GITHUB_BASE_REF}" == "main" ]]; then
-            echo "dev" >> $ENV_NAME
+            echo "ENV_NAME=dev" >> $GITHUB_ENV
           elif [[ "${GITHUB_BASE_REF}" == "wl-prod" ]]; then
-            echo "wl-prod" >> $ENV_NAME
+            echo "ENV_NAME=wl-prod" >> $GITHUB_ENV
           elif [[ "${GITHUB_BASE_REF}" == "wm-prod" ]]; then
-            echo "wm-prod" >> $ENV_NAME
+            echo "ENV_NAME=wm-prod" >> $GITHUB_ENV
           else
-            echo "dev" >> $ENV_NAME
+            echo "ENV_NAME=dev" >> $GITHUB_ENV
           fi
 
       - name: Configure AWS Credentials
