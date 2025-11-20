@@ -1,3 +1,19 @@
+variable "subdomain" {
+  description = "The subdomain for the application."
+  type    = string
+}
+
+variable "aws_region" {
+  description = "AWS region for global resources"
+  default     = "us-east-1"
+}
+
+variable "vpc_id" {
+  description = "The VPC ID where the EC2 instance will be launched."
+  type        = string
+  default     = "vpc-d27da3b7"
+}
+
 variable "instance_name" {
   description = "Value of the EC2 instance's Name tag."
   type        = string
@@ -14,19 +30,6 @@ variable "subnet_id" {
   description = "The subnet ID where the EC2 instance will be launched."
   type        = string
   default     = "subnet-27021a61"
-}
-
-variable "vpc_id" {
-  description = "The VPC ID where the EC2 instance will be launched."
-  type        = string
-  default     = "vpc-d27da3b7"
-}
-
-variable "deployer_public_key" {
-  description = "The public SSH key for the deployer."
-  type        = string
-  default     = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKLX7sunnyaSl6i2JCO3fkSLU51lSwZShWCX8p5dbnGQ"
-
 }
 
 # NOTE: this must match the AZ of the subnet where the instance is launched
@@ -58,10 +61,4 @@ variable "hosted_zone_id" {
   description = "The Route 53 Hosted Zone ID for the domain."
   type        = string
   default     = "Z0371749174EVZHL80QS0"
-}
-
-variable "domain_name" {
-  description = "The domain name for the application."
-  type        = string
-  default     = "carnot-research.org"
 }

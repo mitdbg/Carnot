@@ -5,7 +5,10 @@ on:
     branches: [feature-31/create-deploy-scripts]
   # pull_request:
   #   types: [closed]
-  #   branches: [main]
+  #   branches:
+  #   - main
+  #   - wl-prod
+  #   - wm-prod
 
 permissions:
   id-token: write
@@ -24,15 +27,31 @@ jobs:
           terraform_version: 1.13.5
           terraform_wrapper: false
 
-      - name: Terraform Init
-        working-directory: deploy/terraform
-        id: init
-        run: terraform init
-
-      - name: Terraform Validate
-        working-directory: deploy/terraform
-        id: validate
-        run: terraform validate
+      - name: Determine subdomain
+        id: subdomain
+        run: |
+          if [[ "${GITHUB_BASE_REF}" == "main" ]]; then
+            echo "dev" >> $SUBDOMAIN
+          elif [[ "${GITHUB_BASE_REF}" == "wl-prod" ]]; then
+            echo "${{ secrets.WL_PROD }}" >> $SUBDOMAIN
+          elif [[ "${GITHUB_BASE_REF}" == "wm-prod" ]]; then
+            echo "${{ secrets.WM_PROD }}" >> $SUBDOMAIN
+          else
+            echo "dev" >> $SUBDOMAIN
+          fi
+      
+      - name: Determine environment
+        id: environment
+        run: |
+          if [[ "${GITHUB_BASE_REF}" == "main" ]]; then
+            echo "dev" >> $ENV_NAME
+          elif [[ "${GITHUB_BASE_REF}" == "wl-prod" ]]; then
+            echo "wl-prod" >> $ENV_NAME
+          elif [[ "${GITHUB_BASE_REF}" == "wm-prod" ]]; then
+            echo "wm-prod" >> $ENV_NAME
+          else
+            echo "dev" >> $ENV_NAME
+          fi
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@main
@@ -40,23 +59,57 @@ jobs:
           role-to-assume: arn:aws:iam::422297141788:role/CarnotGithubRole
           aws-region: us-east-1
 
-      - name: Copy Terraform State File
-        working-directory: deploy/terraform
-        run: |
-          aws s3 cp s3://carnot-research/tf/terraform.tfstate . || echo "No existing state file found."
+      ######################################################################
+      # STEP 1 — DEPLOY GLOBAL TERRAFORM
+      ######################################################################
+      - name: Terraform Init (Global)
+        working-directory: deploy/terraform/global
+        id: init-global
+        run: terraform init -upgrade
 
-      - name: Terraform Apply (Setup Infrastructure)
-        working-directory: deploy/terraform
-        id: apply
-        run: |
-          terraform apply -auto-approve
+      - name: Terraform Validate (Global)
+        working-directory: deploy/terraform/global
+        id: validate-global
+        run: terraform validate
+      
+      - name: Terraform Apply (Global)
+        working-directory: deploy/terraform/global
+        id: apply-global
+        run: terraform apply -auto-approve
 
-      - name: Upload Terraform State File Even On Failure
-        if: always()
+      - name: Select Terraform Workspace
         working-directory: deploy/terraform
         run: |
-          echo "Uploading terraform.tfstate to S3"
-          aws s3 cp terraform.tfstate s3://carnot-research/tf/terraform.tfstate
+          terraform workspace list || terraform workspace new "$ENV_NAME"
+          terraform workspace select "$ENV_NAME" || terraform workspace new "$ENV_NAME"
+
+      ######################################################################
+      # STEP 2 — DEPLOY ENVIRONMENT TERRAFORM
+      ######################################################################
+
+      # Create/select workspace BEFORE init because backend key uses ${workspace}
+      - name: Ensure Terraform Workspace Exists
+        working-directory: deploy/terraform/env
+        run: |
+          terraform workspace list || true
+          terraform workspace new "$ENV_NAME" 2>/dev/null || true
+
+      - name: Select Workspace
+        working-directory: deploy/terraform/env
+        run: terraform workspace select "$ENV_NAME"
+
+      - name: Terraform Init (env)
+        working-directory: deploy/terraform/env
+        run: terraform init -upgrade
+      
+      - name: Terraform Validate (env)
+        working-directory: deploy/terraform/env
+        run: terraform validate
+
+      - name: Terraform Apply (env)
+        working-directory: deploy/terraform/env
+        run: terraform apply -var="subdomain=$SUBDOMAIN" -auto-approve
+      ######################################################################
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -65,7 +118,6 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build & Push Docker Images to Docker Hub
-        # working-directory: deploy/compose
         run: |
           # Copy relevant source files to build context
           cp -r app/frontend deploy/compose/frontend
@@ -120,7 +172,10 @@ jobs:
           # Login & deploy using pulled images
           ssh -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem ubuntu@$ec2_public_ip "
             cd compose
+            export API_BASE_URL="http://$SUBDOMAIN.carnot-research.org:8000/api"
+            export BASE_URL="http://$SUBDOMAIN.carnot-research.org:8000"
+            export BASE_ORIGINS="http://$SUBDOMAIN.carnot-research.org,https://$SUBDOMAIN.carnot-research.org"
             docker login -u '${{ vars.DOCKERHUB_USERNAME }}' -p '${{ secrets.DOCKERHUB_TOKEN }}'
             docker compose pull
-            docker compose up -d
+            docker compose up -d -e BASE_URL=$BASE_URL
           "

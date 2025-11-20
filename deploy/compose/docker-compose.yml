@@ -1,6 +1,9 @@
 services:
   web-frontend:
     image: carnotresearch/carnot:frontend
+    environment:
+      API_BASE_URL: ${API_BASE_URL}
+      BASE_URL: ${BASE_URL}
     ports:
       - "80:80"
     depends_on:
@@ -9,6 +12,7 @@ services:
   web-backend:
     image: carnotresearch/carnot:backend
     environment:
+      BASE_ORIGINS: ${BASE_ORIGINS}
       POSTGRES_PASSWORD_FILE: /run/secrets/db_password
       POSTGRES_USER_FILE: /run/secrets/db_user
       POSTGRES_DB_FILE: /run/secrets/db_name
