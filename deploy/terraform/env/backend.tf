@@ -7,11 +7,5 @@
 #     --region us-east-1
 
 terraform {
-  backend "s3" {
-    bucket         = "carnot-research"
-    key            = "tf/${terraform.workspace}/terraform.tfstate"
-    region         = "us-east-1"
-    dynamodb_table = "carnot-terraform-locks"
-    encrypt        = true
-  }
+  backend "s3" {}
 }

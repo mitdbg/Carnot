@@ -81,9 +81,9 @@ jobs:
       # STEP 2 — DEPLOY ENVIRONMENT TERRAFORM
       ######################################################################
 
-      - name: Terraform Init (env - first pass)
+      - name: Terraform Init (env)
         working-directory: deploy/terraform/env
-        run: terraform init -reconfigure
+        run: terraform init -backend-config="backend-config/${ENV_NAME}.hcl"
 
       - name: Ensure Terraform Workspace Exists
         working-directory: deploy/terraform/env
@@ -94,10 +94,6 @@ jobs:
       - name: Select Workspace
         working-directory: deploy/terraform/env
         run: terraform workspace select "$ENV_NAME"
-
-      - name: Terraform Init (env - final)
-        working-directory: deploy/terraform/env
-        run: terraform init
       
       - name: Terraform Validate (env)
         working-directory: deploy/terraform/env
