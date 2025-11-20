@@ -5,6 +5,7 @@ from dataclasses import dataclass
 import json
 import re
 import os
+import logging
 import chromadb
 from enum import Enum
 from typing import Any, Dict, Iterable, List, Mapping, Sequence, Set, Tuple
@@ -16,6 +17,8 @@ import dspy
 
 from ..config import Config
 from ..types import Query
+
+logger = logging.getLogger(__name__)
 
 # ---------- Abstract interfaces (ABCs) ----------
 
@@ -216,6 +219,7 @@ class ChromaVectorIndex(BaseVectorIndex, BaseDocumentCatalog):
             name=self._collection_name,
             embedding_function=self._embed_fn,
         )
+        logger.info(f"Initialized ChromaVectorIndex (collection={self._collection_name}, persist_dir={self._persist_dir})")
 
     # ---------- BaseDocumentCatalog API ----------
 
@@ -249,6 +253,7 @@ class ChromaVectorIndex(BaseVectorIndex, BaseDocumentCatalog):
         if not ids:
             return
 
+        logger.info(f"ChromaVectorIndex: upserting {len(ids)} documents.")
         self._collection.upsert(ids=ids, documents=texts, metadatas=metadatas)
 
     def get_documents(self, doc_ids: Sequence[str]) -> Sequence[Mapping[str, Any]]:
@@ -289,6 +294,7 @@ class ChromaVectorIndex(BaseVectorIndex, BaseDocumentCatalog):
 
         Returns a list of (id, distance) pairs.
         """
+        logger.info(f"ChromaVectorIndex: querying with top_k={top_k}")
         results = self._collection.query(
             query_embeddings=[list(query_embedding)],
             n_results=top_k,
@@ -343,6 +349,7 @@ class TableMetadataStore(BaseMetadataStore):
         if not new_keys:
             return
 
+        logger.info(f"TableMetadataStore: registering new schema keys: {sorted(list(new_keys))}")
         self._schema_keys.update(new_keys)
 
         # Backfill existing docs with None for the new keys
@@ -416,6 +423,7 @@ class InvertedConceptIndex(BaseConceptIndex):
 
     def materialize_concepts(self) -> None:
         """Scan metadata and build posting lists for all concept:* fields."""
+        logger.info("InvertedConceptIndex: starting materialization...")
         self._posting_lists.clear()
 
         for doc_id, meta in self._metadata_store.iter_all():
@@ -432,6 +440,8 @@ class InvertedConceptIndex(BaseConceptIndex):
 
                 index_key = f"{concept_name}:{val_str}"
                 self._posting_lists[index_key].append(doc_id)
+
+        logger.info(f"InvertedConceptIndex: materialized {len(self._posting_lists)} concepts.")
 
     def select(self, concept_predicates: Sequence[str]) -> Sequence[str]:
         """
@@ -741,6 +751,7 @@ class LLMConceptGenerator(BaseConceptGenerator):
         NOTE: docs are currently ignored; concepts are inferred only from
         the query log.
         """
+        logger.info(f"LLMConceptGenerator: fitting on {len(query_log)} queries (mode={self.mode}).")
 
         if not query_log:
             object.__setattr__(self, "_concept_vocabulary", [])
@@ -751,6 +762,7 @@ class LLMConceptGenerator(BaseConceptGenerator):
         else:
             concepts = self._fit_direct(query_log)
 
+        logger.info(f"LLMConceptGenerator: learned {len(concepts)} concepts.")
         object.__setattr__(self, "_concept_vocabulary", concepts)
 
     def assign_concepts(
@@ -799,6 +811,7 @@ class LLMConceptGenerator(BaseConceptGenerator):
             all_concepts.extend(per_query_concepts)
 
         all_concepts = _dedupe_preserve_order(all_concepts)
+        logger.info(f"LLMConceptGenerator: generated {len(all_concepts)} intermediate concepts.")
         if not all_concepts:
             return []
 
@@ -808,6 +821,7 @@ class LLMConceptGenerator(BaseConceptGenerator):
 
         # If fewer concepts than clusters, reduce cluster count
         n_clusters = min(self.n_clusters, len(all_concepts))
+        logger.info(f"LLMConceptGenerator: clustering into {n_clusters} clusters.")
         if n_clusters <= 0:
             return []
 
@@ -883,9 +897,11 @@ class IndexManagementPipeline(BaseIndexManager):
 
         We just fit the concept generator on the query log.
         """
+        logger.info("IndexManagementPipeline: bootstrapping...")
         q_log = query_log or []
         q_strings = [q.text for q in q_log] if q_log else []
         self.concept_generator.fit(docs=[], query_log=q_strings)
+        logger.info("IndexManagementPipeline: bootstrap complete.")
 
     def add_documents(self, docs: Iterable[Mapping[str, Any]]) -> None:
         """
@@ -905,6 +921,8 @@ class IndexManagementPipeline(BaseIndexManager):
         docs_list = list(docs)
         if not docs_list:
             return
+
+        logger.info(f"IndexManagementPipeline: adding {len(docs_list)} documents.")
 
         # 1) Source of truth for text + embeddings + raw metadata: Chroma
         self.document_catalog.add_documents(docs_list)
@@ -931,6 +949,7 @@ class IndexManagementPipeline(BaseIndexManager):
         if not doc_ids:
             return
 
+        logger.info(f"IndexManagementPipeline: enriching {len(doc_ids)} documents.")
         # Fetch the actual chunk texts from Chroma (if needed by the concept generator)
         docs = self.document_catalog.get_documents(doc_ids)
         if not docs:
