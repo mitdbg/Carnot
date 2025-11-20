@@ -1,0 +1,19 @@
+dataset_name: quest
+
+# Chroma basics
+chroma_persist_dir: "./chroma_quest"       
+chroma_collection_name: "quest_documents"   
+embedding_model_name: "BAAI/bge-small-en-v1.5"
+
+# Data path
+quest_documents_path: ""
+
+# Chunking
+index_first_512: true        
+chunk_tokens: 512
+overlap_tokens: 80           
+
+# Batching
+batch_size: 512             
+
+# Optional: concept generation knobs etc. can go here later.
