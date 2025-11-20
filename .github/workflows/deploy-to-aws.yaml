@@ -77,12 +77,6 @@ jobs:
         id: apply-global
         run: terraform apply -auto-approve
 
-      - name: Select Terraform Workspace
-        working-directory: deploy/terraform
-        run: |
-          terraform workspace list || terraform workspace new "$ENV_NAME"
-          terraform workspace select "$ENV_NAME" || terraform workspace new "$ENV_NAME"
-
       ######################################################################
       # STEP 2 — DEPLOY ENVIRONMENT TERRAFORM
       ######################################################################
