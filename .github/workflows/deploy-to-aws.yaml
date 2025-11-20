@@ -81,7 +81,10 @@ jobs:
       # STEP 2 — DEPLOY ENVIRONMENT TERRAFORM
       ######################################################################
 
-      # Create/select workspace BEFORE init because backend key uses ${workspace}
+      - name: Terraform Init (env - first pass)
+        working-directory: deploy/terraform/env
+        run: terraform init -reconfigure
+
       - name: Ensure Terraform Workspace Exists
         working-directory: deploy/terraform/env
         run: |
@@ -92,9 +95,9 @@ jobs:
         working-directory: deploy/terraform/env
         run: terraform workspace select "$ENV_NAME"
 
-      - name: Terraform Init (env)
+      - name: Terraform Init (env - final)
         working-directory: deploy/terraform/env
-        run: terraform init -upgrade
+        run: terraform init
       
       - name: Terraform Validate (env)
         working-directory: deploy/terraform/env
