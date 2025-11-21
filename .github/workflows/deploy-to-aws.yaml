@@ -104,7 +104,7 @@ jobs:
         run: |
           echo "subdomain = \"$SUBDOMAIN\"" >> vars.tfvars
           if [[ "${GITHUB_BASE_REF}" == "main" ]]; then
-            echo "auth0_custom_domain = \"${{ secrets.DEV_AUTH0_DOMAIN }}\"" >> vars.tfvars
+            echo "auth0_custom_domain = \"${{ secrets.DEV_AUTH0_AUTH_DOMAIN }}\"" >> vars.tfvars
             echo "auth0_cname_target = \"${{ secrets.DEV_AUTH0_CNAME_TARGET }}\"" >> vars.tfvars
           elif [[ "${GITHUB_BASE_REF}" == "wl-prod" ]]; then
             echo "auth0_custom_domain = \"${{ secrets.WL_PROD_AUTH0_DOMAIN }}\"" >> vars.tfvars
@@ -113,7 +113,7 @@ jobs:
             echo "auth0_custom_domain = \"${{ secrets.WM_PROD_AUTH0_DOMAIN }}\"" >> vars.tfvars
             echo "auth0_cname_target = \"${{ secrets.WM_PROD_AUTH0_CNAME_TARGET }}\"" >> vars.tfvars
           else
-            echo "auth0_custom_domain = \"${{ secrets.DEV_AUTH0_DOMAIN }}\"" >> vars.tfvars
+            echo "auth0_custom_domain = \"${{ secrets.DEV_AUTH0_AUTH_DOMAIN }}\"" >> vars.tfvars
             echo "auth0_cname_target = \"${{ secrets.DEV_AUTH0_CNAME_TARGET }}\"" >> vars.tfvars
           fi
           cat vars.tfvars
