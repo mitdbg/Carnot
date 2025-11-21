@@ -116,7 +116,8 @@ jobs:
             echo "auth0_custom_domain = \"${{ secrets.DEV_AUTH0_AUTH_DOMAIN }}\"" >> vars.tfvars
             echo "auth0_cname_target = \"${{ secrets.DEV_AUTH0_CNAME_TARGET }}\"" >> vars.tfvars
           fi
-          cat vars.tfvars
+          terraform import aws_route53_record.app_dns Z0371749174EVZHL80QS0_dev.carnot-research.org_A
+          terraform import aws_route53_record.auth0_custom_domain Z0371749174EVZHL80QS0_auth.dev.carnot-research.org_CNAME
           terraform apply -var-file="vars.tfvars" -auto-approve
 
       - name: Store EC2 Public IP
