@@ -10,29 +10,28 @@ class Config:
     chroma_persist_dir: str
     chroma_collection_name: str
     embedding_model_name: str = "BAAI/bge-small-en-v1.5"
+    clear_chroma_collection: bool = False
     
     # Data settings
     quest_documents_path: str = ""
     
     # Chunking settings
     index_first_512: bool = True
-    chunk_tokens: int = 512
-    overlap_tokens: int = 80
+    chunk_size: int = 512
+    overlap: int = 80
+    tokenizer_model: str = "BAAI/bge-small-en-v1.5"
     
     # Batching
     batch_size: int = 64
     
-    # Concept generation (optional)
+    # Concept generation
     concept_generation_mode: str = "two_stage"
     concept_cluster_count: int = 50
     concept_embedding_model: str = "all-MiniLM-L6-v2"
 
     # Other
     dataset_name: str = "quest"
-    chroma_uri: Optional[str] = None
-    space_budget_mb: int = 1000
-    max_latency_ms: int = 100
-
+    
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> "Config":
         # Filter for known fields to avoid errors with extra config keys

@@ -31,8 +31,14 @@ class BaseVectorIndex(ABC):
         pass
 
     @abstractmethod
-    def query(self, query_embedding: Sequence[float], top_k: int, include: Sequence[str], filters: Optional[Mapping[str, Any]] = None) -> Sequence[Tuple[str, float]]:
-        """Return (doc_id, score) tuples of the top-k nearest neighbors."""
+    def query(
+        self,
+        query_embedding: Sequence[float],
+        top_k: int,
+        include: Sequence[str],
+        filters: Optional[Mapping[str, Any]] = None,
+    ) -> Tuple[Sequence[str], Sequence[str], Sequence[Mapping[str, Any]], Sequence[float]]:
+        """Return (ids, documents, metadatas, distances) for the top-k nearest neighbors."""
         pass
 
 
@@ -120,8 +126,12 @@ class BaseConceptGenerator(ABC):
         pass
 
     @abstractmethod
-    def assign_concepts(self, docs: Iterable[Mapping[str, Any]]) -> None:
-        """Returns a mapping: doc_id -> {concept: concept_value}"""
+    def assign_concepts(
+        self,
+        docs: Iterable[Mapping[str, Any]],
+        concept_vocabulary: Optional[List[str]] = None,
+    ) -> Mapping[str, Mapping[str, Any]]:
+        """Return: mapping doc_id -> { 'concept:Name': 'Value', ... }"""
         pass
 
 
@@ -171,12 +181,12 @@ class STEmbeddingFn:
         self.model = SentenceTransformer(model_name, device=device)
         self.batch_size = batch_size
 
-    def __call__(self, texts: List[str]) -> List[List[float]]:
+    def __call__(self, input: List[str]) -> List[List[float]]:
         """Embed a batch of texts for Chroma."""
-        if not texts:
+        if not input:
             return []
         embs = self.model.encode(
-            texts,
+            input,
             batch_size=self.batch_size,
             convert_to_numpy=True,
             normalize_embeddings=True,
@@ -208,6 +218,8 @@ class ChromaVectorIndex(BaseVectorIndex, BaseDocumentCatalog):
         self._embedding_model_name = getattr(
             config, "embedding_model_name", "BAAI/bge-small-en-v1.5"
         )
+        # Match legacy script behavior: larger batches for first-512 mode
+        self._batch_size = 2048 if getattr(config, "index_first_512", False) else 256
 
         os.makedirs(self._persist_dir, exist_ok=True)
 
@@ -220,8 +232,26 @@ class ChromaVectorIndex(BaseVectorIndex, BaseDocumentCatalog):
             embedding_function=self._embed_fn,
         )
         logger.info(f"Initialized ChromaVectorIndex (collection={self._collection_name}, persist_dir={self._persist_dir})")
+        logger.info(f"ChromaVectorIndex: using upsert batch_size={self._batch_size} (index_first_512={getattr(config, 'index_first_512', False)})")
 
     # ---------- BaseDocumentCatalog API ----------
+
+    def reset_collection(self) -> None:
+        """
+        Delete and recreate the underlying Chroma collection.
+        """
+        logger.info(f"ChromaVectorIndex: resetting collection '{self._collection_name}'.")
+        try:
+            # Delete existing collection if present
+            self._client.delete_collection(self._collection_name)
+        except Exception:
+            # Ignore if collection does not exist
+            pass
+        # Recreate collection with the same embedding function
+        self._collection = self._client.get_or_create_collection(
+            name=self._collection_name,
+            embedding_function=self._embed_fn,
+        )
 
     def add_documents(self, docs: Iterable[Mapping[str, Any]]) -> None:
         """
@@ -234,9 +264,23 @@ class ChromaVectorIndex(BaseVectorIndex, BaseDocumentCatalog):
             "metadata": { ... arbitrary JSON-serializable fields ... }
           }
         """
-        ids: List[str] = []
-        texts: List[str] = []
-        metadatas: List[Mapping[str, Any]] = []
+        ids_batch: List[str] = []
+        texts_batch: List[str] = []
+        metas_batch: List[Mapping[str, Any]] = []
+        pos_by_id: Dict[str, int] = {}
+        total = 0
+
+        def flush() -> None:
+            nonlocal ids_batch, texts_batch, metas_batch, pos_by_id, total
+            if not ids_batch:
+                return
+            self._collection.upsert(ids=ids_batch, documents=texts_batch, metadatas=metas_batch)
+            total += len(ids_batch)
+            logger.info(f"ChromaVectorIndex: upserted {len(ids_batch)} documents (total={total}).")
+            ids_batch = []
+            texts_batch = []
+            metas_batch = []
+            pos_by_id = {}
 
         for d in docs:
             doc_id = str(d.get("id") or d.get("doc_id"))
@@ -246,15 +290,20 @@ class ChromaVectorIndex(BaseVectorIndex, BaseDocumentCatalog):
             if not doc_id or not text:
                 continue
 
-            ids.append(doc_id)
-            texts.append(text)
-            metadatas.append(metadata)
+            if doc_id in pos_by_id:
+                pos = pos_by_id[doc_id]
+                texts_batch[pos] = text
+                metas_batch[pos] = metadata
+            else:
+                pos_by_id[doc_id] = len(ids_batch)
+                ids_batch.append(doc_id)
+                texts_batch.append(text)
+                metas_batch.append(metadata)
 
-        if not ids:
-            return
+            if len(ids_batch) >= self._batch_size:
+                flush()
 
-        logger.info(f"ChromaVectorIndex: upserting {len(ids)} documents.")
-        self._collection.upsert(ids=ids, documents=texts, metadatas=metadatas)
+        flush()
 
     def get_documents(self, doc_ids: Sequence[str]) -> Sequence[Mapping[str, Any]]:
         """Retrieve documents (text + metadata) by ID from Chroma."""
@@ -308,7 +357,7 @@ class ChromaVectorIndex(BaseVectorIndex, BaseDocumentCatalog):
         distances = results.get("distances", [[]])[0]
 
         if not ids:
-            return []
+            return ([], [], [], [])
 
         return (ids, documents, metadatas, distances)
 
@@ -325,7 +374,7 @@ class ChromaKeywordIndex(BaseKeywordIndex):
         """Index raw text and tokens for lexical retrieval (not implemented yet)."""
         return
 
-    def query(self, terms: Sequence[str], top_k: int, include: Sequence[str]) -> Sequence[Tuple[str, float]]:
+    def query(self, terms: Sequence[str], top_k: int) -> Sequence[Tuple[str, float]]:
         """Return documents matching the given keywords (empty for now)."""
         return []
 
@@ -769,7 +818,7 @@ class LLMConceptGenerator(BaseConceptGenerator):
     def assign_concepts(
         self,
         docs: Iterable[Mapping[str, Any]],
-        concept_vocabulary: List[str],
+        concept_vocabulary: Optional[List[str]] = None,
     ) -> Mapping[str, Mapping[str, Any]]:
         """
         Returns a mapping:
@@ -781,7 +830,7 @@ class LLMConceptGenerator(BaseConceptGenerator):
                 "concept:release period": "1990s"
             }
         """
-        pass
+        return {}
 
 
     def generate_from_queries(self, queries: List[str]) -> List[str]:
@@ -904,7 +953,7 @@ class IndexManagementPipeline(BaseIndexManager):
         self.concept_generator.fit(docs=[], query_log=q_strings)
         logger.info("IndexManagementPipeline: bootstrap complete.")
 
-    def add_documents(self, docs: Iterable[Mapping[str, Any]]) -> None:
+    def add_documents(self, docs: Iterable[Mapping[str, Any]], reset: bool = False) -> None:
         """
         Ingest documents/chunks into the system (Chroma + metadata + keyword index).
 
@@ -924,6 +973,11 @@ class IndexManagementPipeline(BaseIndexManager):
             return
 
         logger.info(f"IndexManagementPipeline: adding {len(docs_list)} documents.")
+
+        # Optionally clear the Chroma collection before ingesting
+        if reset and hasattr(self.document_catalog, "reset_collection"):
+            logger.info("IndexManagementPipeline: clear_chroma_collection=True; resetting underlying Chroma collection...")
+            self.document_catalog.reset_collection()
 
         # 1) Source of truth for text + embeddings + raw metadata: Chroma
         self.document_catalog.add_documents(docs_list)

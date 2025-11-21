@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import List, Dict, Any, Optional
+import logging
 
 from .config import Config, load_config
 from .types import Query, SearchResult
@@ -79,13 +80,15 @@ class SearchClient:
 
     def ingest_dataset(self, path: str) -> None:
         """
-        Load a dataset and ingest it into the index pipeline. This prepares the documents and adds them to the Chroma collection.
+        Load documents from a path and ingest it into the index pipeline. This prepares the documents and adds them to the Chroma collection.
         """
+
         docs = prepare_quest_documents(
-            path,
+            jsonl_path=path,
+            tokenizer_model=self._config.tokenizer_model,
             index_first_512=self._config.index_first_512,
             chunk_size=self._config.chunk_size,
             overlap=self._config.overlap,
-            tokenizer_model=self._config.tokenizer_model,
         )
-        self._index_pipeline.add_documents(docs)
+        reset = self._config.clear_chroma_collection
+        self._index_pipeline.add_documents(docs, reset=reset)

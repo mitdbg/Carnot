@@ -4,12 +4,13 @@ dataset_name: quest
 chroma_persist_dir: "./chroma_quest"       
 chroma_collection_name: "quest_documents"   
 embedding_model_name: "BAAI/bge-small-en-v1.5"
+clear_chroma_collection: false
 
 # Data path (optional, used by manual loading scripts)
 quest_documents_path: "quest_data.jsonl"
 
 # Chunking
-index_first_512: true        
+index_first_512: True       
 chunk_size: 512
 overlap: 80
 tokenizer_model: "BAAI/bge-small-en-v1.5"
