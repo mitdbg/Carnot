@@ -102,7 +102,7 @@ jobs:
       - name: Terraform Apply (env)
         working-directory: deploy/terraform/env
         run: |
-          echo "subdomain=$SUBDOMAIN" >> vars.tfvars
+          echo 'subdomain = "$SUBDOMAIN"' >> vars.tfvars
           if [[ "${GITHUB_BASE_REF}" == "main" ]]; then
             echo 'auth0_custom_domain = "${{ secrets.DEV_AUTH0_DOMAIN }}"' >> vars.tfvars
             echo 'auth0_cname_target = "${{ secrets.DEV_AUTH0_CNAME_TARGET }}"' >> vars.tfvars
