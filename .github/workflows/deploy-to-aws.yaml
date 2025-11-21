@@ -130,7 +130,10 @@ jobs:
           cd deploy/compose
 
           # Build frontend image
-          docker build -f Dockerfile-frontend -t ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend .
+          docker build -f Dockerfile-frontend \
+            --build-arg VITE_AUTH0_DOMAIN=${{ secrets.AUTH0_DOMAIN }} \
+            --build-arg VITE_AUTH0_CLIENT_ID=${{ secrets.AUTH0_CLIENT_ID }} \
+            -t ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend .
 
           # Build backend image
           docker build -f Dockerfile-backend -t ${{ vars.DOCKERHUB_USERNAME }}/carnot:backend .
