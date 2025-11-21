@@ -101,7 +101,22 @@ jobs:
 
       - name: Terraform Apply (env)
         working-directory: deploy/terraform/env
-        run: terraform apply -var="subdomain=$SUBDOMAIN" -auto-approve
+        run: |
+          echo "subdomain=$SUBDOMAIN" >> vars.tfvars
+          if [[ "${GITHUB_BASE_REF}" == "main" ]]; then
+            echo "auth0_custom_domain=${{ secrets.DEV_AUTH0_DOMAIN }}" >> vars.tfvars
+            echo "auth0_cname_target=${{ secrets.DEV_AUTH0_CNAME_TARGET }}" >> vars.tfvars
+          elif [[ "${GITHUB_BASE_REF}" == "wl-prod" ]]; then
+            echo "auth0_custom_domain=${{ secrets.WL_PROD_AUTH0_DOMAIN }}" >> vars.tfvars
+            echo "auth0_cname_target=${{ secrets.WL_PROD_AUTH0_CNAME_TARGET }}" >> vars.tfvars
+          elif [[ "${GITHUB_BASE_REF}" == "wm-prod" ]]; then
+            echo "auth0_custom_domain=${{ secrets.WM_PROD_AUTH0_DOMAIN }}" >> vars.tfvars
+            echo "auth0_cname_target=${{ secrets.WM_PROD_AUTH0_CNAME_TARGET }}" >> vars.tfvars
+          else
+            echo "auth0_custom_domain=${{ secrets.DEV_AUTH0_DOMAIN }}" >> vars.tfvars
+            echo "auth0_cname_target=${{ secrets.DEV_AUTH0_CNAME_TARGET }}" >> vars.tfvars
+          fi
+          terraform apply -var-file="vars.tfvars" -auto-approve
 
       - name: Store EC2 Public IP
         working-directory: deploy/terraform/env
@@ -130,10 +145,27 @@ jobs:
           cd deploy/compose
 
           # Build frontend image
-          docker build -f Dockerfile-frontend \
-            --build-arg VITE_AUTH0_DOMAIN=${{ secrets.AUTH0_DOMAIN }} \
-            --build-arg VITE_AUTH0_CLIENT_ID=${{ secrets.AUTH0_CLIENT_ID }} \
-            -t ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend .
+          if [[ "${GITHUB_BASE_REF}" == "main" ]]; then
+            docker build -f Dockerfile-frontend \
+              --build-arg VITE_AUTH0_DOMAIN=${{ secrets.DEV_AUTH0_DOMAIN }} \
+              --build-arg VITE_AUTH0_CLIENT_ID=${{ secrets.DEV_AUTH0_CLIENT_ID }} \
+              -t ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend .
+          elif [[ "${GITHUB_BASE_REF}" == "wl-prod" ]]; then
+            docker build -f Dockerfile-frontend \
+              --build-arg VITE_AUTH0_DOMAIN=${{ secrets.WL_PROD_AUTH0_DOMAIN }} \
+              --build-arg VITE_AUTH0_CLIENT_ID=${{ secrets.WL_PROD_AUTH0_CLIENT_ID }} \
+              -t ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend .
+          elif [[ "${GITHUB_BASE_REF}" == "wm-prod" ]]; then
+            docker build -f Dockerfile-frontend \
+              --build-arg VITE_AUTH0_DOMAIN=${{ secrets.WM_PROD_AUTH0_DOMAIN }} \
+              --build-arg VITE_AUTH0_CLIENT_ID=${{ secrets.WM_PROD_AUTH0_CLIENT_ID }} \
+              -t ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend .
+          else
+            docker build -f Dockerfile-frontend \
+              --build-arg VITE_AUTH0_DOMAIN=${{ secrets.DEV_AUTH0_DOMAIN }} \
+              --build-arg VITE_AUTH0_CLIENT_ID=${{ secrets.DEV_AUTH0_CLIENT_ID }} \
+              -t ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend .
+          fi
 
           # Build backend image
           docker build -f Dockerfile-backend -t ${{ vars.DOCKERHUB_USERNAME }}/carnot:backend .

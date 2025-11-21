@@ -264,3 +264,15 @@ resource "aws_route53_record" "app_dns" {
     evaluate_target_health = true
   }
 }
+
+# ---------------------------------------------------------
+# Route53 Record for Auth0 Custom Domain
+# ---------------------------------------------------------
+resource "aws_route53_record" "auth0_custom_domain" {
+  zone_id = var.hosted_zone_id
+  name    = var.auth0_custom_domain
+  type    = "CNAME"
+  ttl     = 300
+
+  records = [var.auth0_cname_target]
+}
