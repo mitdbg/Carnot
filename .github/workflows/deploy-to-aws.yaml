@@ -116,6 +116,7 @@ jobs:
             echo "auth0_custom_domain = \"${{ secrets.DEV_AUTH0_DOMAIN }}\"" >> vars.tfvars
             echo "auth0_cname_target = \"${{ secrets.DEV_AUTH0_CNAME_TARGET }}\"" >> vars.tfvars
           fi
+          cat vars.tfvars
           terraform apply -var-file="vars.tfvars" -auto-approve
 
       - name: Store EC2 Public IP
