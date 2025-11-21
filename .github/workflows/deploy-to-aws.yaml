@@ -132,8 +132,8 @@ jobs:
       - name: temporary (import existing records)
         working-directory: deploy/terraform/env
         run: |
-          terraform import aws_route53_record.app_dns Z0371749174EVZHL80QS0_dev.carnot-research.org_A
-          terraform import aws_route53_record.auth0_custom_domain Z0371749174EVZHL80QS0_auth.dev.carnot-research.org_CNAME
+          terraform import -var-file="vars.tfvars" aws_route53_record.app_dns Z0371749174EVZHL80QS0_dev.carnot-research.org_A
+          terraform import -var-file="vars.tfvars" aws_route53_record.auth0_custom_domain Z0371749174EVZHL80QS0_auth.dev.carnot-research.org_CNAME
 
       - name: Terraform Apply (env)
         working-directory: deploy/terraform/env
