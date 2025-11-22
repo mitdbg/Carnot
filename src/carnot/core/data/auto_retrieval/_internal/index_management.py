@@ -43,16 +43,11 @@ class BaseVectorIndex(ABC):
 
 
 class BaseKeywordIndex(ABC):
-    """Abstract interface for keyword / index search."""
+    """Abstract interface for keyword search."""
 
     @abstractmethod
-    def add_documents(self, docs: Iterable[Mapping[str, Any]]) -> None:
-        """Ingest documents into the keyword index."""
-        pass
-
-    @abstractmethod
-    def query(self, terms: Sequence[str], top_k: int) -> Sequence[Tuple[str, float]]:
-        """Return (doc_id, score) tuples matching the given terms."""
+    def filter(self, terms: Sequence[str], top_k: int | None = None) -> Sequence[str]:
+        """Return doc_ids that satisfy the given keywords."""
         pass
 
 
@@ -378,6 +373,39 @@ class ChromaVectorIndex(BaseVectorIndex, BaseDocumentCatalog):
 
         results = self._collection.get(where=where_clause, include=[])
         return results.get("ids", [])
+    
+    def filter_by_keyword(
+        self,
+        terms: Sequence[str],
+        top_k: int | None = None,
+    ) -> Sequence[str]:
+        """
+        Return doc_ids whose *document text* matches the given keywords.
+        This uses Chroma's `where_document` + `$contains` for full-text search.
+
+        - Currently uses AND semantics: all terms must appear in the text.
+        - If `top_k` is None, returns all matching ids (subject to Chroma limits).
+        """
+        # Normalize terms
+        clean_terms = [t.strip() for t in terms if t and t.strip()]
+        if not clean_terms:
+            return []
+
+        # Build where_document:
+        # 1 term: {"$contains": "foo"}
+        # >1 term: {"$and": [{"$contains": "foo"}, {"$contains": "bar"}]}
+        if len(clean_terms) == 1:
+            where_document: dict[str, Any] = {"$contains": clean_terms[0]}
+        else:
+            where_document = {"$and": [{"$contains": t} for t in clean_terms]}
+
+        # Chroma's get() supports where_document + limit
+        results = self._collection.get(
+            where_document=where_document,
+            limit=top_k,           # None means "no explicit limit"
+            include=[],            # we only need ids
+        )
+        return results.get("ids", []) or []
 
     # ---------- BaseVectorIndex API ----------
 
@@ -407,20 +435,21 @@ class ChromaVectorIndex(BaseVectorIndex, BaseDocumentCatalog):
 
 
 # ---- Simple keyword index stub (kept minimal for now) ----
-
 class ChromaKeywordIndex(BaseKeywordIndex):
-    """Placeholder keyword index."""
+    """
+    Thin façade over ChromaVectorIndex's keyword filter.
+    """
 
-    def __init__(self, config: Config) -> None:
-        pass
+    def __init__(self, vector_index: ChromaVectorIndex) -> None:
+        self._vector_index = vector_index
 
     def add_documents(self, docs: Iterable[Mapping[str, Any]]) -> None:
-        """Index raw text and tokens for lexical retrieval (not implemented yet)."""
+        # Vector index already handles ingest; nothing to do here.
         return
 
-    def query(self, terms: Sequence[str], top_k: int) -> Sequence[Tuple[str, float]]:
-        """Return documents matching the given keywords (empty for now)."""
-        return []
+    def filter(self, terms: Sequence[str], top_k: int | None = None) -> Sequence[str]:
+        """Keyword filter façade over the vector index."""
+        return self._vector_index.filter_by_keyword(terms, top_k=top_k)
 
 
 # ---- Structured metadata table with uniform schema ----
