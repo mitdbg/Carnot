@@ -436,14 +436,6 @@ class TableMetadataStore(BaseMetadataStore):
     def __init__(self, vector_index: ChromaVectorIndex) -> None:
         self._vector_index = vector_index
 
-    def register_schema(self, keys: Iterable[str]) -> None:
-        """No-op: Chroma is schemaless."""
-        pass
-
-    def get_schema(self) -> Sequence[str]:
-        """No-op: Schema is dynamic in Chroma."""
-        return []
-
     def upsert_metadata(self, doc_id: str, metadata: Mapping[str, Any]) -> None:
         """
         Insert or update metadata for a document via Chroma.
@@ -454,18 +446,28 @@ class TableMetadataStore(BaseMetadataStore):
         """Filter documents using Chroma's 'where' clause."""
         return self._vector_index.filter_by_metadata(predicates)
 
-    def iter_all(self) -> Iterable[tuple[str, Dict[str, Any]]]:
+    def list_metadata_keys(self, sample_size: int = 30) -> Sequence[str]:
         """
-        Iterate over all docs. 
-        Warning: This fetches all metadata from Chroma, which can be slow.
+        Best-effort list of metadata keys present in the collection.
+
+        This inspects up to `sample_size` documents from Chroma and unions
+        their metadata keys. Under our design, all docs are written with
+        the same set of fields, so this approximates the global schema.
         """
+        # Get up to `sample_size` IDs
         all_ids = self._vector_index.list_document_ids()
         if not all_ids:
             return []
-        
-        docs = self._vector_index.get_documents(all_ids)
+
+        sample_ids = all_ids[:sample_size]
+        docs = self._vector_index.get_documents(sample_ids)
+
+        keys: set[str] = set()
         for d in docs:
-            yield str(d["id"]), dict(d.get("metadata", {}))
+            meta = d.get("metadata", {}) or {}
+            keys.update(meta.keys())
+
+        return sorted(keys)
 
 
 # ---------- Internal helpers for concept generation ----------
