@@ -51,19 +51,6 @@ class BaseKeywordIndex(ABC):
         pass
 
 
-class BaseConceptIndex(ABC):
-    """Abstract interface for the learned concept index."""
-
-    @abstractmethod
-    def materialize_concepts(self) -> None:
-        """Materialize concept columns over the corpus."""
-        pass
-
-    @abstractmethod
-    def select(self, concept_names: Sequence[str]) -> Sequence[str]:
-        """Return doc_ids that satisfy the given concept predicates."""
-        pass
-
 
 class BaseMetadataStore(ABC):
     """Abstract interface for structural and semantic metadata tables."""
@@ -151,11 +138,6 @@ class BaseIndexManager(ABC):
     @abstractmethod
     def get_keyword_index(self) -> BaseKeywordIndex:
         """Return the underlying keyword index handle."""
-        pass
-
-    @abstractmethod
-    def get_concept_index(self) -> BaseConceptIndex:
-        """Return the underlying concept index handle."""
         pass
 
     @abstractmethod
