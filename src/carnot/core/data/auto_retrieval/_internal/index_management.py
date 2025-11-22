@@ -43,7 +43,7 @@ class BaseVectorIndex(ABC):
 
 
 class BaseKeywordIndex(ABC):
-    """Abstract interface for keyword / inverted index search."""
+    """Abstract interface for keyword / index search."""
 
     @abstractmethod
     def add_documents(self, docs: Iterable[Mapping[str, Any]]) -> None:
@@ -57,7 +57,7 @@ class BaseKeywordIndex(ABC):
 
 
 class BaseConceptIndex(ABC):
-    """Abstract interface for the inverted learned concept index (ILCI)."""
+    """Abstract interface for the learned concept index."""
 
     @abstractmethod
     def materialize_concepts(self) -> None:
@@ -335,6 +335,50 @@ class ChromaVectorIndex(BaseVectorIndex, BaseDocumentCatalog):
         results = self._collection.get(include=[])
         return results.get("ids", [])
 
+    def upsert_metadata(self, doc_id: str, metadata: Mapping[str, Any]) -> None:
+        """
+        Update metadata for an existing document in Chroma.
+        Performs a read-modify-write to preserve existing fields.
+        """
+        # Fetch existing metadata
+        results = self._collection.get(ids=[doc_id], include=["metadatas"])
+        existing_metas = results.get("metadatas")
+        
+        current_meta = {}
+        if existing_metas and len(existing_metas) > 0 and existing_metas[0]:
+            current_meta = existing_metas[0]
+
+        # Merge new metadata
+        current_meta.update(metadata)
+
+        # Write back
+        self._collection.update(
+            ids=[doc_id],
+            metadatas=[current_meta]
+        )
+
+    def filter_by_metadata(self, predicates: Mapping[str, Any]) -> Sequence[str]:
+        """
+        Return doc_ids that satisfy the given metadata predicates (AND).
+        """
+        if not predicates:
+            return self.list_document_ids()
+
+        # Chroma expects 'where' clause
+        # If single predicate: {"key": value}
+        # If multiple: {"$and": [{"key": val}, ...]}
+        
+        where_clause: Dict[str, Any] = {}
+        items = list(predicates.items())
+        
+        if len(items) == 1:
+            where_clause = {items[0][0]: items[0][1]}
+        else:
+            where_clause = {"$and": [{k: v} for k, v in items]}
+
+        results = self._collection.get(where=where_clause, include=[])
+        return results.get("ids", [])
+
     # ---------- BaseVectorIndex API ----------
 
     def query(self, query_embedding: Sequence[float], top_k: int, include: Sequence[str] = ["documents", "metadatas", "distances"], filters: Optional[Mapping[str, Any]] = None) -> Tuple[Sequence[str], Sequence[str], Sequence[Mapping[str, Any]], Sequence[float]]:
@@ -365,7 +409,7 @@ class ChromaVectorIndex(BaseVectorIndex, BaseDocumentCatalog):
 # ---- Simple keyword index stub (kept minimal for now) ----
 
 class ChromaKeywordIndex(BaseKeywordIndex):
-    """Placeholder keyword / inverted index."""
+    """Placeholder keyword index."""
 
     def __init__(self, config: Config) -> None:
         pass
@@ -383,139 +427,45 @@ class ChromaKeywordIndex(BaseKeywordIndex):
 
 class TableMetadataStore(BaseMetadataStore):
     """
-    Simple in-memory metadata store that enforces a uniform schema across all docs.
-
-    - Every doc has the same set of keys (fields/attributes).
-    - New keys are auto-registered, existing docs are backfilled with None.
+    Metadata store backed directly by Chroma.
+    
+    Instead of maintaining an in-memory dict, this delegates storage and 
+    filtering to the underlying Chroma collection.
     """
 
-    def __init__(self, config: Config) -> None:
-        self._metadata: Dict[str, Dict[str, Any]] = {}
-        self._schema_keys: Set[str] = set()
+    def __init__(self, vector_index: ChromaVectorIndex) -> None:
+        self._vector_index = vector_index
 
     def register_schema(self, keys: Iterable[str]) -> None:
-        """Register new keys into the global schema and backfill existing docs."""
-        new_keys = set(keys) - self._schema_keys
-        if not new_keys:
-            return
-
-        logger.info(f"TableMetadataStore: registering new schema keys: {sorted(list(new_keys))}")
-        self._schema_keys.update(new_keys)
-
-        # Backfill existing docs with None for the new keys
-        for doc_id in self._metadata:
-            for k in new_keys:
-                if k not in self._metadata[doc_id]:
-                    self._metadata[doc_id][k] = None
+        """No-op: Chroma is schemaless."""
+        pass
 
     def get_schema(self) -> Sequence[str]:
-        """Return the current list of registered schema keys."""
-        return sorted(self._schema_keys)
+        """No-op: Schema is dynamic in Chroma."""
+        return []
 
     def upsert_metadata(self, doc_id: str, metadata: Mapping[str, Any]) -> None:
         """
-        Insert or update metadata for a document.
-
-        - Any new keys extend the global schema.
-        - All documents are kept schema-consistent.
-        - Concept fields (e.g., 'concept:genre') are treated the same as base fields.
+        Insert or update metadata for a document via Chroma.
         """
-        incoming_keys = set(metadata.keys())
-        new_keys = incoming_keys - self._schema_keys
-
-        if new_keys:
-            self.register_schema(new_keys)
-
-        # Start with all current schema keys set to None
-        record = {k: None for k in self._schema_keys}
-
-        # Merge with existing record (if any)
-        existing = self._metadata.get(doc_id, {})
-        record.update(existing)
-
-        # Merge in the new metadata
-        record.update(metadata)
-
-        self._metadata[doc_id] = record
+        self._vector_index.upsert_metadata(doc_id, metadata)
 
     def filter(self, predicates: Mapping[str, Any]) -> Sequence[str]:
-        """Filter documents using structured predicates (AND semantics)."""
-        results: List[str] = []
-        for doc_id, meta in self._metadata.items():
-            ok = True
-            for key, value in predicates.items():
-                if meta.get(key) != value:
-                    ok = False
-                    break
-            if ok:
-                results.append(doc_id)
-        return results
+        """Filter documents using Chroma's 'where' clause."""
+        return self._vector_index.filter_by_metadata(predicates)
 
     def iter_all(self) -> Iterable[tuple[str, Dict[str, Any]]]:
-        """Iterate over all (doc_id, metadata) pairs."""
-        return self._metadata.items()
-
-
-# ---- Inverted index over generated concepts ----
-
-class InvertedConceptIndex(BaseConceptIndex):
-    """
-    Inverted index over learned semantic concepts.
-
-    We treat concept fields as normal metadata keys with a 'concept:' prefix.
-    Example: metadata["concept:film genre"] = "horror"
-    Becomes an index entry under "film genre:horror".
-    """
-
-    def __init__(self, config: Config, metadata_store: TableMetadataStore) -> None:
-        self._metadata_store = metadata_store
-        self._posting_lists: Dict[str, List[str]] = defaultdict(list)
-
-    def materialize_concepts(self) -> None:
-        """Scan metadata and build posting lists for all concept:* fields."""
-        logger.info("InvertedConceptIndex: starting materialization...")
-        self._posting_lists.clear()
-
-        for doc_id, meta in self._metadata_store.iter_all():
-            for key, value in meta.items():
-                if not key.startswith("concept:"):
-                    continue
-                if not value:
-                    continue
-
-                concept_name = key[len("concept:") :].strip()
-                val_str = str(value).strip().lower()
-                if not concept_name or not val_str:
-                    continue
-
-                index_key = f"{concept_name}:{val_str}"
-                self._posting_lists[index_key].append(doc_id)
-
-        logger.info(f"InvertedConceptIndex: materialized {len(self._posting_lists)} concepts.")
-
-    def select(self, concept_predicates: Sequence[str]) -> Sequence[str]:
         """
-        Return documents that satisfy all given concept predicates.
-
-        Predicates are of the form "ConceptName:Value", e.g.:
-          ["film genre:horror", "release period:1990s"]
+        Iterate over all docs. 
+        Warning: This fetches all metadata from Chroma, which can be slow.
         """
-        if not concept_predicates:
+        all_ids = self._vector_index.list_document_ids()
+        if not all_ids:
             return []
-
-        sets: List[Set[str]] = []
-        for pred in concept_predicates:
-            docs = self._posting_lists.get(pred, [])
-            sets.append(set(docs))
-
-        if not sets:
-            return []
-
-        intersection = sets[0]
-        for s in sets[1:]:
-            intersection &= s
-
-        return list(intersection)
+        
+        docs = self._vector_index.get_documents(all_ids)
+        for d in docs:
+            yield str(d["id"]), dict(d.get("metadata", {}))
 
 
 # ---------- Internal helpers for concept generation ----------
@@ -529,7 +479,6 @@ def _parse_concept_list(raw: str) -> List[str]:
     if not raw:
         return []
 
-    # Normal JSON parse
     try:
         parsed = json.loads(raw)
         if isinstance(parsed, list) and all(isinstance(x, str) for x in parsed):
@@ -913,14 +862,13 @@ class IndexManagementPipeline(BaseIndexManager):
 
     Flow:
       - add_documents: store chunks in Chroma + register base metadata in TableMetadataStore
-      - enrich_documents: assign concepts, update metadata, build inverted concept index
+      - enrich_documents: assign concepts, update metadata
     """
 
     document_catalog: BaseDocumentCatalog
     vector_index: BaseVectorIndex
     keyword_index: BaseKeywordIndex
     metadata_store: TableMetadataStore
-    concept_index: InvertedConceptIndex
     concept_generator: BaseConceptGenerator
 
     @classmethod
@@ -928,16 +876,17 @@ class IndexManagementPipeline(BaseIndexManager):
         # Single Chroma-backed object used as both catalog and vector index
         chroma_index = ChromaVectorIndex(config)
         keyword = ChromaKeywordIndex(config)
-        metadata = TableMetadataStore(config)
+        
+        # Metadata store now wraps the vector index (Chroma)
+        metadata = TableMetadataStore(chroma_index)
+        
         concept_gen = LLMConceptGenerator(config)
-        concept_idx = InvertedConceptIndex(config, metadata_store=metadata)
 
         return cls(
             document_catalog=chroma_index,
             vector_index=chroma_index,
             keyword_index=keyword,
             metadata_store=metadata,
-            concept_index=concept_idx,
             concept_generator=concept_gen,
         )
 
@@ -966,7 +915,6 @@ class IndexManagementPipeline(BaseIndexManager):
 
         After this call:
           - Chroma has (id, embedding, document text, base metadata).
-          - TableMetadataStore has a row for each id with uniform schema.
         """
         docs_list = list(docs)
         if not docs_list:
@@ -979,18 +927,10 @@ class IndexManagementPipeline(BaseIndexManager):
             logger.info("IndexManagementPipeline: clear_chroma_collection=True; resetting underlying Chroma collection...")
             self.document_catalog.reset_collection()
 
-        # 1) Source of truth for text + embeddings + raw metadata: Chroma
+        # Source of truth for text + embeddings + raw metadata: Chroma
         self.document_catalog.add_documents(docs_list)
 
-        # 2) Structured metadata table (keeps fields uniform across docs)
-        for d in docs_list:
-            doc_id = str(d.get("id") or d.get("doc_id"))
-            if not doc_id:
-                continue
-            base_meta = dict(d.get("metadata", {}))
-            self.metadata_store.upsert_metadata(doc_id, base_meta)
-
-        # 3) Keyword index (if implemented)
+        # Keyword index (if implemented)
         self.keyword_index.add_documents(docs_list)
 
     def enrich_documents(self, doc_ids: Sequence[str]) -> None:
@@ -999,7 +939,6 @@ class IndexManagementPipeline(BaseIndexManager):
 
         After this call:
           - concept:* fields are added to TableMetadataStore (same schema for all docs).
-          - InvertedConceptIndex is rebuilt over those concept fields.
         """
         if not doc_ids:
             return
@@ -1017,18 +956,11 @@ class IndexManagementPipeline(BaseIndexManager):
         for doc_id, concept_attrs in assignments.items():
             self.metadata_store.upsert_metadata(doc_id, concept_attrs)
 
-        # Rebuild the inverted concept index
-        self.concept_index.materialize_concepts()
-
-    # Convenience getters (unchanged in spirit)
     def get_vector_index(self) -> BaseVectorIndex:
         return self.vector_index
 
     def get_keyword_index(self) -> BaseKeywordIndex:
         return self.keyword_index
-
-    def get_concept_index(self) -> BaseConceptIndex:
-        return self.concept_index
 
     def get_metadata_store(self) -> BaseMetadataStore:
         return self.metadata_store
