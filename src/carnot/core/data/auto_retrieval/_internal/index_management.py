@@ -18,6 +18,8 @@ import dspy
 from ..config import Config
 from ..types import Query
 
+import palimpzest as pz
+
 logger = logging.getLogger(__name__)
 
 # ---------- Abstract interfaces (ABCs) ----------
@@ -995,7 +997,7 @@ class IndexManagementPipeline(BaseIndexManager):
     def from_config(cls, config: Config) -> "IndexManagementPipeline":
         # Single Chroma-backed object used as both catalog and vector index
         chroma_index = ChromaVectorIndex(config)
-        keyword = ChromaKeywordIndex(config)
+        keyword = ChromaKeywordIndex(chroma_index)
         
         # Metadata store now wraps the vector index (Chroma)
         metadata = TableMetadataStore(chroma_index)
@@ -1048,7 +1050,8 @@ class IndexManagementPipeline(BaseIndexManager):
         After this call:
           - concept:* fields are added to TableMetadataStore (same schema for all docs).
         """
-        docs = self.document_catalog.get_documents()
+        doc_ids = self.document_catalog.list_document_ids()
+        docs = self.document_catalog.get_documents(doc_ids)
         if not docs:
             logger.info("IndexManagementPipeline: no documents to enrich.")
             return
