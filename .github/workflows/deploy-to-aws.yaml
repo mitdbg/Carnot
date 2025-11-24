@@ -229,6 +229,7 @@ jobs:
           # Login & deploy using pulled images
           ssh -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem ubuntu@$EC2_PUBLIC_IP "
             cd compose
+            export SUBDOMAIN=${SUBDOMAIN}
             export API_BASE_URL="http://$SUBDOMAIN.carnot-research.org:8000/api"
             export BASE_URL="http://$SUBDOMAIN.carnot-research.org:8000"
             export BASE_ORIGINS="http://$SUBDOMAIN.carnot-research.org,https://$SUBDOMAIN.carnot-research.org"
