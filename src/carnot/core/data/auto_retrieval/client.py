@@ -92,3 +92,11 @@ class SearchClient:
         )
         reset = self._config.clear_chroma_collection
         self._index_pipeline.add_documents(docs, reset=reset)
+        
+    
+    def enrich_documents(self, queries: List[str], docs: Optional[List[str]] = None) -> None:
+        """
+        Enrich the documents with the concept fields.
+        """
+        concept_vocabulary = self._index_pipeline.concept_generator.generate_from_queries(queries=queries)
+        self._index_pipeline.enrich_documents(concept_vocabulary=concept_vocabulary)

@@ -101,10 +101,10 @@ class BaseConceptGenerator(ABC):
     @abstractmethod
     def fit(
         self,
-        docs: Iterable[Mapping[str, Any]],
-        query_log: Iterable[Query],
+        queries: List[str],
+        docs: Optional[List[str]] = None,
     ) -> None:
-        """Learn candidate concepts from documents and query traces."""
+        """Learn candidate concepts from queries and documents."""
         pass
 
     @abstractmethod
@@ -114,6 +114,11 @@ class BaseConceptGenerator(ABC):
         concept_vocabulary: Optional[List[str]] = None,
     ) -> Mapping[str, Mapping[str, Any]]:
         """Return: mapping doc_id -> { 'concept:Name': 'Value', ... }"""
+        pass
+
+    @abstractmethod
+    def generate_from_queries(self, queries: List[str]) -> List[str]:
+        """Learn and return concept vocabulary from queries."""
         pass
 
 
@@ -754,8 +759,8 @@ class LLMConceptGenerator(BaseConceptGenerator):
 
     def fit(
         self,
-        docs: Iterable[Mapping[str, Any]],
-        query_log: List[str],
+        queries: List[str],
+        docs: Optional[List[str]] = None,
     ) -> None:
         """
         Infer a workload-specific vocabulary of semantic concepts.
@@ -763,16 +768,16 @@ class LLMConceptGenerator(BaseConceptGenerator):
         NOTE: docs are currently ignored; concepts are inferred only from
         the query log.
         """
-        logger.info(f"LLMConceptGenerator: fitting on {len(query_log)} queries (mode={self.mode}).")
+        logger.info(f"LLMConceptGenerator: fitting on {len(queries)} queries (mode={self.mode}).")
 
-        if not query_log:
+        if not queries:
             object.__setattr__(self, "_concept_vocabulary", [])
             return
 
         if self.mode is ConceptGenerationMode.TWO_STAGE:
-            concepts = self._fit_two_stage(query_log)
+            concepts = self._fit_two_stage(queries)
         else:
-            concepts = self._fit_direct(query_log)
+            concepts = self._fit_direct(queries)
 
         logger.info(f"LLMConceptGenerator: learned {len(concepts)} concepts.")
         object.__setattr__(self, "_concept_vocabulary", concepts)
@@ -886,8 +891,8 @@ class LLMConceptGenerator(BaseConceptGenerator):
         # TODO (optional): call an LLM here to determine "type" of the column and generate richer descriptions
         desc = (
             f"The {concept_name} associated with this text chunk. "
-            f"Return one or more short labels that best describe the {concept_name}."
-            f"If the document does not relate to the concept, set the field to None."
+            f"Return one or more short labels that best describe the {concept_name}. "
+            f"If the text chunk does not relate to {concept_name}, set the field to None."
         )
 
         return {
@@ -904,7 +909,7 @@ class LLMConceptGenerator(BaseConceptGenerator):
 
         This bypasses the Query dataclass and does not touch docs.
         """
-        self.fit(docs=[], query_log=queries)
+        self.fit(queries=queries, docs=None)
         return list(self._concept_vocabulary)
 
     def get_concept_vocabulary(self) -> List[str]:
@@ -1005,18 +1010,6 @@ class IndexManagementPipeline(BaseIndexManager):
             concept_generator=concept_gen,
         )
 
-    def bootstrap(self, query_log: Iterable[Query] = None) -> None:
-        """
-        Offline concept vocabulary learning (no docs needed yet).
-
-        We just fit the concept generator on the query log.
-        """
-        logger.info("IndexManagementPipeline: bootstrapping...")
-        q_log = query_log or []
-        q_strings = [q.text for q in q_log] if q_log else []
-        self.concept_generator.fit(docs=[], query_log=q_strings)
-        logger.info("IndexManagementPipeline: bootstrap complete.")
-
     def add_documents(self, docs: Iterable[Mapping[str, Any]], reset: bool = False) -> None:
         """
         Ingest documents/chunks into the system (Chroma + metadata + keyword index).
@@ -1048,24 +1041,20 @@ class IndexManagementPipeline(BaseIndexManager):
         # Keyword index (if implemented)
         self.keyword_index.add_documents(docs_list)
 
-    def enrich_documents(self, doc_ids: Sequence[str]) -> None:
+    def enrich_documents(self, concept_vocabulary: Optional[List[str]] = None) -> None:
         """
         Run concept assignment and update metadata for EXISTING documents.
 
         After this call:
           - concept:* fields are added to TableMetadataStore (same schema for all docs).
         """
-        if not doc_ids:
-            return
-
-        logger.info(f"IndexManagementPipeline: enriching {len(doc_ids)} documents.")
-        # Fetch the actual chunk texts from Chroma (if needed by the concept generator)
-        docs = self.document_catalog.get_documents(doc_ids)
+        docs = self.document_catalog.get_documents()
         if not docs:
+            logger.info("IndexManagementPipeline: no documents to enrich.")
             return
 
-        # Run concept assignment (produces a dict: doc_id -> { "concept:*": value, ... })
-        assignments = self.concept_generator.concept_map(docs)
+        # Run concept mapping (produces a dict: doc_id -> { "concept:*": value, ... })
+        assignments = self.concept_generator.concept_map(docs, concept_vocabulary=concept_vocabulary)
 
         # Update structured metadata store with concept fields
         for doc_id, concept_attrs in assignments.items():
