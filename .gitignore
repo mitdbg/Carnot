@@ -210,3 +210,7 @@ venv_web/
 *.log
 backend.log
 frontend.log
+
+# Auto Retrieval
+src/carnot/core/data/auto_retrieval/chroma_quest/
+src/carnot/core/data/auto_retrieval/dataset/
