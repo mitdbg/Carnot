@@ -11,7 +11,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from retrieve_limited_verbose import initialize_retriever, retrieve
 
 query_num = 10
-from query_10.query_10 import execute_query
+from baseline_quest.decompose.k_scripts.query_10 import execute_query
 
 # --- Main Execution ---
 def main():

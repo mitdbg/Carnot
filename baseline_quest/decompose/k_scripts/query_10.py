@@ -1,28 +1,4 @@
-# # Strategy for Query 10: 1912 films set in England (No Truncation)
-# def execute_query(retrieve, k1, k2):
-#     """
-#     Executes the set-intersection strategy for Query 10 and returns 
-#     the final document list along with the sizes of the two initial retrieval sets.
-    
-#     Returns:
-#         tuple: (list[str], int, int) -> (final_docs, size_films_1912, size_films_set_in_england)
-#     """
-#     # First, retrieve a broad set of documents related to 1912 films
-#     films_1912 = retrieve("1912 films", k1)
-    
-#     # Now, retrieve a set of documents related to films set in England
-#     # films_set_in_england = retrieve("films set in England", k2)
-#     films_set_in_england = retrieve("English films", k2)
-    
-#     # Find the intersection of both sets to get films that are in both categories
-#     films_1912_set_in_england = films_1912 & films_set_in_england
-    
-#     # Convert the result to a list for output and return sizes
-#     return list(films_1912), list(films_set_in_england), list(films_1912_set_in_england)
-
 from typing import Dict
-
-# --- Strategy Definition ---
 
 # Strategy for Query 10: 1912 films set in England (No Truncation)
 def execute_query(retrieve, k1, k2):

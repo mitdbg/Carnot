@@ -175,7 +175,6 @@ def generate_strategies():
         print("FATAL ERROR: OPENAI_API_KEY environment variable not set.")
         return
 
-    # Set the API key using the environment variable value.
     try:
         lm = dspy.LM(
             f'openai/{LLM_MODEL}', 
