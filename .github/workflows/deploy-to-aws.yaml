@@ -219,12 +219,20 @@ jobs:
             docker system prune -af
           "
 
+          AUTH0_ORGANIZATION_ID="${{ secrets.DEV_AUTH0_ORGANIZATION_ID}}"
+          if [[ "${GITHUB_BASE_REF}" == "wl-prod" ]]; then
+            AUTH0_ORGANIZATION_ID="${{ secrets.WL_PROD_AUTH0_ORGANIZATION_ID}}"
+          elif [[ "${GITHUB_BASE_REF}" == "wm-prod" ]]; then
+            AUTH0_ORGANIZATION_ID="${{ secrets.WM_PROD_AUTH0_ORGANIZATION_ID}}"
+          fi
+
           # Login & deploy using pulled images
           ssh -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem ubuntu@$EC2_PUBLIC_IP "
             cd compose
             export API_BASE_URL="http://$SUBDOMAIN.carnot-research.org:8000/api"
             export BASE_URL="http://$SUBDOMAIN.carnot-research.org:8000"
             export BASE_ORIGINS="http://$SUBDOMAIN.carnot-research.org,https://$SUBDOMAIN.carnot-research.org"
+            export AUTH0_ORGANIZATION_ID="${AUTH0_ORGANIZATION_ID}"
             docker login -u '${{ vars.DOCKERHUB_USERNAME }}' -p '${{ secrets.DOCKERHUB_TOKEN }}'
             docker compose pull
             docker compose up -d

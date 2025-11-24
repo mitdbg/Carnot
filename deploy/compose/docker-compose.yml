@@ -4,6 +4,7 @@ services:
     environment:
       API_BASE_URL: ${API_BASE_URL}
       BASE_URL: ${BASE_URL}
+      AUTH0_ORGANIZATION_ID: ${AUTH0_ORGANIZATION_ID}
     ports:
       - "80:80"
     depends_on:
