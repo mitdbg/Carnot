@@ -108,7 +108,7 @@ class BaseConceptGenerator(ABC):
         pass
 
     @abstractmethod
-    def assign_concepts(
+    def concept_map(
         self,
         docs: Iterable[Mapping[str, Any]],
         concept_vocabulary: Optional[List[str]] = None,
@@ -777,22 +777,124 @@ class LLMConceptGenerator(BaseConceptGenerator):
         logger.info(f"LLMConceptGenerator: learned {len(concepts)} concepts.")
         object.__setattr__(self, "_concept_vocabulary", concepts)
 
-    def assign_concepts(
+    def concept_map(
         self,
         docs: Iterable[Mapping[str, Any]],
         concept_vocabulary: Optional[List[str]] = None,
     ) -> Mapping[str, Mapping[str, Any]]:
         """
-        Returns a mapping:
-            doc_id -> { "concept:DimensionName": "Value" }
-        
-        Example:
-            "doc123" -> {
-                "concept:film genre": "horror", 
-                "concept:release period": "1990s"
-            }
+        Given docs and a (learned) concept vocabulary, extract per-doc values
+        for each concept using Palimpzest and return a mapping:
+
+            doc_id -> { "concept:<concept_name>": List[str] }
+
+        This mapping is designed to be written directly into the metadata
+        store (and then into ChromaDB), where each "concept:*" field is
+        a multi-valued metadata column.
+        The where clause for a semantic filter would be: where = {"concept:film genre": {"$contains": "sci-fi"}}
         """
-        return {}
+        # 1) Resolve concept vocabulary
+        if concept_vocabulary is None:
+            concept_vocabulary = self._concept_vocabulary
+        if not concept_vocabulary:
+            logger.info("LLMConceptGenerator.concept_map: empty concept vocabulary; nothing to do.")
+            return {}
+
+        # 2) Materialize docs and extract ids + text
+        docs_list: List[Mapping[str, Any]] = list(docs)
+        if not docs_list:
+            logger.info("LLMConceptGenerator.concept_map: no docs provided.")
+            return {}
+
+        pz_rows: List[Dict[str, Any]] = []
+        for d in docs_list:
+            doc_id = str(d.get("id"))
+            if not doc_id:
+                continue
+
+            # Adjust this field name to how your chunks store text
+            text = d.get("text") or d.get("content") or ""
+            if not text:
+                # Skip empty-text docs; nothing to map
+                continue
+
+            pz_rows.append({"id": doc_id, "text": text})
+
+        if not pz_rows:
+            logger.info("LLMConceptGenerator.concept_map: no docs with text.")
+            return {}
+
+        # 3) Build PZ column specs for all concepts
+        cols_spec: List[Dict[str, Any]] = []
+        for concept in concept_vocabulary:
+            col_name = f"concept:{concept}"
+            col_spec = self._build_pz_col_spec(concept_name=concept, col_name=col_name)
+            cols_spec.append(col_spec)
+
+        # 4) Create PZ dataset
+        dataset = pz.MemoryDataset(id="concept-assignment", vals=pz_rows)
+
+        # 5) Run semantic map to extract concept values
+        dataset = dataset.sem_map(cols=cols_spec)
+        output = dataset.run(max_quality=True)
+        df = output.to_df()
+
+        # 6) Post-process PZ outputs into multi-valued metadata
+        assignments: Dict[str, Dict[str, Any]] = {}
+
+        concept_col_names = [f"concept:{c}" for c in concept_vocabulary]
+
+        for _, row in df.iterrows():
+            doc_id = str(row.get("id"))
+            if not doc_id:
+                continue
+
+            concept_attrs: Dict[str, Any] = {}
+
+            for col_name in concept_col_names:
+                if col_name not in row:
+                    continue
+
+                raw_val = row[col_name]
+                if raw_val is None:
+                    values: List[str] = []
+                else:
+                    # Normalize to string
+                    s = str(raw_val).strip()
+                    if not s:
+                        values = []
+                    else:
+                        # Heuristic split: comma / semicolon separated labels
+                        parts = [p.strip() for p in re.split(r"[;,]", s) if p.strip()]
+                        values = parts or [s]
+
+                # Store as list-of-strings for multi-valued concept fields
+                concept_attrs[col_name] = values
+
+            if concept_attrs:
+                assignments[doc_id] = concept_attrs
+
+        return assignments
+
+    def _build_pz_col_spec(self, concept_name: str, col_name: str) -> Dict[str, Any]:
+        """
+        Build a PZ column specification for a given concept.
+
+        For now, we generate a simple deterministic description; you can
+        later replace this with an actual LLM call that tailors the `desc`.
+        """
+        # TODO (optional): call an LLM here to determine "type" of the column and generate richer descriptions
+        desc = (
+            f"The {concept_name} associated with this text chunk. "
+            f"Return one or more short labels that best describe the {concept_name}."
+            f"If the document does not relate to the concept, set the field to None."
+        )
+
+        return {
+            "name": col_name,
+            "type": str,  # PZ will output strings; we'll post-process into lists.
+            "desc": desc,
+        }
 
 
     def generate_from_queries(self, queries: List[str]) -> List[str]:
@@ -963,7 +1065,7 @@ class IndexManagementPipeline(BaseIndexManager):
             return
 
         # Run concept assignment (produces a dict: doc_id -> { "concept:*": value, ... })
-        assignments = self.concept_generator.assign_concepts(docs)
+        assignments = self.concept_generator.concept_map(docs)
 
         # Update structured metadata store with concept fields
         for doc_id, concept_attrs in assignments.items():
