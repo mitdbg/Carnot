@@ -7,7 +7,7 @@ exclude = ["*.ipynb"]
 target-version = "py312"
 
 [lint]
-ignore = ["E501"]
+ignore = ["E501", "B008"]  # B008: FastAPI uses Depends() and File() in defaults, which is correct
 fixable = ["ALL"]
 unfixable = []
 select = ["E", "F", "UP", "B", "SIM", "I", "N"]

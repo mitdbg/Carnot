@@ -37,4 +37,3 @@ export const searchApi = {
 }
 
 export default api
-

@@ -211,3 +211,7 @@ __marimo__/
 
 # Miscellaneous
 .github/workflows/github-trust-policy.json
+venv_web/
+*.log
+backend.log
+frontend.log

@@ -4,7 +4,6 @@ import logging
 import os
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional
 from uuid import uuid4
 
 import pandas as pd
@@ -21,6 +20,9 @@ from app.database import (
     DatasetFile,
     Message,
 )
+from app.database import (
+    File as FileRecord,
+)
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -36,13 +38,44 @@ else:
     PROJECT_ROOT = Path(__file__).resolve().parents[4]
     BACKEND_ROOT = Path(__file__).resolve().parents[2]
     WEB_ROOT = Path(__file__).resolve().parents[3]
-active_sessions: Dict[str, Dict] = {}
+active_sessions: dict[str, dict] = {}
+
+
+def extract_plan_from_output(output) -> str | None:
+    """Extract the CodeAgent planning steps from the DataRecordCollection."""
+    try:
+        data_records = getattr(output, "data_records", None)
+        if not data_records:
+            return None
+
+        seen: set[str] = set()
+        ordered_plans: list[str] = []
+
+        for record in data_records:
+            try:
+                context_obj = record["context"]
+            except Exception:
+                context_obj = None
+
+            plan_value = getattr(context_obj, "plan", None) if context_obj is not None else None
+            if isinstance(plan_value, str):
+                plan_str = plan_value.strip()
+                if plan_str and plan_str not in seen:
+                    ordered_plans.append(plan_str)
+                    seen.add(plan_str)
+
+        if ordered_plans:
+            return "\n\n".join(ordered_plans)
+    except Exception:
+        logger.debug("Failed to extract plan from output", exc_info=True)
+
+    return None
 
 
 class QueryRequest(BaseModel):
     query: str
-    dataset_ids: List[int]
-    session_id: Optional[str] = None
+    dataset_ids: list[int]
+    session_id: str | None = None
 
 
 def cleanup_old_sessions() -> None:
@@ -57,7 +90,7 @@ def cleanup_old_sessions() -> None:
 
 
 async def get_or_create_conversation(
-    session_id: str, query: str, dataset_ids: List[int]
+    session_id: str, query: str, dataset_ids: list[int]
 ) -> int:
     async with AsyncSessionLocal() as db:
         result = await db.execute(
@@ -85,8 +118,8 @@ async def save_message(
     conversation_id: int,
     role: str,
     content: str,
-    csv_file: Optional[str] = None,
-    row_count: Optional[int] = None,
+    csv_file: str | None = None,
+    row_count: int | None = None,
 ) -> None:
     async with AsyncSessionLocal() as db:
         message = Message(
@@ -108,7 +141,7 @@ async def save_message(
         await db.commit()
 
 
-def resolve_file_path(path: str) -> Optional[Path]:
+def resolve_file_path(path: str) -> Path | None:
     candidates = [
         Path(path),
         PROJECT_ROOT / path,
@@ -121,7 +154,7 @@ def resolve_file_path(path: str) -> Optional[Path]:
 
 
 async def stream_query_execution(
-    query: str, dataset_ids: List[int], session_id: Optional[str] = None
+    query: str, dataset_ids: list[int], session_id: str | None = None
 ):
     try:
         cleanup_old_sessions()
@@ -149,7 +182,9 @@ async def stream_query_execution(
                     return
 
                 files_result = await db.execute(
-                    select(DatasetFile).where(DatasetFile.dataset_id == dataset_id)
+                    select(FileRecord)
+                    .join(DatasetFile, FileRecord.id == DatasetFile.file_id)
+                    .where(DatasetFile.dataset_id == dataset_id)
                 )
                 files = files_result.scalars().all()
                 datasets.append([file.file_path for file in files])
@@ -242,17 +277,56 @@ async def stream_query_execution(
             "session_dir": str(session_dir),
         }
 
+        plan_text = extract_plan_from_output(output)
+        if plan_text:
+            await save_message(conversation_id, "plan", plan_text)
+            yield f"data: {json.dumps({'type': 'plan', 'message': plan_text, 'session_id': session_id})}\n\n"
+            await asyncio.sleep(0.1)
+
         yield f"data: {json.dumps({'type': 'status', 'message': 'Processing results...'})}\n\n"
         await asyncio.sleep(0.1)
 
-        # NOTE: stores results in CSV in S3
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         csv_filename = f"query_results_{timestamp}.csv"
         csv_path = BACKEND_ROOT / csv_filename
 
         try:
+            # First, save to our timestamp-based file
             output.to_df().to_csv(csv_path, index=False)
             df = pd.read_csv(csv_path)
+
+            # Try to extract the actual filename from Carnot's output
+            csv_filename_from_output = None
+            if not df.empty:
+                # Check all columns for CSV filename mentions
+                import re
+                # Pattern to match CSV filenames (e.g., "filtered_enron_emails.csv" or "output.csv")
+                csv_pattern = r'\b([a-zA-Z0-9_\-]+\.csv)\b'
+                for col in df.columns:
+                    for value in df[col]:
+                        if isinstance(value, str):
+                            # Look for any CSV filename in the text
+                            matches = re.findall(csv_pattern, value, re.IGNORECASE)
+                            if matches:
+                                # Use the last match (most likely the output file)
+                                csv_filename_from_output = matches[-1]
+                                break
+                    if csv_filename_from_output:
+                        break
+                
+                # If we found a filename, check if that file exists and use it
+                if csv_filename_from_output:
+                    actual_csv_path = BACKEND_ROOT / csv_filename_from_output
+                    if actual_csv_path.exists() and actual_csv_path != csv_path:
+                        # Use the file that Carnot created
+                        csv_filename = csv_filename_from_output
+                        csv_path = actual_csv_path
+                        df = pd.read_csv(csv_path)  # Re-read from the actual file
+                    else:
+                        # File doesn't exist, rename our file to match
+                        csv_path.rename(actual_csv_path)
+                        csv_path = actual_csv_path
+                        csv_filename = csv_filename_from_output
 
             if df.empty:
                 message_text = "No results found for your query."
@@ -318,14 +392,18 @@ async def download_query_results(filename: str):
     """
     Download a query results CSV file
     """
-    # Security: only allow downloading query_results_* files
-    if not filename.startswith("query_results_") or not filename.endswith(".csv"):
+    # Security: only allow downloading CSV files from backend directory
+    if not filename.endswith(".csv"):
+        raise HTTPException(status_code=400, detail="Invalid filename - must be a CSV file")
+    
+    # Prevent directory traversal
+    if "/" in filename or ".." in filename:
         raise HTTPException(status_code=400, detail="Invalid filename")
     
     # Get the backend directory path
-    file_path = os.path.join(os.path.dirname(__file__), "../..", filename)
+    file_path = BACKEND_ROOT / filename
     
-    if not os.path.exists(file_path):
+    if not file_path.exists():
         raise HTTPException(status_code=404, detail="File not found")
     
     return FileResponse(

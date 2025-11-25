@@ -1,19 +1,20 @@
-from pydantic import BaseModel, Field
 from datetime import datetime
-from typing import List, Optional
+
+from pydantic import BaseModel
+
 
 # File schemas
 class FileItem(BaseModel):
     name: str
     path: str
     is_directory: bool
-    size: Optional[int] = None
-    modified: Optional[datetime] = None
+    size: int | None = None
+    modified: datetime | None = None
 
 class DirectoryContents(BaseModel):
     current_path: str
-    items: List[FileItem]
-    parent_path: Optional[str] = None
+    items: list[FileItem]
+    parent_path: str | None = None
 
 # Dataset schemas
 class DatasetFileCreate(BaseModel):
@@ -23,7 +24,7 @@ class DatasetFileCreate(BaseModel):
 class DatasetCreate(BaseModel):
     name: str
     annotation: str
-    files: List[DatasetFileCreate]
+    files: list[DatasetFileCreate]
 
 class DatasetFileResponse(BaseModel):
     id: int
@@ -50,30 +51,31 @@ class DatasetDetailResponse(BaseModel):
     annotation: str
     created_at: datetime
     updated_at: datetime
-    files: List[DatasetFileResponse]
+    files: list[DatasetFileResponse]
     
     class Config:
         from_attributes = True
 
 class DatasetUpdate(BaseModel):
-    name: Optional[str] = None
-    annotation: Optional[str] = None
-    files: Optional[List[DatasetFileCreate]] = None
+    name: str | None = None
+    annotation: str | None = None
+    files: list[DatasetFileCreate] | None = None
 
 # Upload schemas
 class UploadResponse(BaseModel):
     file_path: str
     original_name: str
     message: str
+    extracted_to: str | None = None
+    extracted_files: list[str] | None = None
 
 # Search schemas
 class SearchQuery(BaseModel):
     query: str
-    path: Optional[str] = None
+    path: str | None = None
 
 class SearchResult(BaseModel):
     file_path: str
     file_name: str
-    relevance_score: Optional[float] = None
-    snippet: Optional[str] = None
-
+    relevance_score: float | None = None
+    snippet: str | None = None
