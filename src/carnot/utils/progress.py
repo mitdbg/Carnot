@@ -174,18 +174,12 @@ class PZProgressManager(ProgressManager):
     def __init__(self, plan: PhysicalPlan, num_samples: int | None = None,
                  session_id: str | None = None, progress_log_file: str | None = None,
                  level: str = "outer"):
-        # Initialize attributes BEFORE calling super().__init__() because parent init calls add_task()
         self.console = Console()
         self.session_id = session_id
         self.level = level
         # Initialize progress logger
         self.progress_logger = ProgressLogger(progress_log_file) if progress_log_file else None
         
-        print(f"DEBUG [PZProgressManager.__init__]: session_id={session_id}")
-        print(f"DEBUG [PZProgressManager.__init__]: progress_log_file={progress_log_file}")
-        print(f"DEBUG [PZProgressManager.__init__]: progress_logger={self.progress_logger}")
-        
-        # Now call parent init which will call add_task()
         super().__init__(plan, num_samples)
 
     def add_task(self, unique_full_op_id: str, op_str: str, total: int):
@@ -207,9 +201,7 @@ class PZProgressManager(ProgressManager):
         self.unique_full_op_id_to_stats[unique_full_op_id] = ProgressStats(start_time=time.time())
         
         # Log started event
-        print(f"DEBUG [add_task]: progress_logger={self.progress_logger}, session_id={self.session_id}")
         if self.progress_logger and self.session_id:
-            print(f"DEBUG [add_task]: Logging STARTED event for {unique_full_op_id}")
             event = ProgressEvent(
                 timestamp=datetime.utcnow().isoformat() + 'Z',
                 session_id=self.session_id,
@@ -224,9 +216,6 @@ class PZProgressManager(ProgressManager):
                 message="",
             )
             self.progress_logger.log_event(event)
-            print(f"DEBUG [add_task]: Event logged successfully")
-        else:
-            print(f"DEBUG [add_task]: NOT logging (progress_logger={self.progress_logger}, session_id={self.session_id})")
 
     def start(self):
         # print a newline before starting to separate from previous output
@@ -239,8 +228,6 @@ class PZProgressManager(ProgressManager):
         self.progress.start()
 
     def incr(self, unique_full_op_id: str, num_inputs: int = 1, num_outputs: int = 1, display_text: str | None = None, **kwargs):
-        print(f"DEBUG [incr]: op_id={unique_full_op_id}, num_inputs={num_inputs}, progress_logger={self.progress_logger is not None}, session_id={self.session_id}", flush=True)
-        
         # get the task for the given operation
         task = self.unique_full_op_id_to_task.get(unique_full_op_id)
 
@@ -297,14 +284,10 @@ class PZProgressManager(ProgressManager):
                 message=display_text or "",
             )
             self.progress_logger.log_event(event)
-            print(f"DEBUG [incr]: Logged PROGRESS event for {unique_full_op_id}: {current}/{total} ({percentage:.1f}%)", flush=True)
 
     def finish(self):
-        print(f"DEBUG [finish]: Called, progress_logger={self.progress_logger is not None}, session_id={self.session_id}", flush=True)
-        
         # Log completion events for all operators
         if self.progress_logger and self.session_id:
-            print(f"DEBUG [finish]: Logging completion events for {len(self.unique_full_op_id_to_task)} tasks", flush=True)
             for unique_full_op_id, task_id in self.unique_full_op_id_to_task.items():
                 task_obj = self.progress._tasks[task_id]
                 event = ProgressEvent(
