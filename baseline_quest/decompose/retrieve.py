@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-# retriever.py
-
-"""
-A modular retriever that connects to a ChromaDB collection and provides a
-function to retrieve candidate chunks for a given query.
-"""
 import os
 import sys
 from typing import Dict, List, Set
