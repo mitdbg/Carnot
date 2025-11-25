@@ -249,11 +249,26 @@ async def stream_query_execution(
         yield f"data: {json.dumps({'type': 'status', 'message': f'Executing query: {query}'})}\n\n"
         await asyncio.sleep(0.1)
 
+        # Setup progress logging
+        progress_log = session_dir / "progress.jsonl"
+        # Clear old progress log if exists
+        if progress_log.exists():
+            progress_log.unlink()
+
+        print(f"DEBUG [query.py]: session_id={session_id}")
+        print(f"DEBUG [query.py]: progress_log={progress_log}")
+        print(f"DEBUG [query.py]: session_dir exists={session_dir.exists()}")
+
         compute_ctx = ctx.compute(query)
         config = carnot.QueryProcessorConfig(
             policy=carnot.MaxQuality(),
-            progress=False,
+            progress=True,  # Enable console progress
+            session_id=session_id,  # Add session ID for tracking
+            progress_log_file=str(progress_log),  # Add progress log file path
         )
+        
+        print(f"DEBUG [query.py]: config.session_id={config.session_id}")
+        print(f"DEBUG [query.py]: config.progress_log_file={config.progress_log_file}")
 
         yield f"data: {json.dumps({'type': 'status', 'message': 'Running Carnot query processor...'})}\n\n"
         await asyncio.sleep(0.1)
@@ -379,6 +394,42 @@ async def execute_query(request: QueryRequest):
         stream_query_execution(request.query, request.dataset_ids, request.session_id),
         media_type="text/event-stream"
     )
+
+@router.get("/progress/{session_id}")
+async def get_progress(session_id: str, since_timestamp: str | None = None):
+    """
+    Get progress events for a session, optionally filtering by timestamp
+    """
+    try:
+        session_dir = BACKEND_ROOT / "sessions" / session_id
+        progress_log = session_dir / "progress.jsonl"
+        
+        print(f"DEBUG [get_progress]: session_id={session_id}")
+        print(f"DEBUG [get_progress]: progress_log={progress_log}")
+        print(f"DEBUG [get_progress]: progress_log.exists()={progress_log.exists()}")
+        
+        if not progress_log.exists():
+            print(f"DEBUG [get_progress]: Returning empty events (file doesn't exist)")
+            return {"events": []}
+        
+        events = []
+        with open(progress_log) as f:
+            for line in f:
+                if line.strip():
+                    try:
+                        event = json.loads(line)
+                        # Filter by timestamp if provided
+                        if since_timestamp is None or event['timestamp'] > since_timestamp:
+                            events.append(event)
+                    except json.JSONDecodeError:
+                        continue
+        
+        print(f"DEBUG [get_progress]: Returning {len(events)} events")
+        return {"events": events}
+    except Exception as e:
+        logger.error(f"Error reading progress log: {e}")
+        print(f"DEBUG [get_progress]: ERROR: {e}")
+        return {"events": [], "error": str(e)}
 
 @router.get("/download/{filename}")
 async def download_query_results(filename: str):

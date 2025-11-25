@@ -1,6 +1,7 @@
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from datetime import datetime
 
 from rich.console import Console
 from rich.progress import (
@@ -16,6 +17,11 @@ from rich.progress import Progress as RichProgress
 
 from carnot.operators.physical import PhysicalOperator
 from carnot.optimizer.plan import PhysicalPlan
+from carnot.utils.progress_events import (
+    ProgressEvent,
+    ProgressLogger,
+    ProgressStatus,
+)
 
 
 @dataclass
@@ -165,9 +171,22 @@ class MockProgressManager(ProgressManager):
 class PZProgressManager(ProgressManager):
     """Progress manager for command line interface using rich"""
     
-    def __init__(self, plan: PhysicalPlan, num_samples: int | None = None):
-        super().__init__(plan, num_samples)
+    def __init__(self, plan: PhysicalPlan, num_samples: int | None = None,
+                 session_id: str | None = None, progress_log_file: str | None = None,
+                 level: str = "outer"):
+        # Initialize attributes BEFORE calling super().__init__() because parent init calls add_task()
         self.console = Console()
+        self.session_id = session_id
+        self.level = level
+        # Initialize progress logger
+        self.progress_logger = ProgressLogger(progress_log_file) if progress_log_file else None
+        
+        print(f"DEBUG [PZProgressManager.__init__]: session_id={session_id}")
+        print(f"DEBUG [PZProgressManager.__init__]: progress_log_file={progress_log_file}")
+        print(f"DEBUG [PZProgressManager.__init__]: progress_logger={self.progress_logger}")
+        
+        # Now call parent init which will call add_task()
+        super().__init__(plan, num_samples)
 
     def add_task(self, unique_full_op_id: str, op_str: str, total: int):
         """Add a new task to the progress bar"""
@@ -186,6 +205,28 @@ class PZProgressManager(ProgressManager):
 
         # initialize the stats for this operation
         self.unique_full_op_id_to_stats[unique_full_op_id] = ProgressStats(start_time=time.time())
+        
+        # Log started event
+        print(f"DEBUG [add_task]: progress_logger={self.progress_logger}, session_id={self.session_id}")
+        if self.progress_logger and self.session_id:
+            print(f"DEBUG [add_task]: Logging STARTED event for {unique_full_op_id}")
+            event = ProgressEvent(
+                timestamp=datetime.utcnow().isoformat() + 'Z',
+                session_id=self.session_id,
+                level=self.level,
+                operator_id=unique_full_op_id,
+                operator_name=op_str,
+                status=ProgressStatus.STARTED,
+                current=0,
+                total=total,
+                percentage=0.0,
+                cost=0.0,
+                message="",
+            )
+            self.progress_logger.log_event(event)
+            print(f"DEBUG [add_task]: Event logged successfully")
+        else:
+            print(f"DEBUG [add_task]: NOT logging (progress_logger={self.progress_logger}, session_id={self.session_id})")
 
     def start(self):
         # print a newline before starting to separate from previous output
@@ -198,6 +239,8 @@ class PZProgressManager(ProgressManager):
         self.progress.start()
 
     def incr(self, unique_full_op_id: str, num_inputs: int = 1, num_outputs: int = 1, display_text: str | None = None, **kwargs):
+        print(f"DEBUG [incr]: op_id={unique_full_op_id}, num_inputs={num_inputs}, progress_logger={self.progress_logger is not None}, session_id={self.session_id}", flush=True)
+        
         # get the task for the given operation
         task = self.unique_full_op_id_to_task.get(unique_full_op_id)
 
@@ -232,8 +275,53 @@ class PZProgressManager(ProgressManager):
             recent=f"{self.unique_full_op_id_to_stats[unique_full_op_id].recent_text}" if display_text is not None else "",
             refresh=True,
         )
+        
+        # Log progress event
+        if self.progress_logger and self.session_id:
+            task_obj = self.progress._tasks[task]
+            current = task_obj.completed
+            total = task_obj.total
+            percentage = (current / total * 100) if total > 0 else 0
+            
+            event = ProgressEvent(
+                timestamp=datetime.utcnow().isoformat() + 'Z',
+                session_id=self.session_id,
+                level=self.level,
+                operator_id=unique_full_op_id,
+                operator_name=self.get_task_description(unique_full_op_id).replace("[bold blue]", ""),
+                status=ProgressStatus.PROGRESS,
+                current=int(current),
+                total=int(total),
+                percentage=percentage,
+                cost=self.unique_full_op_id_to_stats[unique_full_op_id].total_cost,
+                message=display_text or "",
+            )
+            self.progress_logger.log_event(event)
+            print(f"DEBUG [incr]: Logged PROGRESS event for {unique_full_op_id}: {current}/{total} ({percentage:.1f}%)", flush=True)
 
     def finish(self):
+        print(f"DEBUG [finish]: Called, progress_logger={self.progress_logger is not None}, session_id={self.session_id}", flush=True)
+        
+        # Log completion events for all operators
+        if self.progress_logger and self.session_id:
+            print(f"DEBUG [finish]: Logging completion events for {len(self.unique_full_op_id_to_task)} tasks", flush=True)
+            for unique_full_op_id, task_id in self.unique_full_op_id_to_task.items():
+                task_obj = self.progress._tasks[task_id]
+                event = ProgressEvent(
+                    timestamp=datetime.utcnow().isoformat() + 'Z',
+                    session_id=self.session_id,
+                    level=self.level,
+                    operator_id=unique_full_op_id,
+                    operator_name=self.get_task_description(unique_full_op_id).replace("[bold blue]", ""),
+                    status=ProgressStatus.COMPLETED,
+                    current=int(task_obj.total),
+                    total=int(task_obj.total),
+                    percentage=100.0,
+                    cost=self.unique_full_op_id_to_stats[unique_full_op_id].total_cost,
+                    message="",
+                )
+                self.progress_logger.log_event(event)
+        
         self.progress.stop()
 
         # compute total cost, success, and failure
@@ -261,9 +349,13 @@ def create_progress_manager(
     plan: PhysicalPlan,
     num_samples: int | None = None,
     progress: bool = True,
+    session_id: str | None = None,
+    progress_log_file: str | None = None,
+    level: str = "outer",
 ) -> ProgressManager:
     """Factory function to create appropriate progress manager based on environment"""
-    if not progress:
+    # If we have a log file, we need a real progress manager even if console progress is disabled
+    if not progress and not progress_log_file:
         return MockProgressManager(plan, num_samples)
 
-    return PZProgressManager(plan, num_samples)
+    return PZProgressManager(plan, num_samples, session_id, progress_log_file, level)

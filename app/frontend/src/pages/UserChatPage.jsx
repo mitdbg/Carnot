@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Send, Database, CheckSquare, Square, AlertCircle, Loader2, XCircle, RotateCcw, MessageSquare, Trash2, ChevronLeft, ChevronRight, Search } from 'lucide-react'
 import axios from 'axios'
+import ProgressDisplay from '../components/ProgressDisplay'
 
 const API_BASE_URL = 'http://localhost:8000'
 
@@ -424,6 +425,11 @@ function UserChatPage() {
           )}
           
           {messages.map((message, index) => renderMessage(message, index))}
+          
+          {/* Show progress display when loading - after messages */}
+          {isLoading && sessionId && (
+            <ProgressDisplay sessionId={sessionId} isActive={isLoading} />
+          )}
           
           <div ref={messagesEndRef} />
         </div>
