@@ -205,3 +205,13 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# allow env/ within deploy/terraform/env/
+!deploy/terraform/env/
+
+# Miscellaneous
+.github/workflows/github-trust-policy.json
+venv_web/
+*.log
+backend.log
+frontend.log
