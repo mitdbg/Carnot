@@ -17,10 +17,19 @@ from app.models.schemas import DirectoryContents, FileItem, UploadResponse
 router = APIRouter()
 
 # Base upload directory
-UPLOAD_DIR = os.getenv("UPLOAD_DIR", os.path.join(os.getcwd(), "uploaded_files"))
-if UPLOAD_DIR.startswith("file://") or "://" not in UPLOAD_DIR:
+IS_REMOTE_ENV = os.getenv("REMOTE_ENV", "false").lower() == "true"
+if IS_REMOTE_ENV:
+    COMPANY_ENV = os.getenv("COMPANY_ENV", "dev")
+    DATA_DIR = Path(f"s3://carnot-research/{COMPANY_ENV}/data/")
+    UPLOAD_DIR = Path(f"s3://carnot-research/{COMPANY_ENV}/uploaded_files/")
+    UPLOAD_DIR_PATH = Path(UPLOAD_DIR) # TODO: we can probably delete one of UPLOAD_DIR or UPLOAD_DIR_PATH
+else:
+    PROJECT_ROOT = Path(__file__).resolve().parents[4]
+    DATA_DIR = os.path.join(PROJECT_ROOT, "data")
+    UPLOAD_DIR = os.getenv("UPLOAD_DIR", os.path.join(os.getcwd(), "uploaded_files"))
+    UPLOAD_DIR_PATH = Path(UPLOAD_DIR)
+    os.makedirs(DATA_DIR, exist_ok=True)
     os.makedirs(UPLOAD_DIR, exist_ok=True)
-UPLOAD_DIR_PATH = Path(UPLOAD_DIR)
 
 ARCHIVE_EXTENSIONS = (
     ".zip",
@@ -124,40 +133,34 @@ async def browse_directory(path: str | None = None):
     Browse directory contents (uploaded files and user's data directory)
     """
     try:
-        # Default to data directory in the Carnot project
-        data_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))), "data")
-        
         if path is None or path == "":
             # Return root level: show uploaded_files and data directory
             items = []
-            
-            # Add uploaded files directory
-            if os.path.exists(UPLOAD_DIR):
-                items.append(FileItem(
-                    name="uploaded_files",
-                    path="uploaded_files",
-                    is_directory=True
-                ))
-            
-            # Add data directory
-            if os.path.exists(data_dir):
-                items.append(FileItem(
-                    name="data",
-                    path="data",
-                    is_directory=True
-                ))
-            
+
+            # Add uploaded files and data directories
+            upload_path = UPLOAD_DIR if IS_REMOTE_ENV else "uploaded_files"
+            data_path = DATA_DIR if IS_REMOTE_ENV else "data"
+            items.append(FileItem(
+                name="uploaded_files",
+                path=upload_path,
+                is_directory=True
+            ))
+            items.append(FileItem(
+                name="data",
+                path=data_path,
+                is_directory=True
+            ))
             return DirectoryContents(
                 current_path="",
                 items=items,
                 parent_path=None
             )
-        
+
         # Resolve actual path
         if path.startswith("uploaded_files"):
             actual_path = os.path.join(UPLOAD_DIR, path.replace("uploaded_files/", "").replace("uploaded_files", ""))
         elif path.startswith("data"):
-            actual_path = os.path.join(data_dir, path.replace("data/", "").replace("data", ""))
+            actual_path = os.path.join(DATA_DIR, path.replace("data/", "").replace("data", ""))
         else:
             raise HTTPException(status_code=400, detail="Invalid path")
         
