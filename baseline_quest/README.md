@@ -10,15 +10,17 @@
     - Use gpt-4o-mini to decompose the query into subqueries connected with operators
         - E.g. "Stoloniferous plants or crops originating from Bolivia" -> retrieve("crops from Bolivia", 100) | retrieve("stoloniferous plants", 100)
         - E.g. "Neogene mammals of Africa that are Odd-toed ungulates" -> retrieve("Neogene mammals of Africa", 100) & retrieve("Odd-toed ungulates", 100)
+        - Examples decomposition python files: `decompose/k_scripts/query_9` and `decompose/k_scripts/query_10`
     - Generate decompositions with `decompose/generate_decompositions.py`
 
-2. Retrieval (@ k)
+3. Retrieval (@ k)
     - Retrieve with query / subquery (vector similarity)
         - If indexed entired documented, retrieves the top 200 most likely chunks, then maps them to the document
         - If indexed first 512 tokens only, retrieves the top k most likely chunks
+    - Retrieve after decomposition with query / subquery
+        - `decompose/execute_decompositions.py` executes all of the generated decomposition pythons scripts from step 2 and uses the same vectory similarity retrieval for each subquery.
 
 ## Data
-
 The data is directly from QUEST (https://github.com/google-research/language/tree/master/language/quest#examples).
 - The documents that are embedded are: https://storage.googleapis.com/gresearch/quest/documents.zip
 - `data/train_subset1.jsonl` is 20 randomly sampled queries from `train.jsonl` of QUEST.
