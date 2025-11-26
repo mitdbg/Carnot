@@ -1,0 +1,17 @@
+# syntax=docker/dockerfile:1
+FROM python:3.12-slim
+WORKDIR /code
+ENV REMOTE_ENV="true"
+COPY ./backend/requirements.txt requirements.txt
+COPY ./src ./src
+COPY ./pyproject.toml .
+COPY ./README.md .
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    linux-headers-amd64 \
+ && pip install --no-cache-dir -r requirements.txt \
+ && pip install --no-cache-dir . \
+ && rm -rf /var/lib/apt/lists/*
+EXPOSE 8000
+COPY ./backend .
+CMD ["uvicorn", "app.main:app", "--reload", "--port", "8000"]

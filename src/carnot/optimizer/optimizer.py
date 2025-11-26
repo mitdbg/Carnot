@@ -8,7 +8,6 @@ from pydantic.fields import FieldInfo
 from carnot.constants import Model
 from carnot.core.data.dataset import Dataset
 from carnot.core.lib.schemas import get_schema_field_names
-from carnot.execution.execution_strategy_type import ExecutionStrategyType
 from carnot.operators.logical import (
     ComputeOperator,
     SearchOperator,
@@ -66,7 +65,7 @@ class Optimizer:
         api_base: str | None = None,
         verbose: bool = False,
         optimizer_strategy: OptimizationStrategyType = OptimizationStrategyType.PARETO,
-        execution_strategy: ExecutionStrategyType = ExecutionStrategyType.PARALLEL,
+        execution_strategy: str = "parallel",  # Always parallel execution
         use_final_op_quality: bool = False, # TODO: make this func(plan) -> final_quality
         **kwargs,
     ):

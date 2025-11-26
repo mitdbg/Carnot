@@ -1,0 +1,158 @@
+name: Project Automation -- In Progress
+
+on:
+  issues:
+    types: [assigned]
+
+jobs:
+  issue-assigned-move-to-in-progress:
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Move issue to In Progress when assigned
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.CARNOT_PROJECT_TOKEN }}
+          script: |
+            const projectId = "PVT_kwDOAAnpb84BHVLK";
+            const statusFieldId = "PVTSSF_lADOAAnpb84BHVLKzg4HfRU";
+            const todoOptionId = "f75ad846";
+            const inProgressOptionId = "47fc9ee4";
+
+            const issue = context.payload.issue;
+
+            // --- Step 1: Find the project item for this issue ---
+            const result = await github.graphql(`
+              query($projectId: ID!) {
+                node(id: $projectId) {
+                  ... on ProjectV2 {
+                    items(first: 100) {
+                      nodes {
+                        id
+                        content {
+                          ... on Issue {
+                            id
+                            number
+                          }
+                        }
+                        fieldValues(first: 20) {
+                          nodes {
+                            ... on ProjectV2ItemFieldSingleSelectValue {
+                              field {
+                                ... on ProjectV2FieldCommon {
+                                  id
+                                  name
+                                }
+                              }
+                              optionId
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            `, { projectId });
+
+            const item = result.node.items.nodes.find(i =>
+              i.content?.id === issue.node_id
+            );
+
+            if (!item) {
+              console.log("❌ Issue not found in the project, skipping.");
+              return;
+            }
+
+            const itemId = item.id;
+
+            // --- Step 2: Check current Status field value ---
+            const statusField = item.fieldValues.nodes.find(
+              f => f.field?.id === statusFieldId
+            );
+            const currentStatusOptionId = statusField?.optionId;
+
+            if (currentStatusOptionId !== todoOptionId) {
+              console.log(`⚠️ Issue #${issue.number} is not in To Do (current option: ${currentStatusOptionId}), skipping.`);
+              return;
+            }
+
+            // --- Step 3: Move to In Progress ---
+            console.log(`✅ Moving Issue #${issue.number} from To Do → In Progress`);
+
+            await github.graphql(`
+              mutation($itemId: ID!, $statusFieldId: ID!, $inProgressOptionId: String!) {
+                updateProjectV2ItemFieldValue(input: {
+                  projectId: "${projectId}",
+                  itemId: $itemId,
+                  fieldId: $statusFieldId,
+                  value: { singleSelectOptionId: $inProgressOptionId }
+                }) {
+                  clientMutationId
+                }
+              }
+            `, {
+              itemId,
+              statusFieldId,
+              inProgressOptionId
+            });
+
+            console.log(`🎯 Moved Issue #${issue.number} to In Progress`);
+
+            // const issue = context.payload.issue;
+
+            // // Fetch all project items and find the one for this issue
+            // const result = await github.graphql(`
+            //   query($projectId: ID!) {
+            //     node(id: $projectId) {
+            //       ... on ProjectV2 {
+            //         items(first: 100) {
+            //           nodes {
+            //             id
+            //             content {
+            //               ... on Issue {
+            //                 id
+            //                 number
+            //               }
+            //             }
+            //           }
+            //         }
+            //       }
+            //     }
+            //   }
+            // `, { projectId });
+
+            // const item = result.node.items.nodes.find(i =>
+            //   i.content?.id === issue.node_id
+            // );
+
+            // if (!item) {
+            //   console.log("Issue not in this project, skipping.");
+            //   return;
+            // }
+
+            // const itemId = item.id;
+
+            // // Update Status field → In Progress
+            // await github.graphql(`
+            //   mutation($itemId: ID!, $statusFieldId: ID!, $inProgressOptionId: String!) {
+            //     updateProjectV2ItemFieldValue(input: {
+            //       itemId: $itemId,
+            //       fieldId: $statusFieldId,
+            //       projectId: "${projectId}",
+            //       value: { singleSelectOptionId: $inProgressOptionId }
+            //     }) {
+            //       clientMutationId
+            //     }
+            //   }
+            // `, {
+            //   itemId,
+            //   statusFieldId,
+            //   inProgressOptionId
+            // });
+
+            // console.log(`Moved Issue #${issue.number} to In Progress`);
