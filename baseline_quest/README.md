@@ -17,6 +17,13 @@
         - If indexed entired documented, retrieves the top 200 most likely chunks, then maps them to the document
         - If indexed first 512 tokens only, retrieves the top k most likely chunks
 
+## Data
+
+The data is directly from QUEST (https://github.com/google-research/language/tree/master/language/quest#examples).
+- The documents that are embedded are: https://storage.googleapis.com/gresearch/quest/documents.zip
+- `data/train_subset1.jsonl` is 20 randomly sampled queries from `train.jsonl` of QUEST.
+- `data/train_subset2.jsonl` is 20 randomly sampled non-union queries from `train.jsonl` of QUEST.
+
 ## Retrieval
 Retrieval is done with `semantic_retrieval/retrieve.py`.
 - For decompose, we are retrieving titles only, and the code for this is written in `decompose/retrieve.py`
