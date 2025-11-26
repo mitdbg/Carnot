@@ -1,7 +1,6 @@
-The subset of QUEST data used is `data/train_subset_2.jsonl`, 20 random non-union queries from `train.jsonl` in the QUEST dataset (https://storage.googleapis.com/gresearch/quest/train.jsonl).
+The subset of QUEST data used is `data/train_subset2.jsonl`, 20 random non-union queries from `train.jsonl` in the QUEST dataset (https://storage.googleapis.com/gresearch/quest/train.jsonl).
 
 In `full_document`, it shows the chunks retrieved from the quest collection where the full document was embedded.
-- The recall results are in `semantic/results/recall_report_subset3.txt`. The top 50 results were retrieved.
 
 `vector_similarity_1.txt`
 - Target Query: 1992 American children's comedy animated musical films

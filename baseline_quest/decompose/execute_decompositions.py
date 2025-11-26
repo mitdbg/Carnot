@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 from retrieve import initialize_retriever, retrieve
 
-GOLD_FILE_PATH = "../../../data/train_subset.jsonl"
+GOLD_FILE_PATH = "../../data/train_subset.jsonl"
 OUTPUT_PATH = "pred_retrieved_set_ops.jsonl"
 DECOMPOSITION_DIR = os.path.join(os.path.dirname(__file__), "k_50")
 

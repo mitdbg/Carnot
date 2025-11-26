@@ -17,10 +17,16 @@
         - If indexed entired documented, retrieves the top 200 most likely chunks, then maps them to the document
         - If indexed first 512 tokens only, retrieves the top k most likely chunks
 
+## Retrieval
+Retrieval is done with `semantic_retrieval/retrieve.py`.
+- For decompose, we are retrieving titles only, and the code for this is written in `decompose/retrieve.py`
+- For vector similarity, we are retrieving (title, chunk) tuples (`INCLUDE_CHUNKS = true`)
 
-Results:
+## Results:
 |              | Retrieve (entire document) | Retrieve (first 512 tokens) | Decompose + Retrieve* (entire document)                         | Decompose + Retrieve* (first 512 tokens)                        |
 |--------------|----------------------------|-----------------------------|-----------------------------------------------------------------|-----------------------------------------------------------------|
 | Recall @ 20  | 0.0886                     | 0.1127                      | -                                                               |                                                                 |
 | Recall @ 50  | 0.1663                     | 0.1593                      | 0.1560 (\|Pred\| = 61.10)                                       | 0.1617 (\|Pred\| = 60.70)                                       |
 | Recall @ 100 | 0.2122                     | 0.2250                      | 0.2285 (\|Pred\| = 205.95) (k for subqueries increased in size) | 0.2157 (\|Pred\| = 209.30) (k for subqueries increased in size) |
+
+## Data

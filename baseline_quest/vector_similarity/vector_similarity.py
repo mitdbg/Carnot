@@ -11,15 +11,13 @@ import torch
 from typing import Dict, Iterable, List
 from sentence_transformers import SentenceTransformer, util
 
-# --- Configuration ---
 GOLD_FILE_PATH = "data/train_subset3.jsonl"
-RETRIEVED_FILE_PATH = "pred_unranked.jsonl"
+RETRIEVED_FILE_PATH = "full_document/pred_unranked.jsonl"
 OUTPUT_REPORT_PATH = "gold_vs_retrieved_similarity_report.txt"
-
 MODEL_NAME = "BAAI/bge-small-en-v1.5"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-
+# set query and baseline/unrelated query
 QUERY_TO_ANALYZE = "cultural geography and Science books but not about creativity"
 UNRELATED_QUERY = "1947 Science Linguistics books"
 
