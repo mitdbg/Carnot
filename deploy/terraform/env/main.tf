@@ -15,7 +15,8 @@ locals {
   env_name  = terraform.workspace
   full_domain_name = "${var.subdomain}.carnot-research.org"
   alb_sg_id = data.terraform_remote_state.global.outputs.alb_sg_id
-  alb_arn = data.terraform_remote_state.global.outputs.alb_arn
+  https_listener_arn = data.terraform_remote_state.global.outputs.https_listener_arn
+  http_listener_arn = data.terraform_remote_state.global.outputs.http_listener_arn
   alb_dns_name = data.terraform_remote_state.global.outputs.alb_dns_name
   alb_zone_id = data.terraform_remote_state.global.outputs.alb_zone_id
   ssh_key_name = data.terraform_remote_state.global.outputs.global_key_name
@@ -220,32 +221,43 @@ resource "aws_lb_target_group_attachment" "app" {
 }
 
 # -------------------------------
-# ALB Listeners
+# ALB Listener Rules
 # -------------------------------
-resource "aws_lb_listener" "https_listener" {
-  load_balancer_arn = local.alb_arn
-  port              = 443
-  protocol          = "HTTPS"
-  certificate_arn   = var.acm_certificate_arn
+resource "aws_lb_listener_rule" "app_rule" {
+  listener_arn = local.https_listener_arn
+  priority     = var.priority_offset + 10
 
-  default_action {
+  action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.app_tg.arn
   }
+
+  condition {
+    host_header {
+      values = [local.full_domain_name]
+    }
+  }
 }
 
-resource "aws_lb_listener" "http_redirect" {
-  load_balancer_arn = local.alb_arn
-  port              = 80
-  protocol          = "HTTP"
+resource "aws_lb_listener_rule" "http_redirect_rule" {
+  listener_arn = local.http_listener_arn
+  priority     = var.priority_offset + 20
 
-  default_action {
+  action {
     type = "redirect"
-
     redirect {
+      host        = local.full_domain_name
+      path        = "/#{path}"
+      query       = "#{query}"
       port        = "443"
       protocol    = "HTTPS"
       status_code = "HTTP_301"
+    }
+  }
+
+  condition {
+    host_header {
+      values = [local.full_domain_name]
     }
   }
 }
@@ -263,16 +275,4 @@ resource "aws_route53_record" "app_dns" {
     zone_id                = local.alb_zone_id
     evaluate_target_health = true
   }
-}
-
-# ---------------------------------------------------------
-# Route53 Record for Auth0 Custom Domain
-# ---------------------------------------------------------
-resource "aws_route53_record" "auth0_custom_domain" {
-  zone_id = var.hosted_zone_id
-  name    = var.auth0_custom_domain
-  type    = "CNAME"
-  ttl     = 300
-
-  records = [var.auth0_cname_target]
 }

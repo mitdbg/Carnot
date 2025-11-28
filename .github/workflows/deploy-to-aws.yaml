@@ -28,22 +28,29 @@ jobs:
       - name: Determine subdomain
         id: subdomain
         run: |
-          if [[ "${GITHUB_BASE_REF}" == "main" ]]; then
-            echo "SUBDOMAIN=dev" >> $GITHUB_ENV
-          elif [[ "${GITHUB_BASE_REF}" == "wl-prod" ]]; then
+          if [[ "${GITHUB_BASE_REF}" == "wl-prod" ]]; then
             echo "SUBDOMAIN=${{ secrets.WL_PROD }}" >> $GITHUB_ENV
           elif [[ "${GITHUB_BASE_REF}" == "wm-prod" ]]; then
             echo "SUBDOMAIN=${{ secrets.WM_PROD }}" >> $GITHUB_ENV
           else
             echo "SUBDOMAIN=dev" >> $GITHUB_ENV
           fi
-      
+
+      - name: Determine Priority priority_offset
+        id: priority_offset
+        run: |
+          if [[ "${GITHUB_BASE_REF}" == "wl-prod" ]]; then
+            echo "PRIORITY_OFFSET=100" >> $GITHUB_ENV
+          elif [[ "${GITHUB_BASE_REF}" == "wm-prod" ]]; then
+            echo "PRIORITY_OFFSET=200" >> $GITHUB_ENV
+          else
+            echo "PRIORITY_OFFSET=0" >> $GITHUB_ENV
+          fi
+
       - name: Determine environment
         id: environment
         run: |
-          if [[ "${GITHUB_BASE_REF}" == "main" ]]; then
-            echo "ENV_NAME=dev" >> $GITHUB_ENV
-          elif [[ "${GITHUB_BASE_REF}" == "wl-prod" ]]; then
+          if [[ "${GITHUB_BASE_REF}" == "wl-prod" ]]; then
             echo "ENV_NAME=wl-prod" >> $GITHUB_ENV
           elif [[ "${GITHUB_BASE_REF}" == "wm-prod" ]]; then
             echo "ENV_NAME=wm-prod" >> $GITHUB_ENV
@@ -63,17 +70,25 @@ jobs:
       - name: Terraform Init (Global)
         working-directory: deploy/terraform/global
         id: init-global
-        run: terraform init -upgrade
+        run: terraform init
 
       - name: Terraform Validate (Global)
         working-directory: deploy/terraform/global
         id: validate-global
         run: terraform validate
-      
+
+      - name: Write Global vars.tfvars
+        working-directory: deploy/terraform/global
+        run: |
+          cat > global-vars.tfvars <<EOF
+          auth0_custom_domain = "${{ secrets.AUTH0_CUSTOM_DOMAIN }}"
+          auth0_cname_target = "${{ secrets.AUTH0_CNAME_TARGET }}"
+          EOF
+
       - name: Terraform Apply (Global)
         working-directory: deploy/terraform/global
         id: apply-global
-        run: terraform apply -auto-approve
+        run: terraform apply -var-file="global-vars.tfvars" -auto-approve
 
       ######################################################################
       # STEP 2 — DEPLOY ENVIRONMENT TERRAFORM
@@ -81,7 +96,7 @@ jobs:
 
       - name: Terraform Init (env)
         working-directory: deploy/terraform/env
-        run: terraform init -backend-config="backend-config/${ENV_NAME}.hcl"
+        run: terraform init -backend-config="backend-config/backend.hcl"
 
       - name: Ensure Terraform Workspace Exists
         working-directory: deploy/terraform/env
@@ -97,40 +112,18 @@ jobs:
         working-directory: deploy/terraform/env
         run: terraform validate
 
-      - name: Write vars.tfvars for wl-prod
+      - name: Write Env vars.tfvars
         working-directory: deploy/terraform/env
-        if: ${{ github.base_ref == 'wl-prod' }}
         run: |
-          cat > vars.tfvars <<EOF
+          cat > env-vars.tfvars <<EOF
           subdomain = "${SUBDOMAIN}"
-          auth0_custom_domain = "${{ secrets.WL_PROD_AUTH0_DOMAIN }}"
-          auth0_cname_target = "${{ secrets.WL_PROD_AUTH0_CNAME_TARGET }}"
-          EOF
-
-      - name: Write vars.tfvars for wm-prod
-        working-directory: deploy/terraform/env
-        if: ${{ github.base_ref == 'wm-prod' }}
-        run: |
-          cat > vars.tfvars <<EOF
-          subdomain = "${SUBDOMAIN}"
-          auth0_custom_domain = "${{ secrets.WM_PROD_AUTH0_DOMAIN }}"
-          auth0_cname_target = "${{ secrets.WM_PROD_AUTH0_CNAME_TARGET }}"
-          EOF
-
-      - name: Write vars.tfvars for dev
-        working-directory: deploy/terraform/env
-        if: ${{ github.base_ref != 'wl-prod' && github.base_ref != 'wm-prod' }}
-        run: |
-          cat > vars.tfvars <<EOF
-          subdomain = "${SUBDOMAIN}"
-          auth0_custom_domain = "${{ secrets.DEV_AUTH0_AUTH_DOMAIN }}"
-          auth0_cname_target = "${{ secrets.DEV_AUTH0_CNAME_TARGET }}"
+          priority_offset = "${PRIORITY_OFFSET}"
           EOF
 
       - name: Terraform Apply (env)
         working-directory: deploy/terraform/env
         run: |
-          terraform apply -var-file="vars.tfvars" -auto-approve
+          terraform apply -var-file="env-vars.tfvars" -auto-approve
 
       - name: Store EC2 Public IP
         working-directory: deploy/terraform/env
@@ -159,25 +152,23 @@ jobs:
           cd deploy/compose
 
           # Build frontend image
-          if [[ "${GITHUB_BASE_REF}" == "main" ]]; then
+          if [[ "${GITHUB_BASE_REF}" == "wl-prod" ]]; then
             docker build -f Dockerfile-frontend \
-              --build-arg VITE_AUTH0_DOMAIN=${{ secrets.DEV_AUTH0_AUTH_DOMAIN }} \
-              --build-arg VITE_AUTH0_CLIENT_ID=${{ secrets.DEV_AUTH0_CLIENT_ID }} \
-              -t ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend .
-          elif [[ "${GITHUB_BASE_REF}" == "wl-prod" ]]; then
-            docker build -f Dockerfile-frontend \
-              --build-arg VITE_AUTH0_DOMAIN=${{ secrets.WL_PROD_AUTH0_DOMAIN }} \
+              --build-arg VITE_AUTH0_DOMAIN=${{ secrets.AUTH0_CUSTOM_DOMAIN }} \
               --build-arg VITE_AUTH0_CLIENT_ID=${{ secrets.WL_PROD_AUTH0_CLIENT_ID }} \
+              --build-arg VITE_AUTH0_ORGANIZATION_ID=${{ secrets.WL_PROD_AUTH0_ORGANIZATION_ID }} \
               -t ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend .
           elif [[ "${GITHUB_BASE_REF}" == "wm-prod" ]]; then
             docker build -f Dockerfile-frontend \
-              --build-arg VITE_AUTH0_DOMAIN=${{ secrets.WM_PROD_AUTH0_DOMAIN }} \
+              --build-arg VITE_AUTH0_DOMAIN=${{ secrets.AUTH0_CUSTOM_DOMAIN }} \
               --build-arg VITE_AUTH0_CLIENT_ID=${{ secrets.WM_PROD_AUTH0_CLIENT_ID }} \
+              --build-arg VITE_AUTH0_ORGANIZATION_ID=${{ secrets.WM_PROD_AUTH0_ORGANIZATION_ID }} \
               -t ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend .
           else
             docker build -f Dockerfile-frontend \
-              --build-arg VITE_AUTH0_DOMAIN=${{ secrets.DEV_AUTH0_AUTH_DOMAIN }} \
+              --build-arg VITE_AUTH0_DOMAIN=${{ secrets.AUTH0_CUSTOM_DOMAIN }} \
               --build-arg VITE_AUTH0_CLIENT_ID=${{ secrets.DEV_AUTH0_CLIENT_ID }} \
+              --build-arg VITE_AUTH0_ORGANIZATION_ID=${{ secrets.DEV_AUTH0_ORGANIZATION_ID }} \
               -t ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend .
           fi
 
@@ -217,13 +208,6 @@ jobs:
             docker system prune -af
           "
 
-          AUTH0_ORGANIZATION_ID="${{ secrets.DEV_AUTH0_ORGANIZATION_ID}}"
-          if [[ "${GITHUB_BASE_REF}" == "wl-prod" ]]; then
-            AUTH0_ORGANIZATION_ID="${{ secrets.WL_PROD_AUTH0_ORGANIZATION_ID}}"
-          elif [[ "${GITHUB_BASE_REF}" == "wm-prod" ]]; then
-            AUTH0_ORGANIZATION_ID="${{ secrets.WM_PROD_AUTH0_ORGANIZATION_ID}}"
-          fi
-
           # Login & deploy using pulled images
           ssh -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem ubuntu@$EC2_PUBLIC_IP "
             cd compose
@@ -231,7 +215,6 @@ jobs:
             export API_BASE_URL="http://$SUBDOMAIN.carnot-research.org:8000/api"
             export BASE_URL="http://$SUBDOMAIN.carnot-research.org:8000"
             export BASE_ORIGINS="http://$SUBDOMAIN.carnot-research.org,https://$SUBDOMAIN.carnot-research.org"
-            export AUTH0_ORGANIZATION_ID="${AUTH0_ORGANIZATION_ID}"
             docker login -u '${{ vars.DOCKERHUB_USERNAME }}' -p '${{ secrets.DOCKERHUB_TOKEN }}'
             docker compose pull
             docker compose up -d
