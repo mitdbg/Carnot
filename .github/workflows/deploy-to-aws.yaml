@@ -28,22 +28,29 @@ jobs:
       - name: Determine subdomain
         id: subdomain
         run: |
-          if [[ "${GITHUB_BASE_REF}" == "main" ]]; then
-            echo "SUBDOMAIN=dev" >> $GITHUB_ENV
-          elif [[ "${GITHUB_BASE_REF}" == "wl-prod" ]]; then
+          if [[ "${GITHUB_BASE_REF}" == "wl-prod" ]]; then
             echo "SUBDOMAIN=${{ secrets.WL_PROD }}" >> $GITHUB_ENV
           elif [[ "${GITHUB_BASE_REF}" == "wm-prod" ]]; then
             echo "SUBDOMAIN=${{ secrets.WM_PROD }}" >> $GITHUB_ENV
           else
             echo "SUBDOMAIN=dev" >> $GITHUB_ENV
           fi
-      
+
+      - name: Determine Priority priority_offset
+        id: priority_offset
+        run: |
+          if [[ "${GITHUB_BASE_REF}" == "wl-prod" ]]; then
+            echo "PRIORITY_OFFSET=100" >> $GITHUB_ENV
+          elif [[ "${GITHUB_BASE_REF}" == "wm-prod" ]]; then
+            echo "PRIORITY_OFFSET=200" >> $GITHUB_ENV
+          else
+            echo "PRIORITY_OFFSET=0" >> $GITHUB_ENV
+          fi
+
       - name: Determine environment
         id: environment
         run: |
-          if [[ "${GITHUB_BASE_REF}" == "main" ]]; then
-            echo "ENV_NAME=dev" >> $GITHUB_ENV
-          elif [[ "${GITHUB_BASE_REF}" == "wl-prod" ]]; then
+          if [[ "${GITHUB_BASE_REF}" == "wl-prod" ]]; then
             echo "ENV_NAME=wl-prod" >> $GITHUB_ENV
           elif [[ "${GITHUB_BASE_REF}" == "wm-prod" ]]; then
             echo "ENV_NAME=wm-prod" >> $GITHUB_ENV
@@ -89,7 +96,7 @@ jobs:
 
       - name: Terraform Init (env)
         working-directory: deploy/terraform/env
-        run: terraform init -backend-config="backend-config/backend.hcl" -reconfigure
+        run: terraform init -backend-config="backend-config/backend.hcl"
 
       - name: Ensure Terraform Workspace Exists
         working-directory: deploy/terraform/env
@@ -110,6 +117,7 @@ jobs:
         run: |
           cat > env-vars.tfvars <<EOF
           subdomain = "${SUBDOMAIN}"
+          priority_offset = 
           EOF
 
       - name: Terraform Apply (env)
@@ -144,12 +152,7 @@ jobs:
           cd deploy/compose
 
           # Build frontend image
-          if [[ "${GITHUB_BASE_REF}" == "main" ]]; then
-            docker build -f Dockerfile-frontend \
-              --build-arg VITE_AUTH0_DOMAIN=${{ secrets.AUTH0_CUSTOM_DOMAIN }} \
-              --build-arg VITE_AUTH0_CLIENT_ID=${{ secrets.DEV_AUTH0_CLIENT_ID }} \
-              -t ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend .
-          elif [[ "${GITHUB_BASE_REF}" == "wl-prod" ]]; then
+          if [[ "${GITHUB_BASE_REF}" == "wl-prod" ]]; then
             docker build -f Dockerfile-frontend \
               --build-arg VITE_AUTH0_DOMAIN=${{ secrets.AUTH0_CUSTOM_DOMAIN }} \
               --build-arg VITE_AUTH0_CLIENT_ID=${{ secrets.WL_PROD_AUTH0_CLIENT_ID }} \

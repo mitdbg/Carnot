@@ -225,7 +225,7 @@ resource "aws_lb_target_group_attachment" "app" {
 # -------------------------------
 resource "aws_lb_listener_rule" "app_rule" {
   listener_arn = local.https_listener_arn
-  priority     = 10
+  priority     = var.priority_offset + 10
 
   action {
     type             = "forward"
@@ -241,7 +241,7 @@ resource "aws_lb_listener_rule" "app_rule" {
 
 resource "aws_lb_listener_rule" "http_redirect_rule" {
   listener_arn = local.http_listener_arn
-  priority     = 20
+  priority     = var.priority_offset + 20
 
   action {
     type = "redirect"
