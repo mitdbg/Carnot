@@ -3,6 +3,11 @@ variable "subdomain" {
   type    = string
 }
 
+variable "priority_offset" {
+  description = "The priority offset for the ALB listener rules."
+  type    = number
+}
+
 variable "aws_region" {
   description = "AWS region for global resources"
   default     = "us-east-1"
