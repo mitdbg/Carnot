@@ -86,7 +86,7 @@ jobs:
         if: always() # Run this step manually only when needed
         working-directory: deploy/terraform/global
         # !! Replace the ID below with the ID from the current failure !!
-        run: terraform force-unlock 52dfabee-e154-f823-dcf4-c5ae59c6f7e7
+        run: terraform force-unlock 52dfabee-e154-f823-dcf4-c5ae59c6f7e7 -auto-approve
         # Remove this entire step after the deployment succeeds.
 
       - name: Terraform Apply (Global)
