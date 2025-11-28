@@ -82,13 +82,6 @@ jobs:
           auth0_cname_target = "${{ secrets.AUTH0_CNAME_TARGET }}"
           EOF
 
-      - name: Terraform Force Unlock (Manual Fix)
-        if: always() # Run this step manually only when needed
-        working-directory: deploy/terraform/global
-        # !! Replace the ID below with the ID from the current failure !!
-        run: terraform force-unlock -force 52dfabee-e154-f823-dcf4-c5ae59c6f7e7
-        # Remove this entire step after the deployment succeeds.
-
       - name: Terraform Apply (Global)
         working-directory: deploy/terraform/global
         id: apply-global
