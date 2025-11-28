@@ -61,12 +61,6 @@ variable "public_subnet_ids" {
   default     = ["subnet-27021a61", "subnet-09ffc721"]
 }
 
-variable "acm_certificate_arn" {
-  description = "The ARN of the ACM certificate for the ALB HTTPS listener."
-  type        = string
-  default     = "arn:aws:acm:us-east-1:422297141788:certificate/10be4bdb-461d-4dec-9ddf-501e2f157fab"
-}
-
 variable "hosted_zone_id" {
   description = "The Route 53 Hosted Zone ID for the domain."
   type        = string
