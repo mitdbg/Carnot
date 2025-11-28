@@ -89,7 +89,7 @@ jobs:
 
       - name: Terraform Init (env)
         working-directory: deploy/terraform/env
-        run: terraform init -backend-config="backend-config/backend.hcl"
+        run: terraform init -backend-config="backend-config/backend.hcl" -reconfigure
 
       - name: Ensure Terraform Workspace Exists
         working-directory: deploy/terraform/env
