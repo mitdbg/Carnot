@@ -75,7 +75,7 @@ jobs:
         run: terraform validate
 
       - name: Write Global vars.tfvars
-        working-directory: deploy/terraform/env
+        working-directory: deploy/terraform/global
         run: |
           cat > global-vars.tfvars <<EOF
           auth0_custom_domain = "${{ secrets.AUTH0_CUSTOM_DOMAIN }}"
