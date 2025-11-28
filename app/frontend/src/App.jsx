@@ -22,7 +22,7 @@ function App() {
         console.log(`Initiating login for organization: ${ORGANIZATION_ID}`);
       } else {
         // log a warning if the organization ID is not set
-        console.warn('REACT_APP_AUTH0_ORGANIZATION_ID environment variable is not set. Login may not be properly scoped.');
+        console.warn('AUTH0_ORGANIZATION_ID environment variable is not set. Login may not be properly scoped.');
       }
 
       // perform the redirect with the configured options

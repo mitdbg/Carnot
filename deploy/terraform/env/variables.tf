@@ -3,16 +3,6 @@ variable "subdomain" {
   type    = string
 }
 
-variable "auth0_custom_domain" {
-  description = "The custom domain you want to use with Auth0"
-  type        = string
-}
-
-variable "auth0_cname_target" {
-  description = "The CNAME value that Auth0 requires"
-  type        = string
-}
-
 variable "aws_region" {
   description = "AWS region for global resources"
   default     = "us-east-1"
@@ -59,12 +49,6 @@ variable "public_subnet_ids" {
   description = "List of public subnet IDs for the ALB."
   type        = list(string)
   default     = ["subnet-27021a61", "subnet-09ffc721"]
-}
-
-variable "acm_certificate_arn" {
-  description = "The ARN of the ACM certificate for the ALB HTTPS listener."
-  type        = string
-  default     = "arn:aws:acm:us-east-1:422297141788:certificate/10be4bdb-461d-4dec-9ddf-501e2f157fab"
 }
 
 variable "hosted_zone_id" {

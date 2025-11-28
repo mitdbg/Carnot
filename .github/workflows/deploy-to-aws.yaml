@@ -63,17 +63,25 @@ jobs:
       - name: Terraform Init (Global)
         working-directory: deploy/terraform/global
         id: init-global
-        run: terraform init -upgrade
+        run: terraform init
 
       - name: Terraform Validate (Global)
         working-directory: deploy/terraform/global
         id: validate-global
         run: terraform validate
-      
+
+      - name: Write Global vars.tfvars
+        working-directory: deploy/terraform/global
+        run: |
+          cat > global-vars.tfvars <<EOF
+          auth0_custom_domain = "${{ secrets.AUTH0_CUSTOM_DOMAIN }}"
+          auth0_cname_target = "${{ secrets.AUTH0_CNAME_TARGET }}"
+          EOF
+
       - name: Terraform Apply (Global)
         working-directory: deploy/terraform/global
         id: apply-global
-        run: terraform apply -auto-approve
+        run: terraform apply -var-file="global-vars.tfvars" -auto-approve
 
       ######################################################################
       # STEP 2 — DEPLOY ENVIRONMENT TERRAFORM
@@ -81,7 +89,7 @@ jobs:
 
       - name: Terraform Init (env)
         working-directory: deploy/terraform/env
-        run: terraform init -backend-config="backend-config/${ENV_NAME}.hcl"
+        run: terraform init -backend-config="backend-config/backend.hcl" -reconfigure
 
       - name: Ensure Terraform Workspace Exists
         working-directory: deploy/terraform/env
@@ -97,40 +105,17 @@ jobs:
         working-directory: deploy/terraform/env
         run: terraform validate
 
-      - name: Write vars.tfvars for wl-prod
+      - name: Write Env vars.tfvars
         working-directory: deploy/terraform/env
-        if: ${{ github.base_ref == 'wl-prod' }}
         run: |
-          cat > vars.tfvars <<EOF
+          cat > env-vars.tfvars <<EOF
           subdomain = "${SUBDOMAIN}"
-          auth0_custom_domain = "${{ secrets.WL_PROD_AUTH0_DOMAIN }}"
-          auth0_cname_target = "${{ secrets.WL_PROD_AUTH0_CNAME_TARGET }}"
-          EOF
-
-      - name: Write vars.tfvars for wm-prod
-        working-directory: deploy/terraform/env
-        if: ${{ github.base_ref == 'wm-prod' }}
-        run: |
-          cat > vars.tfvars <<EOF
-          subdomain = "${SUBDOMAIN}"
-          auth0_custom_domain = "${{ secrets.WM_PROD_AUTH0_DOMAIN }}"
-          auth0_cname_target = "${{ secrets.WM_PROD_AUTH0_CNAME_TARGET }}"
-          EOF
-
-      - name: Write vars.tfvars for dev
-        working-directory: deploy/terraform/env
-        if: ${{ github.base_ref != 'wl-prod' && github.base_ref != 'wm-prod' }}
-        run: |
-          cat > vars.tfvars <<EOF
-          subdomain = "${SUBDOMAIN}"
-          auth0_custom_domain = "${{ secrets.DEV_AUTH0_AUTH_DOMAIN }}"
-          auth0_cname_target = "${{ secrets.DEV_AUTH0_CNAME_TARGET }}"
           EOF
 
       - name: Terraform Apply (env)
         working-directory: deploy/terraform/env
         run: |
-          terraform apply -var-file="vars.tfvars" -auto-approve
+          terraform apply -var-file="env-vars.tfvars" -auto-approve
 
       - name: Store EC2 Public IP
         working-directory: deploy/terraform/env
@@ -161,22 +146,22 @@ jobs:
           # Build frontend image
           if [[ "${GITHUB_BASE_REF}" == "main" ]]; then
             docker build -f Dockerfile-frontend \
-              --build-arg VITE_AUTH0_DOMAIN=${{ secrets.DEV_AUTH0_AUTH_DOMAIN }} \
+              --build-arg VITE_AUTH0_DOMAIN=${{ secrets.AUTH0_CUSTOM_DOMAIN }} \
               --build-arg VITE_AUTH0_CLIENT_ID=${{ secrets.DEV_AUTH0_CLIENT_ID }} \
               -t ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend .
           elif [[ "${GITHUB_BASE_REF}" == "wl-prod" ]]; then
             docker build -f Dockerfile-frontend \
-              --build-arg VITE_AUTH0_DOMAIN=${{ secrets.WL_PROD_AUTH0_DOMAIN }} \
+              --build-arg VITE_AUTH0_DOMAIN=${{ secrets.AUTH0_CUSTOM_DOMAIN }} \
               --build-arg VITE_AUTH0_CLIENT_ID=${{ secrets.WL_PROD_AUTH0_CLIENT_ID }} \
               -t ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend .
           elif [[ "${GITHUB_BASE_REF}" == "wm-prod" ]]; then
             docker build -f Dockerfile-frontend \
-              --build-arg VITE_AUTH0_DOMAIN=${{ secrets.WM_PROD_AUTH0_DOMAIN }} \
+              --build-arg VITE_AUTH0_DOMAIN=${{ secrets.AUTH0_CUSTOM_DOMAIN }} \
               --build-arg VITE_AUTH0_CLIENT_ID=${{ secrets.WM_PROD_AUTH0_CLIENT_ID }} \
               -t ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend .
           else
             docker build -f Dockerfile-frontend \
-              --build-arg VITE_AUTH0_DOMAIN=${{ secrets.DEV_AUTH0_AUTH_DOMAIN }} \
+              --build-arg VITE_AUTH0_DOMAIN=${{ secrets.AUTH0_CUSTOM_DOMAIN }} \
               --build-arg VITE_AUTH0_CLIENT_ID=${{ secrets.DEV_AUTH0_CLIENT_ID }} \
               -t ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend .
           fi
