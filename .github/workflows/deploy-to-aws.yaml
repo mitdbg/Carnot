@@ -67,7 +67,7 @@ jobs:
       - name: Terraform Init (Global)
         working-directory: deploy/terraform/global
         id: init-global
-        run: terraform init -upgrade
+        run: terraform init
 
       - name: Terraform Validate (Global)
         working-directory: deploy/terraform/global
@@ -93,7 +93,7 @@ jobs:
 
       - name: Terraform Init (env)
         working-directory: deploy/terraform/env
-        run: terraform init -backend-config="backend-config/${ENV_NAME}.hcl"
+        run: terraform init -backend-config="backend-config/backend.hcl" -reconfigure
 
       - name: Ensure Terraform Workspace Exists
         working-directory: deploy/terraform/env

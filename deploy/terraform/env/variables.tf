@@ -3,16 +3,6 @@ variable "subdomain" {
   type    = string
 }
 
-variable "auth0_custom_domain" {
-  description = "The custom domain you want to use with Auth0"
-  type        = string
-}
-
-variable "auth0_cname_target" {
-  description = "The CNAME value that Auth0 requires"
-  type        = string
-}
-
 variable "aws_region" {
   description = "AWS region for global resources"
   default     = "us-east-1"
