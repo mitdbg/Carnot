@@ -6,8 +6,8 @@ import DataManagementPage from './pages/DataManagementPage'
 import DatasetCreatorPage from './pages/DatasetCreatorPage'
 import UserChatPage from './pages/UserChatPage'
 
-// read the organization ID from the environment variable
-const ORGANIZATION_ID = process.env.AUTH0_ORGANIZATION_ID;
+// read the organization ID from environment variables
+const ORGANIZATION_ID = import.meta.env.AUTH0_ORGANIZATION_ID;
 
 function App() {
   const { isAuthenticated, isLoading, error, loginWithRedirect } = useAuth0()
