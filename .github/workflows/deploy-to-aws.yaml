@@ -1,16 +1,12 @@
 name: Deploy to AWS
 
-# on:
-#   pull_request:
-#     types: [closed]
-#     branches:
-#     - main
-#     - wl-prod
-#     - wm-prod
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches:
-      - dev
+    - main
+    - wl-prod
+    - wm-prod
 
 permissions:
   id-token: write
@@ -93,7 +89,7 @@ jobs:
 
       - name: Terraform Init (env)
         working-directory: deploy/terraform/env
-        run: terraform init -backend-config="backend-config/backend.hcl" -reconfigure
+        run: terraform init -backend-config="backend-config/backend.hcl"
 
       - name: Ensure Terraform Workspace Exists
         working-directory: deploy/terraform/env
