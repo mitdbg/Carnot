@@ -117,7 +117,7 @@ jobs:
         run: |
           cat > env-vars.tfvars <<EOF
           subdomain = "${SUBDOMAIN}"
-          priority_offset = 
+          priority_offset = "${PRIORITY_OFFSET}"
           EOF
 
       - name: Terraform Apply (env)
