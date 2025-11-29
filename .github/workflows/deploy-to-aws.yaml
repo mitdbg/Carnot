@@ -27,9 +27,9 @@ jobs:
       - name: Determine subdomain
         id: subdomain
         run: |
-          if [[ "${GITHUB_BASE_REF}" == "wl-prod" ]]; then
+          if [[ "${GITHUB_REF_NAME}" == "wl-prod" ]]; then
             echo "SUBDOMAIN=${{ secrets.WL_PROD }}" >> $GITHUB_ENV
-          elif [[ "${GITHUB_BASE_REF}" == "wm-prod" ]]; then
+          elif [[ "${GITHUB_REF_NAME}" == "wm-prod" ]]; then
             echo "SUBDOMAIN=${{ secrets.WM_PROD }}" >> $GITHUB_ENV
           else
             echo "SUBDOMAIN=dev" >> $GITHUB_ENV
@@ -38,9 +38,9 @@ jobs:
       - name: Determine Priority priority_offset
         id: priority_offset
         run: |
-          if [[ "${GITHUB_BASE_REF}" == "wl-prod" ]]; then
+          if [[ "${GITHUB_REF_NAME}" == "wl-prod" ]]; then
             echo "PRIORITY_OFFSET=100" >> $GITHUB_ENV
-          elif [[ "${GITHUB_BASE_REF}" == "wm-prod" ]]; then
+          elif [[ "${GITHUB_REF_NAME}" == "wm-prod" ]]; then
             echo "PRIORITY_OFFSET=200" >> $GITHUB_ENV
           else
             echo "PRIORITY_OFFSET=0" >> $GITHUB_ENV
@@ -49,9 +49,9 @@ jobs:
       - name: Determine environment
         id: environment
         run: |
-          if [[ "${GITHUB_BASE_REF}" == "wl-prod" ]]; then
+          if [[ "${GITHUB_REF_NAME}" == "wl-prod" ]]; then
             echo "ENV_NAME=wl-prod" >> $GITHUB_ENV
-          elif [[ "${GITHUB_BASE_REF}" == "wm-prod" ]]; then
+          elif [[ "${GITHUB_REF_NAME}" == "wm-prod" ]]; then
             echo "ENV_NAME=wm-prod" >> $GITHUB_ENV
           else
             echo "ENV_NAME=dev" >> $GITHUB_ENV
