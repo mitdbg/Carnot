@@ -6,8 +6,6 @@ import DataManagementPage from './pages/DataManagementPage'
 import DatasetCreatorPage from './pages/DatasetCreatorPage'
 import UserChatPage from './pages/UserChatPage'
 
-// read the organization ID from the environment variable
-const ORGANIZATION_ID = process.env.AUTH0_ORGANIZATION_ID;
 
 function App() {
   const { isAuthenticated, isLoading, error, loginWithRedirect } = useAuth0()
@@ -15,18 +13,7 @@ function App() {
   // automatically redirect unauthenticated users to Auth0
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      // prepare the organization parameter
-      const loginOptions = {};
-      if (ORGANIZATION_ID) {
-        loginOptions.organization = ORGANIZATION_ID;
-        console.log(`Initiating login for organization: ${ORGANIZATION_ID}`);
-      } else {
-        // log a warning if the organization ID is not set
-        console.warn('AUTH0_ORGANIZATION_ID environment variable is not set. Login may not be properly scoped.');
-      }
-
-      // perform the redirect with the configured options
-      loginWithRedirect(loginOptions);
+      loginWithRedirect();
     }
   }, [isLoading, isAuthenticated, loginWithRedirect])
 
