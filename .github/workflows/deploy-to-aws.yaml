@@ -60,164 +60,164 @@ jobs:
           echo "SUBDOMAIN=${SUBDOMAIN}"
           echo "PRIORITY_OFFSET=${PRIORITY_OFFSET}"
 
-      # - name: Configure AWS Credentials
-      #   uses: aws-actions/configure-aws-credentials@main
-      #   with:
-      #     role-to-assume: arn:aws:iam::422297141788:role/CarnotGithubRole
-      #     aws-region: us-east-1
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@main
+        with:
+          role-to-assume: arn:aws:iam::422297141788:role/CarnotGithubRole
+          aws-region: us-east-1
 
-      # ######################################################################
-      # # STEP 1 — DEPLOY GLOBAL TERRAFORM
-      # ######################################################################
-      # - name: Terraform Init (Global)
-      #   working-directory: deploy/terraform/global
-      #   id: init-global
-      #   run: terraform init
+      ######################################################################
+      # STEP 1 — DEPLOY GLOBAL TERRAFORM
+      ######################################################################
+      - name: Terraform Init (Global)
+        working-directory: deploy/terraform/global
+        id: init-global
+        run: terraform init
 
-      # - name: Terraform Validate (Global)
-      #   working-directory: deploy/terraform/global
-      #   id: validate-global
-      #   run: terraform validate
+      - name: Terraform Validate (Global)
+        working-directory: deploy/terraform/global
+        id: validate-global
+        run: terraform validate
 
-      # - name: Write Global vars.tfvars
-      #   working-directory: deploy/terraform/global
-      #   run: |
-      #     cat > global-vars.tfvars <<EOF
-      #     auth0_custom_domain = "${{ secrets.AUTH0_CUSTOM_DOMAIN }}"
-      #     auth0_cname_target = "${{ secrets.AUTH0_CNAME_TARGET }}"
-      #     EOF
+      - name: Write Global vars.tfvars
+        working-directory: deploy/terraform/global
+        run: |
+          cat > global-vars.tfvars <<EOF
+          auth0_custom_domain = "${{ secrets.AUTH0_CUSTOM_DOMAIN }}"
+          auth0_cname_target = "${{ secrets.AUTH0_CNAME_TARGET }}"
+          EOF
 
-      # - name: Terraform Apply (Global)
-      #   working-directory: deploy/terraform/global
-      #   id: apply-global
-      #   run: terraform apply -var-file="global-vars.tfvars" -auto-approve
+      - name: Terraform Apply (Global)
+        working-directory: deploy/terraform/global
+        id: apply-global
+        run: terraform apply -var-file="global-vars.tfvars" -auto-approve
 
-      # ######################################################################
-      # # STEP 2 — DEPLOY ENVIRONMENT TERRAFORM
-      # ######################################################################
+      ######################################################################
+      # STEP 2 — DEPLOY ENVIRONMENT TERRAFORM
+      ######################################################################
 
-      # - name: Terraform Init (env)
-      #   working-directory: deploy/terraform/env
-      #   run: terraform init -backend-config="backend-config/backend.hcl"
+      - name: Terraform Init (env)
+        working-directory: deploy/terraform/env
+        run: terraform init -backend-config="backend-config/backend.hcl"
 
-      # - name: Ensure Terraform Workspace Exists
-      #   working-directory: deploy/terraform/env
-      #   run: |
-      #     terraform workspace list || true
-      #     terraform workspace new "$ENV_NAME" 2>/dev/null || true
+      - name: Ensure Terraform Workspace Exists
+        working-directory: deploy/terraform/env
+        run: |
+          terraform workspace list || true
+          terraform workspace new "$ENV_NAME" 2>/dev/null || true
 
-      # - name: Select Workspace
-      #   working-directory: deploy/terraform/env
-      #   run: terraform workspace select "$ENV_NAME"
+      - name: Select Workspace
+        working-directory: deploy/terraform/env
+        run: terraform workspace select "$ENV_NAME"
       
-      # - name: Terraform Validate (env)
-      #   working-directory: deploy/terraform/env
-      #   run: terraform validate
+      - name: Terraform Validate (env)
+        working-directory: deploy/terraform/env
+        run: terraform validate
 
-      # - name: Write Env vars.tfvars
-      #   working-directory: deploy/terraform/env
-      #   run: |
-      #     cat > env-vars.tfvars <<EOF
-      #     subdomain = "${SUBDOMAIN}"
-      #     priority_offset = "${PRIORITY_OFFSET}"
-      #     EOF
+      - name: Write Env vars.tfvars
+        working-directory: deploy/terraform/env
+        run: |
+          cat > env-vars.tfvars <<EOF
+          subdomain = "${SUBDOMAIN}"
+          priority_offset = "${PRIORITY_OFFSET}"
+          EOF
 
-      # - name: Terraform Apply (env)
-      #   working-directory: deploy/terraform/env
-      #   run: |
-      #     terraform apply -var-file="env-vars.tfvars" -auto-approve
+      - name: Terraform Apply (env)
+        working-directory: deploy/terraform/env
+        run: |
+          terraform apply -var-file="env-vars.tfvars" -auto-approve
 
-      # - name: Store EC2 Public IP
-      #   working-directory: deploy/terraform/env
-      #   id: ec2-ip
-      #   run: |
-      #     ec2_public_ip=$(terraform output -raw ec2_public_ip)
-      #     echo "EC2_PUBLIC_IP=$ec2_public_ip" >> $GITHUB_ENV
-      # ######################################################################
+      - name: Store EC2 Public IP
+        working-directory: deploy/terraform/env
+        id: ec2-ip
+        run: |
+          ec2_public_ip=$(terraform output -raw ec2_public_ip)
+          echo "EC2_PUBLIC_IP=$ec2_public_ip" >> $GITHUB_ENV
+      ######################################################################
 
-      # - name: Login to Docker Hub
-      #   uses: docker/login-action@v3
-      #   with:
-      #     username: ${{ vars.DOCKERHUB_USERNAME }}
-      #     password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # - name: Build & Push Docker Images to Docker Hub
-      #   run: |
-      #     # Copy relevant source files to build context
-      #     cp -r app/frontend deploy/compose/frontend
-      #     cp -r app/backend deploy/compose/backend
-      #     cp -r src deploy/compose/src
-      #     cp pyproject.toml deploy/compose/pyproject.toml
-      #     cp README.md deploy/compose/README.md
+      - name: Build & Push Docker Images to Docker Hub
+        run: |
+          # Copy relevant source files to build context
+          cp -r app/frontend deploy/compose/frontend
+          cp -r app/backend deploy/compose/backend
+          cp -r src deploy/compose/src
+          cp pyproject.toml deploy/compose/pyproject.toml
+          cp README.md deploy/compose/README.md
 
-      #     # navigate to build context
-      #     cd deploy/compose
+          # navigate to build context
+          cd deploy/compose
 
-      #     # Build frontend image
-      #     if [[ "${GITHUB_BASE_REF}" == "wl-prod" ]]; then
-      #       docker build -f Dockerfile-frontend \
-      #         --build-arg VITE_AUTH0_DOMAIN=${{ secrets.AUTH0_CUSTOM_DOMAIN }} \
-      #         --build-arg VITE_AUTH0_CLIENT_ID=${{ secrets.WL_PROD_AUTH0_CLIENT_ID }} \
-      #         --build-arg VITE_AUTH0_ORGANIZATION_ID=${{ secrets.WL_PROD_AUTH0_ORGANIZATION_ID }} \
-      #         -t ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend .
-      #     elif [[ "${GITHUB_BASE_REF}" == "wm-prod" ]]; then
-      #       docker build -f Dockerfile-frontend \
-      #         --build-arg VITE_AUTH0_DOMAIN=${{ secrets.AUTH0_CUSTOM_DOMAIN }} \
-      #         --build-arg VITE_AUTH0_CLIENT_ID=${{ secrets.WM_PROD_AUTH0_CLIENT_ID }} \
-      #         --build-arg VITE_AUTH0_ORGANIZATION_ID=${{ secrets.WM_PROD_AUTH0_ORGANIZATION_ID }} \
-      #         -t ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend .
-      #     else
-      #       docker build -f Dockerfile-frontend \
-      #         --build-arg VITE_AUTH0_DOMAIN=${{ secrets.AUTH0_CUSTOM_DOMAIN }} \
-      #         --build-arg VITE_AUTH0_CLIENT_ID=${{ secrets.DEV_AUTH0_CLIENT_ID }} \
-      #         --build-arg VITE_AUTH0_ORGANIZATION_ID=${{ secrets.DEV_AUTH0_ORGANIZATION_ID }} \
-      #         -t ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend .
-      #     fi
+          # Build frontend image
+          if [[ "${GITHUB_BASE_REF}" == "wl-prod" ]]; then
+            docker build -f Dockerfile-frontend \
+              --build-arg VITE_AUTH0_DOMAIN=${{ secrets.AUTH0_CUSTOM_DOMAIN }} \
+              --build-arg VITE_AUTH0_CLIENT_ID=${{ secrets.WL_PROD_AUTH0_CLIENT_ID }} \
+              --build-arg VITE_AUTH0_ORGANIZATION_ID=${{ secrets.WL_PROD_AUTH0_ORGANIZATION_ID }} \
+              -t ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend .
+          elif [[ "${GITHUB_BASE_REF}" == "wm-prod" ]]; then
+            docker build -f Dockerfile-frontend \
+              --build-arg VITE_AUTH0_DOMAIN=${{ secrets.AUTH0_CUSTOM_DOMAIN }} \
+              --build-arg VITE_AUTH0_CLIENT_ID=${{ secrets.WM_PROD_AUTH0_CLIENT_ID }} \
+              --build-arg VITE_AUTH0_ORGANIZATION_ID=${{ secrets.WM_PROD_AUTH0_ORGANIZATION_ID }} \
+              -t ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend .
+          else
+            docker build -f Dockerfile-frontend \
+              --build-arg VITE_AUTH0_DOMAIN=${{ secrets.AUTH0_CUSTOM_DOMAIN }} \
+              --build-arg VITE_AUTH0_CLIENT_ID=${{ secrets.DEV_AUTH0_CLIENT_ID }} \
+              --build-arg VITE_AUTH0_ORGANIZATION_ID=${{ secrets.DEV_AUTH0_ORGANIZATION_ID }} \
+              -t ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend .
+          fi
 
-      #     # Build backend image
-      #     docker build -f Dockerfile-backend -t ${{ vars.DOCKERHUB_USERNAME }}/carnot:backend .
+          # Build backend image
+          docker build -f Dockerfile-backend -t ${{ vars.DOCKERHUB_USERNAME }}/carnot:backend .
 
-      #     # Push both images
-      #     docker push ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend
-      #     docker push ${{ vars.DOCKERHUB_USERNAME }}/carnot:backend
+          # Push both images
+          docker push ${{ vars.DOCKERHUB_USERNAME }}/carnot:frontend
+          docker push ${{ vars.DOCKERHUB_USERNAME }}/carnot:backend
 
-      # - name: Deploy Application to EC2 Instance
-      #   env:
-      #     CARNOT_DB_PASSWORD: ${{ secrets.CARNOT_DB_PASSWORD }}
-      #     CARNOT_DB_USER: ${{ secrets.CARNOT_DB_USER }}
-      #     CARNOT_DB_NAME: ${{ secrets.CARNOT_DB_NAME }}
-      #     CARNOT_DEPLOY_KEY: ${{ secrets.CARNOT_DEPLOY_KEY }}
-      #   run: |
-      #     echo "Deploying to EC2 Instance at $EC2_PUBLIC_IP"
+      - name: Deploy Application to EC2 Instance
+        env:
+          CARNOT_DB_PASSWORD: ${{ secrets.CARNOT_DB_PASSWORD }}
+          CARNOT_DB_USER: ${{ secrets.CARNOT_DB_USER }}
+          CARNOT_DB_NAME: ${{ secrets.CARNOT_DB_NAME }}
+          CARNOT_DEPLOY_KEY: ${{ secrets.CARNOT_DEPLOY_KEY }}
+        run: |
+          echo "Deploying to EC2 Instance at $EC2_PUBLIC_IP"
 
-      #     # Prepare deploy directory
-      #     mkdir -p deploy/compose/secrets
-      #     echo "$CARNOT_DB_PASSWORD" > deploy/compose/secrets/db_password.txt
-      #     echo "$CARNOT_DB_USER" > deploy/compose/secrets/db_user.txt
-      #     echo "$CARNOT_DB_NAME" > deploy/compose/secrets/db_name.txt
-      #     chmod 600 deploy/compose/secrets/db_*.txt
+          # Prepare deploy directory
+          mkdir -p deploy/compose/secrets
+          echo "$CARNOT_DB_PASSWORD" > deploy/compose/secrets/db_password.txt
+          echo "$CARNOT_DB_USER" > deploy/compose/secrets/db_user.txt
+          echo "$CARNOT_DB_NAME" > deploy/compose/secrets/db_name.txt
+          chmod 600 deploy/compose/secrets/db_*.txt
 
-      #     # Copy compose bundle to EC2
-      #     echo "$CARNOT_DEPLOY_KEY" > deploy/terraform/deployer_key.pem
-      #     chmod 400 deploy/terraform/deployer_key.pem
-      #     scp -r -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem deploy/compose ubuntu@$EC2_PUBLIC_IP:~/
+          # Copy compose bundle to EC2
+          echo "$CARNOT_DEPLOY_KEY" > deploy/terraform/deployer_key.pem
+          chmod 400 deploy/terraform/deployer_key.pem
+          scp -r -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem deploy/compose ubuntu@$EC2_PUBLIC_IP:~/
 
-      #     # Shutdown current docker containers
-      #     ssh -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem ubuntu@$EC2_PUBLIC_IP "
-      #       cd compose
-      #       docker compose down
-      #       docker rmi -f $(docker images -aq)
-      #       docker system prune -af
-      #     "
+          # Shutdown current docker containers
+          ssh -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem ubuntu@$EC2_PUBLIC_IP "
+            cd compose
+            docker compose down
+            docker rmi -f $(docker images -aq)
+            docker system prune -af
+          "
 
-      #     # Login & deploy using pulled images
-      #     ssh -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem ubuntu@$EC2_PUBLIC_IP "
-      #       cd compose
-      #       export SUBDOMAIN=${SUBDOMAIN}
-      #       export API_BASE_URL="http://$SUBDOMAIN.carnot-research.org:8000/api"
-      #       export BASE_URL="http://$SUBDOMAIN.carnot-research.org:8000"
-      #       export BASE_ORIGINS="http://$SUBDOMAIN.carnot-research.org,https://$SUBDOMAIN.carnot-research.org"
-      #       docker login -u '${{ vars.DOCKERHUB_USERNAME }}' -p '${{ secrets.DOCKERHUB_TOKEN }}'
-      #       docker compose pull
-      #       docker compose up -d
-      #     "
+          # Login & deploy using pulled images
+          ssh -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem ubuntu@$EC2_PUBLIC_IP "
+            cd compose
+            export SUBDOMAIN=${SUBDOMAIN}
+            export API_BASE_URL="http://$SUBDOMAIN.carnot-research.org:8000/api"
+            export BASE_URL="http://$SUBDOMAIN.carnot-research.org:8000"
+            export BASE_ORIGINS="http://$SUBDOMAIN.carnot-research.org,https://$SUBDOMAIN.carnot-research.org"
+            docker login -u '${{ vars.DOCKERHUB_USERNAME }}' -p '${{ secrets.DOCKERHUB_TOKEN }}'
+            docker compose pull
+            docker compose up -d
+          "
