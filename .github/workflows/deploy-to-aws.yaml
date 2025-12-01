@@ -88,7 +88,9 @@ jobs:
       - name: Terraform Apply (Global)
         working-directory: deploy/terraform/global
         id: apply-global
-        run: terraform apply -var-file="global-vars.tfvars" -auto-approve
+        run: |
+          terraform import aws_s3_bucket.homepage carnot-research-homepage
+          terraform apply -var-file="global-vars.tfvars" -auto-approve
       
       - name: Upload Homepage to S3
         run: |
