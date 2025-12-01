@@ -90,7 +90,6 @@ jobs:
         id: apply-global
         run: |
           terraform force-unlock -force 7a6b02cd-a896-41b7-55d5-2b2731d7326c
-          terraform import -var-file="global-vars.tfvars" aws_s3_bucket.homepage carnot-research-homepage
           terraform apply -var-file="global-vars.tfvars" -auto-approve
       
       - name: Upload Homepage to S3
