@@ -17,9 +17,18 @@ from app.models.schemas import (
 
 router = APIRouter()
 
-PROJECT_ROOT = Path(__file__).resolve().parents[4]
-DATA_DIR = PROJECT_ROOT / "data"
-UPLOAD_DIR = Path(os.getcwd()) / "uploaded_files"
+IS_REMOTE_ENV = os.getenv("REMOTE_ENV", "false").lower() == "true"
+if IS_REMOTE_ENV:
+    COMPANY_ENV = os.getenv("COMPANY_ENV", "dev")
+    DATA_DIR = Path(f"s3://carnot-research/{COMPANY_ENV}/data/")
+    UPLOAD_DIR = Path(f"s3://carnot-research/{COMPANY_ENV}/uploaded_files/")
+else:
+    PROJECT_ROOT = Path(__file__).resolve().parents[4]
+    DATA_DIR = PROJECT_ROOT / "data"
+    UPLOAD_DIR = Path(os.getcwd()) / "uploaded_files"
+    os.makedirs(DATA_DIR, exist_ok=True)
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+
 ROOT_DIRECTORIES = {
     "uploaded_files": UPLOAD_DIR,
     "data": DATA_DIR,
@@ -37,6 +46,7 @@ def _resolve_relative_path(relative_path: str) -> tuple[str, Path, Path]:
     normalized = _normalize_relative_path(relative_path)
     parts = normalized.split("/", 1)
     root_name = parts[0]
+    # TODO: this logic will not work with S3 paths
     if root_name not in ROOT_DIRECTORIES:
         raise HTTPException(status_code=400, detail=f"Unsupported root in path: {relative_path}")
 

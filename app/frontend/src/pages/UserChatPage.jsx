@@ -3,7 +3,7 @@ import { Send, Database, CheckSquare, Square, AlertCircle, Loader2, XCircle, Rot
 import axios from 'axios'
 import ProgressDisplay from '../components/ProgressDisplay'
 
-const API_BASE_URL = 'http://localhost:8000'
+const BASE_URL = process.env.BASE_URL || "http://localhost:8000"
 
 function UserChatPage() {
   const [datasets, setDatasets] = useState([])
@@ -39,7 +39,7 @@ function UserChatPage() {
   
   const loadConversations = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/conversations/`)
+      const response = await axios.get(`${BASE_URL}/api/conversations/`)
       setConversations(response.data)
     } catch (error) {
       console.error('Error loading conversations:', error)
@@ -48,7 +48,7 @@ function UserChatPage() {
 
   const loadConversation = async (conversationId) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/conversations/${conversationId}`)
+      const response = await axios.get(`${BASE_URL}/api/conversations/${conversationId}`)
       const conversation = response.data
       
       // Set session ID and messages
@@ -81,7 +81,7 @@ function UserChatPage() {
     }
     
     try {
-      await axios.delete(`${API_BASE_URL}/api/conversations/${conversationId}`)
+      await axios.delete(`${BASE_URL}/api/conversations/${conversationId}`)
       
       // If we deleted the current conversation, create a new session
       if (conversationId === currentConversationId) {
@@ -105,7 +105,7 @@ function UserChatPage() {
 
   const loadDatasets = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/datasets/`)
+      const response = await axios.get(`${BASE_URL}/api/datasets/`)
       setDatasets(response.data)
     } catch (error) {
       console.error('Error loading datasets:', error)
@@ -174,7 +174,7 @@ function UserChatPage() {
       // Create abort controller for this request
       abortControllerRef.current = new AbortController()
 
-      const response = await fetch(`${API_BASE_URL}/api/query/execute`, {
+      const response = await fetch(`${BASE_URL}/api/query/execute`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -299,7 +299,7 @@ function UserChatPage() {
               </pre>
               {message.csv_file && (
                 <a
-                  href={`${API_BASE_URL}/api/query/download/${message.csv_file}`}
+                  href={`${BASE_URL}/api/query/download/${message.csv_file}`}
                   download={message.csv_file}
                   className="inline-flex items-center gap-2 bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-lg transition-colors"
                 >
