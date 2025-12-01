@@ -79,4 +79,3 @@ class SearchResult(BaseModel):
     file_name: str
     relevance_score: float | None = None
     snippet: str | None = None
-

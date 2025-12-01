@@ -35,3 +35,7 @@ $ gh api graphql -f query='
   }
 }'
 ```
+
+To enable OIDC with AWS, I needed to create role with the trust policy using:
+$ aws iam create-role --role-name <role-name> --assume-role-policy-document file://path/to/trust-policy.json
+
