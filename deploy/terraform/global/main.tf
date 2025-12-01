@@ -151,8 +151,8 @@ resource "aws_instance" "homepage_ec2" {
   instance_type               = "t2.micro"
   key_name                    = aws_key_pair.deployer_key.key_name
   vpc_security_group_ids      = [aws_security_group.homepage_sg.id]
-  subnet_id                   = var.public_subnet_ids[0] # Pick the first public subnet
-  associate_public_ip_address = true # Required for install/pull to work
+  subnet_id                   = var.public_subnet_ids[0]
+  associate_public_ip_address = true
 
   tags = {
     Name = "carnot-homepage-ec2"
@@ -213,6 +213,7 @@ resource "aws_lb_listener_rule" "homepage_rule_https" {
     type = "forward"
     target_group_arn = aws_lb_target_group.homepage_tg.arn
   }
+
   condition {
     host_header {
       values = ["carnot-research.org"]

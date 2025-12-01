@@ -107,6 +107,7 @@ jobs:
           # Setup SSH Key
           echo "$CARNOT_DEPLOY_KEY" > deploy/terraform/deployer_key.pem
           chmod 400 deploy/terraform/deployer_key.pem
+          scp -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem app/index.html ubuntu@$HOMEPAGE_PUBLIC_IP:~/
 
           # Copy index.html to the NGINX default location inside the container's volume mount
           # NGINX runs on port 80 INSIDE the container, which is mounted to a volume.
@@ -116,7 +117,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem ubuntu@$HOMEPAGE_PUBLIC_IP "
             # Copy your index.html from your local action runner to the EC2
             # Then copy it from the EC2 into the running container
-            docker cp app/index.html carnot-homepage-nginx:/usr/share/nginx/html/index.html
+            docker cp index.html carnot-homepage-nginx:/usr/share/nginx/html/index.html
           "
 
       ######################################################################
@@ -160,6 +161,7 @@ jobs:
         run: |
           ec2_public_ip=$(terraform output -raw ec2_public_ip)
           echo "EC2_PUBLIC_IP=$ec2_public_ip" >> $GITHUB_ENV
+
       ######################################################################
       # STEP 3 — BUILD & DEPLOY APPLICATION
       ######################################################################
