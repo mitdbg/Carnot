@@ -3,7 +3,7 @@ from typing import List, Dict, Any, Optional
 import logging
 
 from .config import Config, load_config
-from .retrieval_types import Query, SearchResult
+from .types import Query, SearchResult
 from .quest_data_prep import prepare_quest_documents
 from ._internal.index_management import IndexManagementPipeline
 from ._internal.query_planning import QueryPlanner, LogicalPlan
