@@ -2,8 +2,8 @@ from __future__ import annotations
 import os
 import json
 import logging
-from client import SearchClient
-from quest_data_prep import prepare_quest_queries
+from carnot.core.data.auto_retrieval import SearchClient
+from carnot.core.data.auto_retrieval import prepare_quest_queries
 
 logging.basicConfig(level=logging.INFO)
 
