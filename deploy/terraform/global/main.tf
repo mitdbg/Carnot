@@ -168,10 +168,13 @@ resource "aws_instance" "homepage_ec2" {
               echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
               sudo apt-get update
               sudo apt-get install -y docker-ce docker-ce-cli containerd.io
-              sudo usermod -aG docker ubuntu
+
+              # start and enable docker service
+              sudo systemctl start docker
+              sudo systemctl enable docker
 
               # Pull and Run NGINX Container
-              docker run -d -p 8080:80 --name carnot-homepage-nginx nginx:latest
+              sudo docker run -d -p 8080:80 --name carnot-homepage-nginx nginx:latest
               EOF
 }
 
