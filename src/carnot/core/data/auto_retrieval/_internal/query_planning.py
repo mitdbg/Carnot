@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Mapping, Any, Optional
 
-from ..types import Query
+from ..retrieval_types import Query
 from .index_management import IndexManagementPipeline
 
 

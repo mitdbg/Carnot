@@ -2,7 +2,7 @@
 from __future__ import annotations
 from typing import List
 
-from ..types import SearchResult
+from ..retrieval_types import SearchResult
 from .index_management import IndexManagementPipeline
 from .query_optimization import PhysicalPlan
 
