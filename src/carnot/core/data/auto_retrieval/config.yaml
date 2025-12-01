@@ -1,7 +1,7 @@
 dataset_name: quest
 
 # Chroma basics
-chroma_persist_dir: "./chroma_quest"       
+chroma_persist_dir: "/orcd/home/002/joycequ/carnot-orcd-2/chroma_quest"       
 chroma_collection_name: "quest_documents"   
 embedding_model_name: "BAAI/bge-small-en-v1.5"
 clear_chroma_collection: false
