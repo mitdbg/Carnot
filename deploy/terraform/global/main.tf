@@ -112,6 +112,14 @@ resource "aws_s3_bucket" "homepage" {
   }
 }
 
+resource "aws_s3_bucket_ownership_controls" "homepage_ownership" {
+  bucket = aws_s3_bucket.homepage.id
+
+  rule {
+    object_ownership = "BucketOwnerEnforced"
+  }
+}
+
 resource "aws_s3_bucket_public_access_block" "public_bucket_access_block" {
   bucket = aws_s3_bucket.homepage.id
 
@@ -144,7 +152,10 @@ resource "aws_s3_bucket_policy" "homepage_policy" {
       }
     ]
   })
-  depends_on = [aws_s3_bucket_website_configuration.homepage_website]
+  depends_on = [
+    aws_s3_bucket_ownership_controls.homepage_ownership,
+    aws_s3_bucket_public_access_block.public_bucket_access_block
+  ]
 }
 
 # -------------------------------
