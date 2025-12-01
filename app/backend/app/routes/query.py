@@ -2,6 +2,8 @@ import asyncio
 import json
 import logging
 import os
+import re
+import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
@@ -28,6 +30,31 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 SESSION_TIMEOUT = timedelta(minutes=30)
+class OutputCapture:
+    """Captures stdout/stderr to both a file and the original streams"""
+    def __init__(self, filepath, original_stream):
+        self.filepath = filepath
+        self.original_stream = original_stream
+        self.file = open(filepath, 'a', buffering=1)
+        # ANSI escape sequence pattern
+        self.ansi_pattern = re.compile(r'\x1b\[[0-9;]*m')
+
+    def write(self, data):
+        # Write to file with ANSI codes stripped
+        clean_data = self.ansi_pattern.sub('', data)
+        self.file.write(clean_data)
+        self.file.flush()
+        # Write to original stream with ANSI codes
+        self.original_stream.write(data)
+        self.original_stream.flush()
+
+    def flush(self):
+        self.file.flush()
+        self.original_stream.flush()
+
+    def close(self):
+        self.file.close()
+
 IS_REMOTE_ENV = os.getenv("REMOTE_ENV", "false").lower() == "true"
 if IS_REMOTE_ENV:
     COMPANY_ENV = os.getenv("COMPANY_ENV", "dev")
@@ -256,19 +283,44 @@ async def stream_query_execution(
         yield f"data: {json.dumps({'type': 'status', 'message': f'Executing query: {query}'})}\n\n"
         await asyncio.sleep(0.1)
 
+        # Setup progress logging
+        progress_log = session_dir / "progress.jsonl"
+        # Clear old progress log if exists
+        if progress_log.exists():
+            progress_log.unlink()
+
         compute_ctx = ctx.compute(query)
         config = carnot.QueryProcessorConfig(
             policy=carnot.MaxQuality(),
-            progress=False,
+            progress=True,  # Enable console progress
+            session_id=session_id,  # Add session ID for tracking
+            progress_log_file=str(progress_log),  # Add progress log file path
         )
 
         yield f"data: {json.dumps({'type': 'status', 'message': 'Running Carnot query processor...'})}\n\n"
         await asyncio.sleep(0.1)
 
+        output_log = session_dir / "output.txt"
+        if output_log.exists():
+            output_log.unlink()
+        original_stdout = sys.stdout
+        original_stderr = sys.stderr
+        def run_query_with_capture():
+            stdout_capture = OutputCapture(output_log, original_stdout)
+            stderr_capture = OutputCapture(output_log, original_stderr)
+            
+            try:
+                sys.stdout = stdout_capture
+                sys.stderr = stderr_capture
+                return compute_ctx.run(config=config)
+            finally:
+                sys.stdout = original_stdout
+                sys.stderr = original_stderr
+                stdout_capture.close()
+                stderr_capture.close()
+        
         loop = asyncio.get_event_loop()
-        output = await loop.run_in_executor(
-            None, lambda: compute_ctx.run(config=config)
-        )
+        output = await loop.run_in_executor(None, run_query_with_capture)
 
         active_sessions[session_id] = {
             "context": compute_ctx,
@@ -386,6 +438,57 @@ async def execute_query(request: QueryRequest):
         stream_query_execution(request.query, request.dataset_ids, request.session_id),
         media_type="text/event-stream"
     )
+
+@router.get("/progress/{session_id}")
+async def get_progress(session_id: str, since_timestamp: str | None = None):
+    """
+    Get progress events for a session, optionally filtering by timestamp
+    """
+    try:
+        session_dir = BACKEND_ROOT / "sessions" / session_id
+        progress_log = session_dir / "progress.jsonl"
+        
+        if not progress_log.exists():
+            return {"events": []}
+        
+        events = []
+        with open(progress_log) as f:
+            for line in f:
+                if line.strip():
+                    try:
+                        event = json.loads(line)
+                        # Filter by timestamp if provided
+                        if since_timestamp is None or event['timestamp'] > since_timestamp:
+                            events.append(event)
+                    except json.JSONDecodeError:
+                        continue
+        
+        return {"events": events}
+    except Exception as e:
+        logger.error(f"Error reading progress log: {e}")
+        return {"events": [], "error": str(e)}
+
+
+@router.get("/output/{session_id}")
+async def get_output(session_id: str, last_line: int = 0):
+    """
+    Get terminal output for a session, returns lines after last_line
+    """
+    try:
+        session_dir = BACKEND_ROOT / "sessions" / session_id
+        output_file = session_dir / "output.txt"
+        
+        if not output_file.exists():
+            return {"lines": [], "total_lines": 0}
+        
+        with open(output_file, 'r') as f:
+            all_lines = f.readlines()
+            new_lines = all_lines[last_line:]
+            return {"lines": new_lines, "total_lines": len(all_lines)}
+    except Exception as e:
+        logger.error(f"Error reading output log: {e}")
+        return {"lines": [], "total_lines": 0}
+
 
 @router.get("/download/{filename}")
 async def download_query_results(filename: str):
