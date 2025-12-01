@@ -112,6 +112,13 @@ resource "aws_s3_bucket" "homepage" {
   }
 }
 
+resource "aws_s3_bucket_acl" "homepage_acl" {
+  depends_on = [aws_s3_bucket.homepage]
+
+  bucket = aws_s3_bucket.homepage.id
+  acl    = "public-read"
+}
+
 resource "aws_s3_bucket_website_configuration" "homepage_website" {
   bucket = aws_s3_bucket.homepage.id
 
@@ -135,6 +142,7 @@ resource "aws_s3_bucket_policy" "homepage_policy" {
       }
     ]
   })
+  depends_on = [aws_s3_bucket_website_configuration.homepage_website]
 }
 
 # -------------------------------
