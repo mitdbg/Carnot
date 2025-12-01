@@ -89,7 +89,7 @@ jobs:
         working-directory: deploy/terraform/global
         id: apply-global
         run: |
-          terraform force-unlock -force f2ace363-33fa-c9f7-3e08-a4b0a8daddc4
+          terraform force-unlock -force 022fc15c-2e10-8a46-57a5-322dec7965e1
           terraform apply -var-file="global-vars.tfvars" -auto-approve
       
       - name: Upload Homepage to S3
