@@ -100,3 +100,90 @@ resource "aws_route53_record" "auth0_custom_domain" {
 
   records = [var.auth0_cname_target]
 }
+
+# -------------------------------
+# S3 Bucket for Homepage
+# -------------------------------
+resource "aws_s3_bucket" "homepage" {
+  bucket = "carnot-research-homepage"
+
+  tags = {
+    Name = "Carnot Homepage"
+  }
+}
+
+resource "aws_s3_bucket_website_configuration" "homepage_website" {
+  bucket = aws_s3_bucket.homepage.id
+
+  index_document {
+    suffix = "index.html"
+  }
+}
+
+# The ALB needs permission to read from the S3 bucket via the S3 endpoint
+resource "aws_s3_bucket_policy" "homepage_policy" {
+  bucket = aws_s3_bucket.homepage.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "AllowPublicRead"
+        Effect    = "Allow"
+        Principal = "*"
+        Action    = "s3:GetObject"
+        Resource  = "${aws_s3_bucket.homepage.arn}/*"
+      }
+    ]
+  })
+}
+
+# -------------------------------
+# ALB Listener Rule for Root Domain (Homepage) - HTTPS
+# -------------------------------
+resource "aws_lb_listener_rule" "homepage_rule_https" {
+  listener_arn = aws_lb_listener.https_listener.arn
+  priority     = 1
+
+  action {
+    type = "redirect"
+    redirect {
+      host        = aws_s3_bucket_website_configuration.homepage_website.website_endpoint
+      path        = "/#{path}"
+      query       = "#{query}"
+      protocol    = "HTTPS"
+      status_code = "HTTP_302"
+    }
+  }
+
+  condition {
+    host_header {
+      values = ["carnot-research.org"]
+    }
+  }
+}
+
+# -------------------------------
+# ALB Listener Rule for Root Domain (Homepage) - HTTP
+# -------------------------------
+resource "aws_lb_listener_rule" "homepage_rule_http" {
+  listener_arn = aws_lb_listener.http_redirect.arn
+  priority     = 1
+
+  action {
+    type = "redirect"
+    redirect {
+      host        = "carnot-research.org"
+      path        = "/#{path}"
+      query       = "#{query}"
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
+
+  condition {
+    host_header {
+      values = ["carnot-research.org"]
+    }
+  }
+}
