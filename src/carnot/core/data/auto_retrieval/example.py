@@ -1,7 +1,10 @@
 from __future__ import annotations
 import os
+import sys
 import json
 import logging
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', '..')))
 from carnot.core.data.auto_retrieval import SearchClient
 from carnot.core.data.auto_retrieval import prepare_quest_queries
 
