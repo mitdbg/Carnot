@@ -171,7 +171,7 @@ resource "aws_lb_listener_rule" "homepage_rule_https" {
       host        = aws_s3_bucket_website_configuration.homepage_website.website_endpoint
       path        = "/#{path}"
       query       = "#{query}"
-      protocol    = "HTTPS"
+      protocol    = "HTTP"
       status_code = "HTTP_302"
     }
   }
@@ -206,5 +206,20 @@ resource "aws_lb_listener_rule" "homepage_rule_http" {
     host_header {
       values = ["carnot-research.org"]
     }
+  }
+}
+
+# -------------------------------
+# Route53 Record for Root Domain
+# -------------------------------
+resource "aws_route53_record" "root_domain" {
+  zone_id = var.hosted_zone_id
+  name    = "carnot-research.org"
+  type    = "A"
+
+  alias {
+    name                   = aws_lb.global_alb.dns_name
+    zone_id                = aws_lb.global_alb.zone_id
+    evaluate_target_health = true
   }
 }
