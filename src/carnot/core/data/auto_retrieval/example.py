@@ -7,8 +7,8 @@ from carnot.core.data.auto_retrieval import prepare_quest_queries
 
 logging.basicConfig(level=logging.INFO)
 
-documents_path = "/orcd/home/002/joycequ/quest_data/documents.jsonl"
-config_path = "config.yaml"
+documents_path = "/home/joycequ/quest_data/documents.jsonl"
+config_path = "/home/joycequ/Carnot/src/carnot/core/data/auto_retrieval/config.yaml"
 queries = prepare_quest_queries()
 print(f"Loaded {len(queries)} queries")
 
