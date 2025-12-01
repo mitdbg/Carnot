@@ -35,10 +35,10 @@ class OutputCapture:
     def __init__(self, filepath, original_stream):
         self.filepath = filepath
         self.original_stream = original_stream
-        self.file = open(filepath, 'a', buffering=1)  
+        self.file = open(filepath, 'a', buffering=1)
         # ANSI escape sequence pattern
         self.ansi_pattern = re.compile(r'\x1b\[[0-9;]*m')
-    
+
     def write(self, data):
         # Write to file with ANSI codes stripped
         clean_data = self.ansi_pattern.sub('', data)
@@ -47,11 +47,11 @@ class OutputCapture:
         # Write to original stream with ANSI codes
         self.original_stream.write(data)
         self.original_stream.flush()
-    
+
     def flush(self):
         self.file.flush()
         self.original_stream.flush()
-    
+
     def close(self):
         self.file.close()
 
