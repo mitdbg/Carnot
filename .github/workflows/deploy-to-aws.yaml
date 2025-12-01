@@ -91,8 +91,33 @@ jobs:
         run: |
           terraform apply -var-file="global-vars.tfvars" -auto-approve
       
-      - name: Upload Homepage to S3
-        run: aws s3 cp app/index.html s3://carnot-research-homepage/index.html
+      - name: Get Homepage EC2 Public IP
+        working-directory: deploy/terraform/global
+        id: homepage-ip
+        run: |
+          homepage_public_ip=$(terraform output -raw homepage_public_ip)
+          echo "HOMEPAGE_PUBLIC_IP=$homepage_public_ip" >> $GITHUB_ENV
+
+      - name: Copy Homepage Files to New EC2
+        env:
+          CARNOT_DEPLOY_KEY: ${{ secrets.CARNOT_DEPLOY_KEY }}
+        run: |
+          echo "Copying homepage files to $HOMEPAGE_PUBLIC_IP"
+          
+          # Setup SSH Key
+          echo "$CARNOT_DEPLOY_KEY" > deploy/terraform/deployer_key.pem
+          chmod 400 deploy/terraform/deployer_key.pem
+
+          # Copy index.html to the NGINX default location inside the container's volume mount
+          # NGINX runs on port 80 INSIDE the container, which is mounted to a volume.
+          # We need to copy directly to the path NGINX serves from.
+          # The standard NGINX container serves from /usr/share/nginx/html.
+          # The simplest way is to overwrite the default index.html inside the container
+          ssh -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem ubuntu@$HOMEPAGE_PUBLIC_IP "
+            # Copy your index.html from your local action runner to the EC2
+            # Then copy it from the EC2 into the running container
+            docker cp app/index.html carnot-homepage-nginx:/usr/share/nginx/html/index.html
+          "
 
       ######################################################################
       # STEP 2 — DEPLOY ENVIRONMENT TERRAFORM

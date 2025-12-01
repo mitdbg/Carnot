@@ -102,60 +102,104 @@ resource "aws_route53_record" "auth0_custom_domain" {
 }
 
 # -------------------------------
-# S3 Bucket for Homepage
+# EC2 Instance for Homepage NGINX
 # -------------------------------
-resource "aws_s3_bucket" "homepage" {
-  bucket = "carnot-research-homepage"
+data "aws_ami" "ubuntu" {
+  most_recent = true
+  filter {
+    name   = "name"
+    values = ["*ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+  }
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+  owners = ["099720109477"] # Canonical
+}
+
+resource "aws_security_group" "homepage_sg" {
+  name   = "carnot-homepage-ec2-sg"
+  vpc_id = var.vpc_id
+
+  # Allow SSH from anywhere (or restrict to your IP range)
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"] 
+  }
+
+  # Allow traffic on port 8080 ONLY from the ALB's security group
+  ingress {
+    from_port       = 8080
+    to_port         = 8080
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb_sg.id]
+  }
+
+  # Allow all outbound traffic
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_instance" "homepage_ec2" {
+  ami                         = data.aws_ami.ubuntu.id
+  instance_type               = "t2.micro"
+  key_name                    = aws_key_pair.deployer_key.key_name
+  vpc_security_group_ids      = [aws_security_group.homepage_sg.id]
+  subnet_id                   = var.public_subnet_ids[0] # Pick the first public subnet
+  associate_public_ip_address = true # Required for install/pull to work
 
   tags = {
-    Name = "Carnot Homepage"
+    Name = "carnot-homepage-ec2"
   }
+
+  # Script to run on first launch: install docker, pull nginx, and run container
+  user_data = <<-EOF
+              #!/bin/bash
+              # Install Docker
+              apt-get update
+              apt-get install -y docker.io
+              systemctl start docker
+              systemctl enable docker
+              
+              # Pull and Run NGINX Container
+              docker run -d -p 8080:80 --name carnot-homepage-nginx nginx:latest
+              EOF
 }
 
-resource "aws_s3_bucket_ownership_controls" "homepage_ownership" {
-  bucket = aws_s3_bucket.homepage.id
+# -------------------------------
+# Register Homepage EC2 with its Target Group
+# -------------------------------
+resource "aws_lb_target_group_attachment" "homepage_ec2_attachment" {
+  target_group_arn = aws_lb_target_group.homepage_tg.arn
+  target_id        = aws_instance.homepage_ec2.id
+  port             = 8080
+}
 
-  rule {
-    object_ownership = "BucketOwnerEnforced"
+# -------------------------------
+# Target Group for Homepage NGINX
+# -------------------------------
+resource "aws_lb_target_group" "homepage_tg" {
+  name     = "carnot-homepage-tg"
+  port     = 8080
+  protocol = "HTTP"
+  vpc_id   = var.vpc_id
+
+  health_check {
+    path                = "/"
+    port                = "8080"
+    protocol            = "HTTP"
+    matcher             = "200"
+    interval            = 30
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
   }
-}
-
-resource "aws_s3_bucket_public_access_block" "public_bucket_access_block" {
-  bucket = aws_s3_bucket.homepage.id
-
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
-}
-
-resource "aws_s3_bucket_website_configuration" "homepage_website" {
-  bucket = aws_s3_bucket.homepage.id
-
-  index_document {
-    suffix = "index.html"
-  }
-}
-
-# The ALB needs permission to read from the S3 bucket via the S3 endpoint
-resource "aws_s3_bucket_policy" "homepage_policy" {
-  bucket = aws_s3_bucket.homepage.id
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Sid       = "AllowPublicRead"
-        Effect    = "Allow"
-        Principal = "*"
-        Action    = "s3:GetObject"
-        Resource  = "${aws_s3_bucket.homepage.arn}/*"
-      }
-    ]
-  })
-  depends_on = [
-    aws_s3_bucket_ownership_controls.homepage_ownership,
-    aws_s3_bucket_public_access_block.public_bucket_access_block
-  ]
 }
 
 # -------------------------------
@@ -166,16 +210,9 @@ resource "aws_lb_listener_rule" "homepage_rule_https" {
   priority     = 1
 
   action {
-    type = "redirect"
-    redirect {
-      host        = aws_s3_bucket_website_configuration.homepage_website.website_endpoint
-      path        = "/#{path}"
-      query       = "#{query}"
-      protocol    = "HTTP"
-      status_code = "HTTP_302"
-    }
+    type = "forward"
+    target_group_arn = aws_lb_target_group.homepage_tg.arn
   }
-
   condition {
     host_header {
       values = ["carnot-research.org"]
