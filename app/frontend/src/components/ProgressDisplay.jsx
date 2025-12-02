@@ -32,4 +32,3 @@ const ProgressDisplay = ({ sessionId, isActive }) => {
 };
 
 export default ProgressDisplay;
-

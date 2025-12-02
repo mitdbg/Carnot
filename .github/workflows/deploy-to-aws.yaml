@@ -62,6 +62,13 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::422297141788:role/CarnotGithubRole
           aws-region: us-east-1
+      
+      - name: Write Deployer Key to Files
+        env:
+          CARNOT_DEPLOY_KEY: ${{ secrets.CARNOT_DEPLOY_KEY }}
+        run: |
+          echo "$CARNOT_DEPLOY_KEY" > deployer_key.pem
+          chmod 400 deployer_key.pem
 
       ######################################################################
       # STEP 1 — DEPLOY GLOBAL TERRAFORM
@@ -87,7 +94,34 @@ jobs:
       - name: Terraform Apply (Global)
         working-directory: deploy/terraform/global
         id: apply-global
-        run: terraform apply -var-file="global-vars.tfvars" -auto-approve
+        run: |
+          terraform apply -var-file="global-vars.tfvars" -auto-approve
+      
+      - name: Get Homepage EC2 Public IP
+        working-directory: deploy/terraform/global
+        id: homepage-ip
+        run: |
+          homepage_public_ip=$(terraform output -raw homepage_public_ip)
+          echo "HOMEPAGE_PUBLIC_IP=$homepage_public_ip" >> $GITHUB_ENV
+
+      - name: Start NGINX on Homepage EC2
+        env:
+          CARNOT_DEPLOY_KEY: ${{ secrets.CARNOT_DEPLOY_KEY }}
+        run: |
+          echo "Copying homepage files to $HOMEPAGE_PUBLIC_IP"
+          
+          # copy index.html to EC2; sleep first to wait for it to be ready to accept SSH connections
+          sleep 5
+          scp -o StrictHostKeyChecking=no -i deployer_key.pem app/index.html ubuntu@$HOMEPAGE_PUBLIC_IP:~/
+
+          # Copy index.html to the NGINX default location inside the container's volume mount and (re)start container
+          ssh -o StrictHostKeyChecking=no -i deployer_key.pem ubuntu@$HOMEPAGE_PUBLIC_IP "
+            sudo docker start carnot-homepage-nginx
+            sleep 3
+            sudo docker cp index.html carnot-homepage-nginx:/usr/share/nginx/html/index.html
+            rm index.html
+            sudo docker restart carnot-homepage-nginx
+          "
 
       ######################################################################
       # STEP 2 — DEPLOY ENVIRONMENT TERRAFORM
@@ -130,6 +164,7 @@ jobs:
         run: |
           ec2_public_ip=$(terraform output -raw ec2_public_ip)
           echo "EC2_PUBLIC_IP=$ec2_public_ip" >> $GITHUB_ENV
+
       ######################################################################
       # STEP 3 — BUILD & DEPLOY APPLICATION
       ######################################################################
@@ -197,12 +232,10 @@ jobs:
           chmod 600 deploy/compose/secrets/db_*.txt
 
           # Copy compose bundle to EC2
-          echo "$CARNOT_DEPLOY_KEY" > deploy/terraform/deployer_key.pem
-          chmod 400 deploy/terraform/deployer_key.pem
-          scp -r -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem deploy/compose ubuntu@$EC2_PUBLIC_IP:~/
+          scp -r -o StrictHostKeyChecking=no -i deployer_key.pem deploy/compose ubuntu@$EC2_PUBLIC_IP:~/
 
           # Shutdown current docker containers
-          ssh -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem ubuntu@$EC2_PUBLIC_IP "
+          ssh -o StrictHostKeyChecking=no -i deployer_key.pem ubuntu@$EC2_PUBLIC_IP "
             cd compose
             docker compose down
             docker rmi -f $(docker images -aq)
@@ -210,7 +243,7 @@ jobs:
           "
 
           # Login & deploy using pulled images
-          ssh -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem ubuntu@$EC2_PUBLIC_IP "
+          ssh -o StrictHostKeyChecking=no -i deployer_key.pem ubuntu@$EC2_PUBLIC_IP "
             cd compose
             export SUBDOMAIN=${SUBDOMAIN}
             export API_BASE_URL="http://$SUBDOMAIN.carnot-research.org:8000/api"
