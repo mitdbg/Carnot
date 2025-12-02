@@ -16,7 +16,7 @@ from sklearn.cluster import KMeans
 import dspy
 
 from ..config import Config
-from ..retrieval_types import Query
+from ..types import Query
 
 import palimpzest as pz
 
@@ -56,16 +56,6 @@ class BaseKeywordIndex(ABC):
 
 class BaseMetadataStore(ABC):
     """Abstract interface for structural and semantic metadata tables."""
-
-    @abstractmethod
-    def register_schema(self, keys: Iterable[str]) -> None:
-        """Register the global list of known metadata keys (schema)."""
-        pass
-
-    @abstractmethod
-    def get_schema(self) -> Sequence[str]:
-        """Return the current list of registered schema keys."""
-        pass
 
     @abstractmethod
     def upsert_metadata(self, doc_id: str, metadata: Mapping[str, Any]) -> None:
@@ -126,11 +116,6 @@ class BaseConceptGenerator(ABC):
 
 class BaseIndexManager(ABC):
     """Abstract manager for building and exposing an index portfolio."""
-
-    @abstractmethod
-    def bootstrap(self) -> None:
-        """Run offline analysis to design and build indexes."""
-        pass
 
     @abstractmethod
     def add_documents(self, docs: Iterable[Mapping[str, Any]]) -> None:
