@@ -3,7 +3,6 @@ name: Deploy to AWS
 on:
   push:
     branches:
-    - add-homepage
     - main
     - wl-prod
     - wm-prod
