@@ -1,17 +1,25 @@
 services:
   web-frontend:
-    image: carnotresearch/carnot:frontend
-    environment:
-      SUBDOMAIN: ${SUBDOMAIN}
-      API_BASE_URL: ${API_BASE_URL}
-      BASE_URL: ${BASE_URL}
+    image: ${DOCKERHUB_USERNAME}/carnot:frontend-${ENV_NAME}
+    build:
+      context: .
+      dockerfile: Dockerfile-frontend
+      args:
+        VITE_AUTH0_DOMAIN: ${VITE_AUTH0_DOMAIN}
+        VITE_AUTH0_CLIENT_ID: ${VITE_AUTH0_CLIENT_ID}
+        VITE_AUTH0_ORGANIZATION_ID: ${VITE_AUTH0_ORGANIZATION_ID}
+        VITE_API_BASE_URL: ${API_BASE_URL}
+        VITE_BASE_URL: ${BASE_URL}
     ports:
       - "80:80"
     depends_on:
       - web-backend
 
   web-backend:
-    image: carnotresearch/carnot:backend
+    image: ${DOCKERHUB_USERNAME}/carnot:backend-${ENV_NAME}
+    build:
+      context: .
+      dockerfile: Dockerfile-backend
     environment:
       BASE_ORIGINS: ${BASE_ORIGINS}
       POSTGRES_PASSWORD_FILE: /run/secrets/db_password
@@ -19,6 +27,7 @@ services:
       POSTGRES_DB_FILE: /run/secrets/db_name
     ports:
       - "8000:8000"
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
     secrets:
       - db_password
       - db_user

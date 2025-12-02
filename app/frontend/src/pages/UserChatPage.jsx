@@ -3,7 +3,7 @@ import { Send, Database, CheckSquare, Square, AlertCircle, Loader2, XCircle, Rot
 import axios from 'axios'
 import ProgressDisplay from '../components/ProgressDisplay'
 
-const BASE_URL = process.env.BASE_URL || "http://localhost:8000"
+const BASE_URL = import.meta.env.VITE_BASE_URL || "http://localhost:8000"
 
 function UserChatPage() {
   const [datasets, setDatasets] = useState([])
