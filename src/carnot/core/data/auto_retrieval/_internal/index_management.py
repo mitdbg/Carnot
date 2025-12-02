@@ -16,7 +16,7 @@ from sklearn.cluster import KMeans
 import dspy
 
 from ..config import Config
-from ..types import Query
+from ..retrieval_types import Query
 
 import palimpzest as pz
 
