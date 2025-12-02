@@ -193,8 +193,8 @@ jobs:
           export DOCKERHUB_USERNAME=${{ vars.DOCKERHUB_USERNAME }}
           export ENV_NAME=${ENV_NAME}
           export VITE_AUTH0_DOMAIN=${{ secrets.AUTH0_CUSTOM_DOMAIN }}
-          export VITE_API_BASE_URL="http://web-backend:8000/api"
-          export VITE_BASE_URL="http://web-backend:8000"
+          export VITE_API_BASE_URL="https://${SUBDOMAIN}.carnot-research.org:8000/api"
+          export VITE_BASE_URL="https://${SUBDOMAIN}.carnot-research.org:8000"
           if [[ "${GITHUB_REF_NAME}" == "wl-prod" ]]; then
             export VITE_AUTH0_CLIENT_ID=${{ secrets.WL_PROD_AUTH0_CLIENT_ID }}
             export VITE_AUTH0_ORGANIZATION_ID=${{ secrets.WL_PROD_AUTH0_ORGANIZATION_ID }}
