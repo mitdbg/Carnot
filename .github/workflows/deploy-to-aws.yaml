@@ -242,6 +242,8 @@ jobs:
           # Login & deploy using pulled images
           ssh -o StrictHostKeyChecking=no -i deployer_key.pem ubuntu@$EC2_PUBLIC_IP "
             cd compose
+            export DOCKERHUB_USERNAME=${{ vars.DOCKERHUB_USERNAME }}
+            export ENV_NAME=${ENV_NAME}
             export BASE_ORIGINS="http://${SUBDOMAIN}.carnot-research.org,https://${SUBDOMAIN}.carnot-research.org,http://web-backend,https://web-backend"
             docker login -u '${{ vars.DOCKERHUB_USERNAME }}' -p '${{ secrets.DOCKERHUB_TOKEN }}'
             docker compose pull
