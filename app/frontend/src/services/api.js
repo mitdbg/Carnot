@@ -24,8 +24,8 @@ export const filesApi = {
 
 // Datasets API
 export const datasetsApi = {
-  list: () => api.get('/datasets'),
-  create: (data) => api.post('/datasets', data),
+  list: () => api.get('/datasets/'),
+  create: (data) => api.post('/datasets/', data),
   get: (id) => api.get(`/datasets/${id}`),
   update: (id, data) => api.put(`/datasets/${id}`, data),
   delete: (id) => api.delete(`/datasets/${id}`),
