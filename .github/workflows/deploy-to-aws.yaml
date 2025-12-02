@@ -63,6 +63,13 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::422297141788:role/CarnotGithubRole
           aws-region: us-east-1
+      
+      - name: Write Deployer Key to Files
+        env:
+          CARNOT_DEPLOY_KEY: ${{ secrets.CARNOT_DEPLOY_KEY }}
+        run: |
+          echo "$CARNOT_DEPLOY_KEY" > deployer_key.pem
+          chmod 400 deployer_key.pem
 
       ######################################################################
       # STEP 1 — DEPLOY GLOBAL TERRAFORM
@@ -98,27 +105,23 @@ jobs:
           homepage_public_ip=$(terraform output -raw homepage_public_ip)
           echo "HOMEPAGE_PUBLIC_IP=$homepage_public_ip" >> $GITHUB_ENV
 
-      - name: Copy Homepage Files to New EC2
+      - name: Start NGINX on Homepage EC2
         env:
           CARNOT_DEPLOY_KEY: ${{ secrets.CARNOT_DEPLOY_KEY }}
         run: |
           echo "Copying homepage files to $HOMEPAGE_PUBLIC_IP"
           
-          # Setup SSH Key
-          echo "$CARNOT_DEPLOY_KEY" > deploy/terraform/deployer_key.pem
-          chmod 400 deploy/terraform/deployer_key.pem
-          sleep 5 # wait for EC2 to be ready to accept SSH connections
-          scp -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem app/index.html ubuntu@$HOMEPAGE_PUBLIC_IP:~/
+          # copy index.html to EC2; sleep first to wait for it to be ready to accept SSH connections
+          sleep 5
+          scp -o StrictHostKeyChecking=no -i deployer_key.pem app/index.html ubuntu@$HOMEPAGE_PUBLIC_IP:~/
 
-          # Copy index.html to the NGINX default location inside the container's volume mount
-          # NGINX runs on port 80 INSIDE the container, which is mounted to a volume.
-          # We need to copy directly to the path NGINX serves from.
-          # The standard NGINX container serves from /usr/share/nginx/html.
-          # The simplest way is to overwrite the default index.html inside the container
-          ssh -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem ubuntu@$HOMEPAGE_PUBLIC_IP "
-            # Copy your index.html from your local action runner to the EC2
-            # Then copy it from the EC2 into the running container
+          # Copy index.html to the NGINX default location inside the container's volume mount and (re)start container
+          ssh -o StrictHostKeyChecking=no -i deployer_key.pem ubuntu@$HOMEPAGE_PUBLIC_IP "
+            sudo docker start carnot-homepage-nginx
+            sleep 3
             sudo docker cp index.html carnot-homepage-nginx:/usr/share/nginx/html/index.html
+            rm index.html
+            sudo docker restart carnot-homepage-nginx
           "
 
       ######################################################################
@@ -230,12 +233,10 @@ jobs:
           chmod 600 deploy/compose/secrets/db_*.txt
 
           # Copy compose bundle to EC2
-          echo "$CARNOT_DEPLOY_KEY" > deploy/terraform/deployer_key.pem
-          chmod 400 deploy/terraform/deployer_key.pem
-          scp -r -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem deploy/compose ubuntu@$EC2_PUBLIC_IP:~/
+          scp -r -o StrictHostKeyChecking=no -i deployer_key.pem deploy/compose ubuntu@$EC2_PUBLIC_IP:~/
 
           # Shutdown current docker containers
-          ssh -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem ubuntu@$EC2_PUBLIC_IP "
+          ssh -o StrictHostKeyChecking=no -i deployer_key.pem ubuntu@$EC2_PUBLIC_IP "
             cd compose
             docker compose down
             docker rmi -f $(docker images -aq)
@@ -243,7 +244,7 @@ jobs:
           "
 
           # Login & deploy using pulled images
-          ssh -o StrictHostKeyChecking=no -i deploy/terraform/deployer_key.pem ubuntu@$EC2_PUBLIC_IP "
+          ssh -o StrictHostKeyChecking=no -i deployer_key.pem ubuntu@$EC2_PUBLIC_IP "
             cd compose
             export SUBDOMAIN=${SUBDOMAIN}
             export API_BASE_URL="http://$SUBDOMAIN.carnot-research.org:8000/api"
