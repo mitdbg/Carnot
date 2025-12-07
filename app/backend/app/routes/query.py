@@ -1,13 +1,13 @@
 import asyncio
 import json
 import logging
-import os
 import re
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
 
+import fsspec
 import pandas as pd
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
@@ -25,46 +25,53 @@ from app.database import (
 from app.database import (
     File as FileRecord,
 )
+from app.env import BACKEND_ROOT, BASE_DIR, IS_LOCAL_ENV
+from app.services.file_service import LocalFileService, S3FileService
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-
+file_service = LocalFileService() if IS_LOCAL_ENV else S3FileService()
 SESSION_TIMEOUT = timedelta(minutes=30)
+
+
 class OutputCapture:
-    """Captures stdout/stderr to both a file and the original streams"""
-    def __init__(self, filepath, original_stream):
+    """
+    Captures output and writes it to a file (local or S3) while also echoing it to the original stream.
+    """
+    def __init__(self, filepath: str, original_stream):
         self.filepath = filepath
         self.original_stream = original_stream
-        self.file = open(filepath, 'a', buffering=1)
-        # ANSI escape sequence pattern
-        self.ansi_pattern = re.compile(r'\x1b\[[0-9;]*m')
+        self.file_handle = None
+        self.file_stream = None
+        self._open_stream()
 
-    def write(self, data):
-        # Write to file with ANSI codes stripped
-        clean_data = self.ansi_pattern.sub('', data)
-        self.file.write(clean_data)
-        self.file.flush()
-        # Write to original stream with ANSI codes
+    def _open_stream(self):
+        """Open the stream using fsspec."""
+        try:
+            # open the stream in append mode ('a') since stdout/stderr writes are sequential
+            # and may be interleaved. 'w' would overwrite the previous stream's output.
+            self.file_handle = fsspec.open(self.filepath, mode='a', encoding='utf-8')
+            self.file_stream = self.file_handle.__enter__()
+        except Exception as e:
+            self.original_stream.write(f"Error opening output stream for {self.filepath}: {e}\n")
+            raise
+
+    def write(self, data: str):
+        """Write data to both the file stream (S3/local) and the original stream (console/terminal)."""
+        self.file_stream.write(data)
         self.original_stream.write(data)
-        self.original_stream.flush()
 
     def flush(self):
-        self.file.flush()
+        """Flush data to both the file stream (S3/local) and the original stream (console/terminal)."""
+        self.file_stream.flush()
         self.original_stream.flush()
 
     def close(self):
-        self.file.close()
+        """Close the file stream safely."""
+        self.file_handle.__exit__(None, None, None)
+        self.file_handle = None
+        self.file_stream = None
 
-IS_REMOTE_ENV = os.getenv("REMOTE_ENV", "false").lower() == "true"
-if IS_REMOTE_ENV:
-    COMPANY_ENV = os.getenv("COMPANY_ENV", "dev")
-    PROJECT_ROOT = Path(f"s3://carnot-research/{COMPANY_ENV}/")
-    BACKEND_ROOT = Path(f"s3://carnot-research/{COMPANY_ENV}/backend/")  # TODO
-    WEB_ROOT = Path(f"s3://carnot-research/{COMPANY_ENV}/frontend/")  # TODO
-else:
-    PROJECT_ROOT = Path(__file__).resolve().parents[4]
-    BACKEND_ROOT = Path(__file__).resolve().parents[2]
-    WEB_ROOT = Path(__file__).resolve().parents[3]
 active_sessions: dict[str, dict] = {}
 
 
@@ -163,21 +170,9 @@ async def save_message(
         )
         conversation = result.scalar_one_or_none()
         if conversation:
-            conversation.updated_at = datetime.utcnow()
+            conversation.updated_at = datetime.now(datetime.UTC)
 
         await db.commit()
-
-
-def resolve_file_path(path: str) -> Path | None:
-    candidates = [
-        Path(path),
-        PROJECT_ROOT / path,
-        WEB_ROOT / path,
-    ]
-    for candidate in candidates:
-        if candidate.exists():
-            return candidate
-    return None
 
 
 async def stream_query_execution(
@@ -219,7 +214,7 @@ async def stream_query_execution(
         yield f"data: {json.dumps({'type': 'status', 'message': f'Loaded {len(datasets)} dataset(s)'})}\n\n"
         await asyncio.sleep(0.1)
 
-        all_files = [path for dataset in datasets for path in dataset]
+        all_files = [Path(path) for dataset in datasets for path in dataset]
         if not all_files:
             yield f"data: {json.dumps({'type': 'error', 'message': 'No files found in selected datasets'})}\n\n"
             return
@@ -233,32 +228,25 @@ async def stream_query_execution(
         ):
             session_exists = False
 
-        session_dir = BACKEND_ROOT / "sessions" / session_id
-        session_dir.mkdir(parents=True, exist_ok=True)
+        session_dir = Path(BASE_DIR, "sessions", session_id)
+        file_service.create_dir(str(session_dir))
 
         yield f"data: {json.dumps({'type': 'status', 'message': 'Preparing data context...'})}\n\n"
         await asyncio.sleep(0.1)
 
-        # NOTE: this uses BACKEND_ROOT
         # NOTE: this copies files to a session-specific directory; we cannot make copies of large datasets
-        temp_dir = session_dir
-
         if not session_exists:
             text_file_count = 0
             for file_path in all_files:
-                resolved = resolve_file_path(file_path) # NOTE: resolves file paths in WEB_ROOT and PROJECT_ROOT
-                if not resolved:
+                if file_path.suffix.lower() in {".pdf", ".jpg", ".jpeg", ".png", ".gif", ".zip", ".exe", ".bin"}:
                     continue
 
-                if resolved.suffix.lower() in {".pdf", ".jpg", ".jpeg", ".png", ".gif", ".zip", ".exe", ".bin"}:
-                    continue
-
-                destination = temp_dir / resolved.name
+                destination = session_dir / file_path.name
                 try:
-                    destination.write_bytes(resolved.read_bytes())
+                    destination.write_bytes(file_path.read_bytes())
                     text_file_count += 1
                 except OSError as exc:
-                    logger.debug("Skipping file %s: %s", resolved, exc)
+                    logger.debug("Skipping file %s: %s", file_path, exc)
 
             if text_file_count == 0:
                 yield f"data: {json.dumps({'type': 'error', 'message': 'No text files found in selected datasets'})}\n\n"
@@ -275,7 +263,7 @@ async def stream_query_execution(
         else:
             context_id = f"session_{session_id[:8]}"
             ctx = carnot.TextFileContext(
-                path=str(temp_dir),
+                path=str(session_dir),
                 id=context_id,
                 description=f"Query on {len(datasets)} dataset(s)",
             )
@@ -283,32 +271,33 @@ async def stream_query_execution(
         yield f"data: {json.dumps({'type': 'status', 'message': f'Executing query: {query}'})}\n\n"
         await asyncio.sleep(0.1)
 
-        # Setup progress logging
-        progress_log = session_dir / "progress.jsonl"
-        # Clear old progress log if exists
-        if progress_log.exists():
-            progress_log.unlink()
+        # setup progress logging and clear old progress log if it exists
+        progress_log = fsspec.join(str(session_dir), "progress.jsonl")
+        fs = fsspec.utils.get_fs(progress_log)
+        if fs.exists(progress_log):
+            fs.rm(progress_log, recursive=False)
 
         compute_ctx = ctx.compute(query)
         config = carnot.QueryProcessorConfig(
             policy=carnot.MaxQuality(),
             progress=True,  # Enable console progress
             session_id=session_id,  # Add session ID for tracking
-            progress_log_file=str(progress_log),  # Add progress log file path
+            progress_log_file=progress_log,  # Add progress log file path
         )
 
         yield f"data: {json.dumps({'type': 'status', 'message': 'Running Carnot query processor...'})}\n\n"
         await asyncio.sleep(0.1)
 
-        output_log = session_dir / "output.txt"
-        if output_log.exists():
-            output_log.unlink()
+        output_log = fsspec.join(str(session_dir), "output.txt")
+        fs = fsspec.utils.get_fs(output_log)
+        if fs.exists(output_log):
+            fs.rm(output_log, recursive=False)
+
         original_stdout = sys.stdout
         original_stderr = sys.stderr
         def run_query_with_capture():
             stdout_capture = OutputCapture(output_log, original_stdout)
             stderr_capture = OutputCapture(output_log, original_stderr)
-            
             try:
                 sys.stdout = stdout_capture
                 sys.stderr = stderr_capture
@@ -318,7 +307,7 @@ async def stream_query_execution(
                 sys.stderr = original_stderr
                 stdout_capture.close()
                 stderr_capture.close()
-        
+
         loop = asyncio.get_event_loop()
         output = await loop.run_in_executor(None, run_query_with_capture)
 
@@ -340,18 +329,19 @@ async def stream_query_execution(
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         csv_filename = f"query_results_{timestamp}.csv"
-        csv_path = BACKEND_ROOT / csv_filename
+        results_dir = Path(BASE_DIR, "results")
+        file_service.create_dir(str(results_dir))
+        csv_path = results_dir / csv_filename
 
         try:
             # First, save to our timestamp-based file
-            output.to_df().to_csv(csv_path, index=False)
-            df = pd.read_csv(csv_path)
+            df = output.to_df()
+            df.to_csv(csv_path, index=False)
 
             # Try to extract the actual filename from Carnot's output
             csv_filename_from_output = None
             if not df.empty:
                 # Check all columns for CSV filename mentions
-                import re
                 # Pattern to match CSV filenames (e.g., "filtered_enron_emails.csv" or "output.csv")
                 csv_pattern = r'\b([a-zA-Z0-9_\-]+\.csv)\b'
                 for col in df.columns:
@@ -445,14 +435,15 @@ async def get_progress(session_id: str, since_timestamp: str | None = None):
     Get progress events for a session, optionally filtering by timestamp
     """
     try:
-        session_dir = BACKEND_ROOT / "sessions" / session_id
-        progress_log = session_dir / "progress.jsonl"
-        
-        if not progress_log.exists():
+        session_dir = fsspec.join(BASE_DIR, "sessions", session_id)
+        progress_log = fsspec.join(session_dir, "progress.jsonl")
+
+        fs = fsspec.utils.get_fs(progress_log)
+        if not fs.exists(progress_log):
             return {"events": []}
-        
+
         events = []
-        with open(progress_log) as f:
+        with fsspec.open(progress_log, 'r', encoding='utf-8') as f:
             for line in f:
                 if line.strip():
                     try:
@@ -475,13 +466,14 @@ async def get_output(session_id: str, last_line: int = 0):
     Get terminal output for a session, returns lines after last_line
     """
     try:
-        session_dir = BACKEND_ROOT / "sessions" / session_id
-        output_file = session_dir / "output.txt"
-        
-        if not output_file.exists():
+        session_dir = fsspec.join(BASE_DIR, "sessions", session_id)
+        output_file = fsspec.join(session_dir, "output.txt")
+
+        fs = fsspec.utils.get_fs(output_file)
+        if not fs.exists(output_file):
             return {"lines": [], "total_lines": 0}
         
-        with open(output_file, 'r') as f:
+        with fsspec.open(output_file, 'r', encoding='utf-8') as f:
             all_lines = f.readlines()
             new_lines = all_lines[last_line:]
             return {"lines": new_lines, "total_lines": len(all_lines)}
@@ -498,20 +490,20 @@ async def download_query_results(filename: str):
     # Security: only allow downloading CSV files from backend directory
     if not filename.endswith(".csv"):
         raise HTTPException(status_code=400, detail="Invalid filename - must be a CSV file")
-    
+
     # Prevent directory traversal
     if "/" in filename or ".." in filename:
         raise HTTPException(status_code=400, detail="Invalid filename")
-    
+
     # Get the backend directory path
-    file_path = BACKEND_ROOT / filename
-    
-    if not file_path.exists():
+    file_path = fsspec.join(BACKEND_ROOT, filename)
+
+    fs = fsspec.utils.get_fs(file_path)
+    if not fs.exists(file_path):
         raise HTTPException(status_code=404, detail="File not found")
-    
+
     return FileResponse(
         path=file_path,
         filename=filename,
         media_type="text/csv"
     )
-

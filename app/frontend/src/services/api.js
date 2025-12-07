@@ -19,7 +19,7 @@ export const filesApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
   },
-  listUploaded: () => api.get('/files/uploaded'),
+  listUploaded: () => api.get('/files/upload'),
 }
 
 // Datasets API
@@ -33,7 +33,7 @@ export const datasetsApi = {
 
 // Search API
 export const searchApi = {
-  search: (query, path = null) => api.post('/search', { query, path }),
+  search: (query, paths = null) => api.post('/search', { query, paths }),
 }
 
 export default api

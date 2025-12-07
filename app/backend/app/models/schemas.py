@@ -5,16 +5,10 @@ from pydantic import BaseModel
 
 # File schemas
 class FileItem(BaseModel):
-    name: str
     path: str
     is_directory: bool
     size: int | None = None
     modified: datetime | None = None
-
-class DirectoryContents(BaseModel):
-    current_path: str
-    items: list[FileItem]
-    parent_path: str | None = None
 
 # Dataset schemas
 class DatasetFileCreate(BaseModel):
@@ -61,18 +55,10 @@ class DatasetUpdate(BaseModel):
     annotation: str | None = None
     files: list[DatasetFileCreate] | None = None
 
-# Upload schemas
-class UploadResponse(BaseModel):
-    file_path: str
-    original_name: str
-    message: str
-    extracted_to: str | None = None
-    extracted_files: list[str] | None = None
-
 # Search schemas
 class SearchQuery(BaseModel):
     query: str
-    path: str | None = None
+    paths: list[str] | None = None
 
 class SearchResult(BaseModel):
     file_path: str

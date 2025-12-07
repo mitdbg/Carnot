@@ -37,16 +37,15 @@ class Dataset(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, nullable=False, index=True)
     annotation = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC))
+    updated_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC), onupdate=lambda: datetime.now(datetime.UTC))
 
 class File(Base):
     __tablename__ = "files"
     
     id = Column(Integer, primary_key=True, index=True)
     file_path = Column(String, unique=True, nullable=False)
-    file_name = Column(String, nullable=False)
-    upload_date = Column(DateTime, default=datetime.utcnow)
+    upload_date = Column(DateTime, default=lambda: datetime.now(datetime.UTC))
 
 class DatasetFile(Base):
     __tablename__ = "dataset_files"
@@ -61,8 +60,8 @@ class Conversation(Base):
     session_id = Column(String, unique=True, nullable=False, index=True)
     title = Column(String, nullable=True)  # Auto-generated from first query
     dataset_ids = Column(String, nullable=True)  # Comma-separated dataset IDs
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC))
+    updated_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC), onupdate=lambda: datetime.now(datetime.UTC))
 
 class Message(Base):
     __tablename__ = "messages"
@@ -73,7 +72,7 @@ class Message(Base):
     content = Column(Text, nullable=False)
     csv_file = Column(String, nullable=True)  # For result messages
     row_count = Column(Integer, nullable=True)  # For result messages
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC))
 
 # Dependency to get database session
 async def get_db():

@@ -22,6 +22,8 @@ services:
       dockerfile: Dockerfile-backend
     environment:
       BASE_ORIGINS: ${BASE_ORIGINS}
+      COMPANY_ENV: ${ENV_NAME}
+      LOCAL_ENV: ${LOCAL_ENV}
       POSTGRES_PASSWORD_FILE: /run/secrets/db_password
       POSTGRES_USER_FILE: /run/secrets/db_user
       POSTGRES_DB_FILE: /run/secrets/db_name

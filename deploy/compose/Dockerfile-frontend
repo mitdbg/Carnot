@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # Stage 1 — Build Vite frontend
-FROM node:18 AS builder
+FROM node:20 AS builder
 WORKDIR /app
 
 ARG VITE_AUTH0_DOMAIN

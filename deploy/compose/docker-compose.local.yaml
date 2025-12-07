@@ -1,0 +1,22 @@
+services:
+  web-frontend:
+    image: ${DOCKERHUB_USERNAME}/carnot:frontend-${ENV_NAME}
+    build:
+      context: .
+      dockerfile: Dockerfile-frontend
+      args:
+        VITE_AUTH0_DOMAIN: ${VITE_AUTH0_DOMAIN}
+        VITE_AUTH0_CLIENT_ID: ${VITE_AUTH0_CLIENT_ID}
+        VITE_AUTH0_ORGANIZATION_ID: ${VITE_AUTH0_ORGANIZATION_ID}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+        VITE_BASE_URL: ${VITE_BASE_URL}
+
+  web-backend:
+    volumes:
+      # maps the host directory created in start_local.sh to the container's /carnot/data
+      - ${LOCAL_DATA_DIR}:/carnot/data
+
+  db:
+    volumes:
+      # override the original '/mnt/pg-data/data:/var/lib/postgresql/data'
+      - /tmp/pg-data/data:/var/lib/postgresql/data

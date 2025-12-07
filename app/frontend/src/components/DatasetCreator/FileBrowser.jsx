@@ -1,6 +1,15 @@
 import { useState, useEffect } from 'react'
+import path from 'path';
 import { ChevronRight, ChevronDown, Folder, File, Loader2, Home, CheckSquare, Square } from 'lucide-react'
 import { filesApi } from '../../services/api'
+
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 Bytes'
+  const k = 1024
+  const sizes = ['Bytes', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+}
 
 function FileBrowser({ selectedFiles, onFileToggle }) {
   const [currentPath, setCurrentPath] = useState('')
@@ -36,18 +45,17 @@ function FileBrowser({ selectedFiles, onFileToggle }) {
 
   const handleCheckboxChange = (item, event) => {
     event.stopPropagation() // Prevent navigation when clicking checkbox
-    
+
     if (item.is_directory) {
       handleDirectoryToggle(item)
     } else {
-      onFileToggle(item.path, item.name)
+      onFileToggle(item.path)
     }
   }
 
   const isFileSelected = (item) => {
     if (item.is_directory) return false
-    const key = `${item.path}||${item.name}`
-    return selectedFiles.has(key)
+    return selectedFiles.has(item.path)
   }
 
   const checkDirectorySelection = async (directoryPath) => {
@@ -55,9 +63,8 @@ function FileBrowser({ selectedFiles, onFileToggle }) {
     try {
       const allFiles = await getAllFilesInDirectory(directoryPath)
       if (allFiles.length === 0) return false
-      const allSelected = allFiles.every(file => {
-        const key = `${file.path}||${file.name}`
-        return selectedFiles.has(key)
+      const allSelected = allFiles.every(filePath => {
+        return selectedFiles.has(filePath)
       })
       setDirectorySelectionState(prev => new Map(prev).set(directoryPath, allSelected))
       return allSelected
@@ -75,9 +82,8 @@ function FileBrowser({ selectedFiles, onFileToggle }) {
           try {
             const allFiles = await getAllFilesInDirectory(item.path)
             if (allFiles.length > 0) {
-              const allSelected = allFiles.every(file => {
-                const key = `${file.path}||${file.name}`
-                return selectedFiles.has(key)
+              const allSelected = allFiles.every(filePath => {
+                return selectedFiles.has(filePath)
               })
               newState.set(item.path, allSelected)
             } else {
@@ -98,58 +104,51 @@ function FileBrowser({ selectedFiles, onFileToggle }) {
 
   const getAllFilesInDirectory = async (dirPath) => {
     const allFiles = []
-    
+
     const loadDirRecursive = async (path) => {
       try {
         const response = await filesApi.browse(path)
         const items = response.data.items
-        
+
         for (const item of items) {
           if (item.is_directory) {
-            // Recursively load subdirectory
-            const subPath = path ? `${path}/${item.name}` : item.name
-            await loadDirRecursive(subPath)
+            // recursively load subdirectory
+            await loadDirRecursive(item.path)
           } else {
-            // Add file to list
-            allFiles.push({
-              path: item.path,
-              name: item.name
-            })
+            // add file path to list of files
+            allFiles.push(item.path)
           }
         }
       } catch (err) {
         console.error(`Failed to load directory ${path}:`, err)
       }
     }
-    
+
     await loadDirRecursive(dirPath)
     return allFiles
   }
 
   const handleDirectoryToggle = async (directory) => {
     const allFiles = await getAllFilesInDirectory(directory.path)
-    const allSelected = allFiles.every(file => {
-      const key = `${file.path}||${file.name}`
-      return selectedFiles.has(key)
+    const allSelected = allFiles.every(filePath => {
+      return selectedFiles.has(filePath)
     })
-    
+
     const newSelected = new Set(selectedFiles)
-    
+
     if (allSelected) {
-      // Deselect all files in directory
-      allFiles.forEach(file => {
-        const key = `${file.path}||${file.name}`
-        newSelected.delete(key)
+      // deselect all files in directory
+      allFiles.forEach(filePath => {
+        newSelected.delete(filePath)
       })
     } else {
-      // Select all files in directory
-      allFiles.forEach(file => {
-        const key = `${file.path}||${file.name}`
-        newSelected.add(key)
+      // select all files in directory
+      allFiles.forEach(filePath => {
+        newSelected.add(filePath)
       })
     }
-    
-    onFileToggle(null, null, newSelected)
+
+    onFileToggle(null, newSelected)
   }
 
   const getCurrentDirectoryFiles = () => {
@@ -163,12 +162,12 @@ function FileBrowser({ selectedFiles, onFileToggle }) {
   const areAllItemsSelected = async () => {
     const files = getCurrentDirectoryFiles()
     const folders = getCurrentDirectoryFolders()
-    
+
     if (files.length === 0 && folders.length === 0) return false
-    
+
     // Check all files are selected
     const allFilesSelected = files.length === 0 || files.every(file => isFileSelected(file))
-    
+
     // Check all folders are fully selected
     let allFoldersSelected = true
     for (const folder of folders) {
@@ -178,7 +177,7 @@ function FileBrowser({ selectedFiles, onFileToggle }) {
         break
       }
     }
-    
+
     return allFilesSelected && allFoldersSelected
   }
 
@@ -186,43 +185,39 @@ function FileBrowser({ selectedFiles, onFileToggle }) {
     const files = getCurrentDirectoryFiles()
     const folders = getCurrentDirectoryFolders()
     const allSelected = await areAllItemsSelected()
-    
+
     const newSelected = new Set(selectedFiles)
-    
+
     if (allSelected) {
       // Deselect all files in current directory
       files.forEach(file => {
-        const key = `${file.path}||${file.name}`
-        newSelected.delete(key)
+        newSelected.delete(file.path)
       })
-      
+
       // Deselect all folders (and their contents)
       for (const folder of folders) {
         const allFiles = await getAllFilesInDirectory(folder.path)
-        allFiles.forEach(file => {
-          const key = `${file.path}||${file.name}`
-          newSelected.delete(key)
+        allFiles.forEach(filePath => {
+          newSelected.delete(filePath)
         })
       }
     } else {
       // Select all files in current directory
       files.forEach(file => {
-        const key = `${file.path}||${file.name}`
-        newSelected.add(key)
+        newSelected.add(file.path)
       })
-      
+
       // Select all folders (and their contents)
       for (const folder of folders) {
         const allFiles = await getAllFilesInDirectory(folder.path)
-        allFiles.forEach(file => {
-          const key = `${file.path}||${file.name}`
-          newSelected.add(key)
+        allFiles.forEach(filePath => {
+          newSelected.add(filePath)
         })
       }
     }
-    
-    // Update all at once
-    onFileToggle(null, null, newSelected)
+
+    // update all at once
+    onFileToggle(null, newSelected)
   }
 
   const navigateUp = () => {
@@ -386,13 +381,4 @@ function FileBrowser({ selectedFiles, onFileToggle }) {
   )
 }
 
-function formatFileSize(bytes) {
-  if (bytes === 0) return '0 Bytes'
-  const k = 1024
-  const sizes = ['Bytes', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
-}
-
 export default FileBrowser
-

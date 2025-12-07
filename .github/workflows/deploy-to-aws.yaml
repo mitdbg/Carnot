@@ -63,7 +63,7 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::422297141788:role/CarnotGithubRole
           aws-region: us-east-1
-      
+
       - name: Write Deployer Key to Files
         env:
           CARNOT_DEPLOY_KEY: ${{ secrets.CARNOT_DEPLOY_KEY }}
@@ -244,6 +244,7 @@ jobs:
             cd compose
             export DOCKERHUB_USERNAME=${{ vars.DOCKERHUB_USERNAME }}
             export ENV_NAME=${ENV_NAME}
+            export LOCAL_ENV="false"
             export BASE_ORIGINS="http://${SUBDOMAIN}.carnot-research.org,https://${SUBDOMAIN}.carnot-research.org,http://web-backend,https://web-backend"
             docker login -u '${{ vars.DOCKERHUB_USERNAME }}' -p '${{ secrets.DOCKERHUB_TOKEN }}'
             docker compose pull
