@@ -11,7 +11,7 @@ from typing import IO
 import boto3
 from fastapi import HTTPException, UploadFile
 
-from app.env import DATA_DIR
+from app.env import BASE_DIR, DATA_DIR
 from app.models.schemas import FileItem
 
 # predefined set of archive extensions
@@ -175,7 +175,7 @@ class LocalFileService(BaseFileService):
         return os.path.exists(path)
 
     def create_dir(self, path: str) -> None:
-        os.makedirs(path, exist_ok=True, parents=True)
+        os.makedirs(path, exist_ok=True)
 
     def is_dir(self, path: str) -> bool:
         return os.path.isdir(path)
@@ -184,10 +184,12 @@ class LocalFileService(BaseFileService):
         items = []
         for entry in os.listdir(path):
             entry_path = os.path.join(path, entry)
+            display_name = entry.split(BASE_DIR)[-1].lstrip("/")
             is_dir = os.path.isdir(entry_path)
             stat = os.stat(entry_path)
             items.append(FileItem(
                 path=entry_path,
+                display_name=display_name,
                 is_directory=is_dir,
                 size=stat.st_size if not is_dir else None,
                 modified=datetime.fromtimestamp(stat.st_mtime)
@@ -249,8 +251,11 @@ class S3FileService(BaseFileService):
         for page in result_iterator:
             # CommonPrefixes contains "directories"
             for prefix in page.get('CommonPrefixes', []):
+                path = f"s3://{self.s3_bucket}/{prefix['Prefix']}"
+                display_name = path.split(BASE_DIR)[-1].lstrip("/")
                 items.append(FileItem(
-                    path=f"s3://{self.s3_bucket}/{prefix['Prefix']}",
+                    path=path,
+                    display_name=display_name,
                     is_directory=True,
                 ))
 
@@ -258,8 +263,11 @@ class S3FileService(BaseFileService):
             for obj in page.get('Contents', []):
                 if obj['Key'] == prefix:
                     continue
+                path = f"s3://{self.s3_bucket}/{obj['Key']}"
+                display_name = path.split(BASE_DIR)[-1].lstrip("/")
                 items.append(FileItem(
-                    path=f"s3://{self.s3_bucket}/{obj['Key']}",
+                    path=path,
+                    display_name=display_name,
                     is_directory=False,
                     size=obj['Size'],
                     modified=obj['LastModified'],

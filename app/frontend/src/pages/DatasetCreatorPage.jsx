@@ -61,8 +61,8 @@ function DatasetCreatorPage() {
       const files = Array.from(selectedFiles)
       await datasetsApi.create({
         name: datasetName,
-        annotation,
-        files,
+        annotation: annotation,
+        files: files,
       })
 
       // Navigate back to data management page

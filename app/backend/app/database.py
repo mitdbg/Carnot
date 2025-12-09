@@ -1,6 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Column, ForeignKey, Integer, String, Text
+from sqlalchemy.dialects.postgresql import TIMESTAMP
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import declarative_base
 
@@ -37,15 +38,15 @@ class Dataset(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, nullable=False, index=True)
     annotation = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC))
-    updated_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC), onupdate=lambda: datetime.now(datetime.UTC))
+    created_at = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
 class File(Base):
     __tablename__ = "files"
     
     id = Column(Integer, primary_key=True, index=True)
     file_path = Column(String, unique=True, nullable=False)
-    upload_date = Column(DateTime, default=lambda: datetime.now(datetime.UTC))
+    upload_date = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 class DatasetFile(Base):
     __tablename__ = "dataset_files"
@@ -60,8 +61,8 @@ class Conversation(Base):
     session_id = Column(String, unique=True, nullable=False, index=True)
     title = Column(String, nullable=True)  # Auto-generated from first query
     dataset_ids = Column(String, nullable=True)  # Comma-separated dataset IDs
-    created_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC))
-    updated_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC), onupdate=lambda: datetime.now(datetime.UTC))
+    created_at = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
 class Message(Base):
     __tablename__ = "messages"
@@ -72,7 +73,7 @@ class Message(Base):
     content = Column(Text, nullable=False)
     csv_file = Column(String, nullable=True)  # For result messages
     row_count = Column(Integer, nullable=True)  # For result messages
-    created_at = Column(DateTime, default=lambda: datetime.now(datetime.UTC))
+    created_at = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 # Dependency to get database session
 async def get_db():

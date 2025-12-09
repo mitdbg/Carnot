@@ -4,13 +4,51 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import File as FileRecord
 from app.database import get_db
-from app.env import DATA_DIR, IS_LOCAL_ENV
+from app.env import BASE_DIR, IS_LOCAL_ENV
 from app.models.schemas import FileItem
 from app.services.file_service import LocalFileService, S3FileService
 
 router = APIRouter()
 file_service = LocalFileService() if IS_LOCAL_ENV else S3FileService()
 
+def normalize_path(path: str) -> str:
+    """
+    Normalizes a path, preserving protocol (like s3://) and ensuring consistent
+    single slashes and no trailing slash (unless the path is just the root protocol).
+    """
+    if not path:
+        return ""
+
+    # separate protocol (e.g., s3://bucket, file://) from the path segment
+    protocol = ""
+    path_segment = path
+
+    # check for protocol or local absolute path starting with "/"
+    if "://" in path:
+        parts = path.split("://", 1)
+        protocol = parts[0] + "://"
+        path_segment = parts[1]
+    elif path.startswith("/"):
+        # for local paths, treat the initial '/' as a special character to preserve
+        path_segment = path.lstrip("/")
+
+    # normalize the path segment: remove multiple slashes and trailing slash
+    # This also handles the case where the protocol part might have had extra slashes
+    path_segment = path_segment.replace("//", "/")
+    path_segment = path_segment.rstrip("/")
+
+    # recombine
+    if protocol:
+        # for protocols, the combination looks like: s3://bucket/key/
+        return protocol + path_segment
+    elif path.startswith("/") and path_segment:
+        # for absolute local paths: /carnot/data
+        return "/" + path_segment
+    elif path.startswith("/") and not path_segment:
+        # If path was just "/", return "/"
+        return "/"
+
+    return path_segment
 
 @router.get("/browse", response_model=list[FileItem])
 async def browse_directory(path: str | None = None):
@@ -20,18 +58,20 @@ async def browse_directory(path: str | None = None):
     try:
         # return the root level (i.e. "data/") if no path is provided
         if path is None or path == "":
-            # Return root level: show data directory
-            return [FileItem(path=DATA_DIR, is_directory=True)]
+            return file_service.list_directory(BASE_DIR)
+
+        # ✨ FIX: Normalize the incoming path from the frontend
+        normalized_path = normalize_path(path)
 
         # confirm that path exists and is a directory / s3 prefix
-        if not file_service.exists(path):
-            raise HTTPException(status_code=404, detail=f"Path {path} not found")
+        if not file_service.exists(normalized_path):
+            raise HTTPException(status_code=404, detail=f"Path {normalized_path} not found")
         
-        if not file_service.is_dir(path):
-            raise HTTPException(status_code=400, detail=f"Path {path} is not a directory or s3 prefix")
+        if not file_service.is_dir(normalized_path):
+            raise HTTPException(status_code=400, detail=f"Path {normalized_path} is not a directory or s3 prefix")
 
         # get list of directory contents and then sort them so that directories come first
-        items = file_service.list_directory(path)
+        items = file_service.list_directory(normalized_path)
         items.sort(key=lambda file: (not file.is_directory, file.path.lower()))
 
         return items

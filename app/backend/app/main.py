@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import init_db
-from app.routes import conversations, datasets, files, query, search
+from app.routes import config, conversations, datasets, files, query, search
 
 # compute allowed origins for CORS
 allowed_origins = ["http://localhost", "http://localhost:80"]
@@ -32,6 +32,7 @@ app.add_middleware(
 )
 
 # Include routers
+app.include_router(config.router, prefix="/api/config", tags=["config"])
 app.include_router(files.router, prefix="/api/files", tags=["files"])
 app.include_router(datasets.router, prefix="/api/datasets", tags=["datasets"])
 app.include_router(search.router, prefix="/api/search", tags=["search"])

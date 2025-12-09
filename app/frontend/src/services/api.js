@@ -9,6 +9,11 @@ const api = axios.create({
   },
 })
 
+// Config API
+export const configApi = {
+  getConfig: () => api.get('/config/'),
+}
+
 // Files API
 export const filesApi = {
   browse: (path = '') => api.get('/files/browse', { params: { path } }),

@@ -3,7 +3,7 @@ import json
 import logging
 import re
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from uuid import uuid4
 
@@ -170,7 +170,7 @@ async def save_message(
         )
         conversation = result.scalar_one_or_none()
         if conversation:
-            conversation.updated_at = datetime.now(datetime.UTC)
+            conversation.updated_at = datetime.now(timezone.utc)
 
         await db.commit()
 

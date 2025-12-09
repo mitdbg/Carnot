@@ -1,3 +1,5 @@
+import os
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -117,6 +119,7 @@ async def create_dataset(
                 {
                     "id": file.id,
                     "file_path": file.file_path,
+                    "file_name": os.path.basename(file.file_path),
                 }
                 for _, file in file_rows
             ]

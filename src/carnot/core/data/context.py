@@ -48,11 +48,11 @@ validator = pz.Validator()
 config = pz.QueryProcessorConfig(
     policy=pz.MaxQuality(),
     execution_strategy="parallel",
-    available_models=[pz.Model.GPT_4o, pz.Model.GPT_4o_MINI],
+    available_models=[pz.Model.GPT_5, pz.Model.GPT_5_MINI],
     max_workers=20,
     progress=True,
 )
-output = ds.optimize_and_run(config=config, validator=validator)
+output = ds.run(config=config, validator=validator)
 
 # write the execution stats to json
 output.execution_stats.to_json("pz_program_stats.json")
@@ -99,11 +99,11 @@ validator = pz.Validator()
 config = pz.QueryProcessorConfig(
     policy=pz.MaxQuality(),
     execution_strategy="parallel",
-    available_models=[pz.Model.GPT_4o, pz.Model.GPT_4o_MINI],
+    available_models=[pz.Model.GPT_5, pz.Model.GPT_5_MINI],
     max_workers=20,
     progress=True,
 )
-output = ds.optimize_and_run(config=config, validator=validator)
+output = ds.run(config=config, validator=validator)
 
 # write the execution stats to json
 output.execution_stats.to_json("pz_program_stats.json")
@@ -115,7 +115,7 @@ print(f"Results at: {output_filepath}")
 ```
 
 Be sure to always:
-- execute your program using the `.optimize_and_run()` format shown above
+- execute your program using the `.run()` format shown above
 - call `output.execution_stats.to_json("pz_program_stats.json")` to write execution statistics to disk
 - write your output to CSV and print where you wrote it!
 """

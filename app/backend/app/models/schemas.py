@@ -3,22 +3,23 @@ from datetime import datetime
 from pydantic import BaseModel
 
 
+# Config schemas
+class AppConfig(BaseModel):
+    base_dir: str
+
 # File schemas
 class FileItem(BaseModel):
     path: str
+    display_name: str
     is_directory: bool
     size: int | None = None
     modified: datetime | None = None
 
 # Dataset schemas
-class DatasetFileCreate(BaseModel):
-    file_path: str
-    file_name: str
-
 class DatasetCreate(BaseModel):
     name: str
     annotation: str
-    files: list[DatasetFileCreate]
+    files: list[str]
 
 class DatasetFileResponse(BaseModel):
     id: int
@@ -53,7 +54,7 @@ class DatasetDetailResponse(BaseModel):
 class DatasetUpdate(BaseModel):
     name: str | None = None
     annotation: str | None = None
-    files: list[DatasetFileCreate] | None = None
+    files: list[str] | None = None
 
 # Search schemas
 class SearchQuery(BaseModel):

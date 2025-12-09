@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -174,7 +174,7 @@ async def update_conversation(conversation_id: int, update: ConversationUpdate):
         if update.title is not None:
             conversation.title = update.title
 
-        conversation.updated_at = datetime.now(datetime.UTC)
+        conversation.updated_at = datetime.now(timezone.utc)
         await db.commit()
         await db.refresh(conversation)
 
@@ -235,7 +235,7 @@ async def create_message(message: MessageCreate):
         db.add(new_message)
 
         # Update conversation timestamp
-        conversation.updated_at = datetime.now(datetime.UTC)
+        conversation.updated_at = datetime.now(timezone.utc)
 
         await db.commit()
         await db.refresh(new_message)
