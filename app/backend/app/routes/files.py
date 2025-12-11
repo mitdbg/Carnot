@@ -87,17 +87,17 @@ async def upload_file(file: UploadFile = File(...), db: AsyncSession = Depends(g
     """
     Upload a file to the server.
     """
-    try:
-        # save file to file system
-        file_paths = file_service.save_uploaded_file(file)
+    # try:
+    # save file to file system
+    file_paths = file_service.save_uploaded_file(file)
 
-        # store file metadata in database
-        uploaded_files = [FileRecord(file_path=file_path) for file_path in file_paths]
-        db.add_all(uploaded_files)
-        await db.commit()
+    # store file metadata in database
+    uploaded_files = [FileRecord(file_path=file_path) for file_path in file_paths]
+    db.add_all(uploaded_files)
+    await db.commit()
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error uploading file: {str(e)}") from e
+    # except Exception as e:
+    #     raise HTTPException(status_code=500, detail=f"Error uploading file: {str(e)}") from e
 
 
 @router.get("/upload")
