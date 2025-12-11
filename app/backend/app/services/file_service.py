@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import IO
 
 import boto3
+from cloudpathlib import S3Path
 from fastapi import HTTPException, UploadFile
 
 from app.env import BASE_DIR, DATA_DIR
@@ -41,7 +42,7 @@ def _safe_join(base: Path, target: Path) -> Path:
     return resolved_target
 
 
-def _extract_zip_to_streams(archive_path: Path, data_dir: Path) -> tuple[list[IO[bytes]], list[str]]:
+def _extract_zip_to_streams(archive_path: Path, data_dir: Path | S3Path) -> tuple[list[IO[bytes]], list[str]]:
     """Extracts a ZIP archive and returns a list of BytesIO streams for file contents."""
     streams, upload_paths = [], []
     try:
@@ -67,7 +68,7 @@ def _extract_zip_to_streams(archive_path: Path, data_dir: Path) -> tuple[list[IO
     return streams, upload_paths
 
 
-def _extract_tar_to_streams(archive_path: Path, data_dir: Path) -> tuple[list[IO[bytes]], list[str]]:
+def _extract_tar_to_streams(archive_path: Path, data_dir: Path | S3Path) -> tuple[list[IO[bytes]], list[str]]:
     """Extracts a TAR archive and returns a list of BytesIO streams for file contents."""
     streams, upload_paths = [], []
     try:
@@ -105,10 +106,11 @@ def _extract_archive(archive: UploadFile, data_dir: str) -> tuple[list[IO[bytes]
 
         # extract archive contents to in-memory streams
         file_streams = []
+        data_dir_path = S3Path(data_dir) if data_dir.startswith("s3://") else Path(data_dir)
         if archive.filename.lower().endswith(".zip"):
-            file_streams, upload_paths = _extract_zip_to_streams(temp_archive_path, Path(data_dir))
+            file_streams, upload_paths = _extract_zip_to_streams(temp_archive_path, data_dir_path)
         else:
-            file_streams, upload_paths = _extract_tar_to_streams(temp_archive_path, Path(data_dir))
+            file_streams, upload_paths = _extract_tar_to_streams(temp_archive_path, data_dir_path)
 
     except HTTPException:
         raise
@@ -156,7 +158,7 @@ class BaseFileService(ABC):
     def save_uploaded_file(self, file: UploadFile) -> list[str]:
         """Save an uploaded file to the upload directory. Returns the uploaded file paths."""
         # get list of files and the paths they will be uploaded to
-        file_bytes_streams, upload_paths = [file.file], [str(Path(DATA_DIR, file.filename))]
+        file_bytes_streams, upload_paths = [file.file], [os.path.join(DATA_DIR, file.filename)]
         logger.info(
             f"Pre S3 upload | DATA_DIR: {DATA_DIR} | file.filename: {file.filename} | path: {upload_paths[0]}"
         )

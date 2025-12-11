@@ -9,6 +9,7 @@ from uuid import uuid4
 
 import fsspec
 import pandas as pd
+from cloudpathlib import S3Path
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
@@ -219,7 +220,11 @@ async def stream_query_execution(
         yield f"data: {json.dumps({'type': 'status', 'message': f'Loaded {len(datasets)} dataset(s)'})}\n\n"
         await asyncio.sleep(0.1)
 
-        all_files = [Path(path) for dataset in datasets for path in dataset]
+        all_files = [
+            S3Path(path) if path.startswith("s3://") else Path(path)
+            for dataset in datasets
+            for path in dataset
+        ]
         if not all_files:
             yield f"data: {json.dumps({'type': 'error', 'message': 'No files found in selected datasets'})}\n\n"
             return
@@ -233,7 +238,7 @@ async def stream_query_execution(
         ):
             session_exists = False
 
-        session_dir = Path(BASE_DIR, "sessions", session_id)
+        session_dir = Path(BASE_DIR, "sessions", session_id) if IS_LOCAL_ENV else S3Path(BASE_DIR, "sessions", session_id)
         file_service.create_dir(str(session_dir))
 
         yield f"data: {json.dumps({'type': 'status', 'message': 'Preparing data context...'})}\n\n"
@@ -279,7 +284,7 @@ async def stream_query_execution(
 
         # setup progress logging and clear old progress log if it exists
         fs = fsspec.filesystem(FILESYSTEM)
-        progress_log = str(Path(session_dir, "progress.jsonl"))
+        progress_log = str(Path(session_dir, "progress.jsonl") if IS_LOCAL_ENV else S3Path(session_dir, "progress.jsonl"))
         if fs.exists(progress_log):
             fs.rm(progress_log, recursive=False)
 
@@ -295,7 +300,7 @@ async def stream_query_execution(
         yield f"data: {json.dumps({'type': 'status', 'message': 'Running Carnot query processor...'})}\n\n"
         await asyncio.sleep(0.1)
 
-        output_log = str(Path(session_dir, "output.txt"))
+        output_log = str(Path(session_dir, "output.txt") if IS_LOCAL_ENV else S3Path(session_dir, "output.txt"))
         if fs.exists(output_log):
             fs.rm(output_log, recursive=False)
 
@@ -335,7 +340,7 @@ async def stream_query_execution(
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         csv_filename = f"query_results_{timestamp}.csv"
-        results_dir = Path(BASE_DIR, "results")
+        results_dir = Path(BASE_DIR, "results") if IS_LOCAL_ENV else S3Path(BASE_DIR, "results")
         file_service.create_dir(str(results_dir))
         csv_path = results_dir / csv_filename
 
@@ -458,8 +463,8 @@ async def get_progress(session_id: str, since_timestamp: str | None = None):
     """
     try:
         fs = fsspec.filesystem(FILESYSTEM)
-        session_dir = str(Path(BASE_DIR, "sessions", session_id))
-        progress_log = str(Path(session_dir, "progress.jsonl"))
+        session_dir = str(Path(BASE_DIR, "sessions", session_id) if IS_LOCAL_ENV else S3Path(BASE_DIR, "sessions", session_id))
+        progress_log = str(Path(session_dir, "progress.jsonl") if IS_LOCAL_ENV else S3Path(session_dir, "progress.jsonl"))
         if not fs.exists(progress_log):
             return {"events": []}
 
@@ -488,8 +493,8 @@ async def get_output(session_id: str, last_line: int = 0):
     """
     try:
         fs = fsspec.filesystem(FILESYSTEM)
-        session_dir = str(Path(BASE_DIR, "sessions", session_id))
-        output_file = str(Path(session_dir, "output.txt"))
+        session_dir = str(Path(BASE_DIR, "sessions", session_id) if IS_LOCAL_ENV else S3Path(BASE_DIR, "sessions", session_id))
+        output_file = str(Path(session_dir, "output.txt") if IS_LOCAL_ENV else S3Path(session_dir, "output.txt"))
         if not fs.exists(output_file):
             return {"lines": [], "total_lines": 0}
 
@@ -517,7 +522,7 @@ async def download_query_results(filename: str):
 
     # Get the backend directory path
     fs = fsspec.filesystem(FILESYSTEM)
-    file_path = str(Path(BASE_DIR, "results", filename))
+    file_path = str(Path(BASE_DIR, "results", filename) if IS_LOCAL_ENV else S3Path(BASE_DIR, "results", filename))
     if not fs.exists(file_path):
         raise HTTPException(status_code=404, detail="File not found")
 
