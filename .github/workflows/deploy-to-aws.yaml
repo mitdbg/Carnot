@@ -227,6 +227,17 @@ jobs:
           echo "$CARNOT_DB_NAME" > deploy/compose/secrets/db_name.txt
           chmod 600 deploy/compose/secrets/db_*.txt
 
+          # Prepare deploy environment variables
+          echo "DOCKERHUB_USERNAME=${{ vars.DOCKERHUB_USERNAME }}" >> deploy/compose/.env
+          echo "ENV_NAME=${ENV_NAME}" >> deploy/compose/.env
+          echo "LOCAL_ENV=false" >> deploy/compose/.env
+          echo "SETTINGS_ENCRYPTION_KEY=${{ secrets.SETTINGS_ENCRYPTION_KEY }}" >> deploy/compose/.env
+          echo "AUTH0_DOMAIN=${{ secrets.AUTH0_CUSTOM_DOMAIN }}" >> deploy/compose/.env
+          echo "AUTH0_AUDIENCE=${{ secrets.AUTH0_AUDIENCE }}" >> deploy/compose/.env
+          echo "AUTH0_CLAIMS_NAMESPACE=${{ secrets.AUTH0_CLAIMS_NAMESPACE }}" >> deploy/compose/.env
+          echo "BASE_ORIGINS=http://${SUBDOMAIN}.carnot-research.org,https://${SUBDOMAIN}.carnot-research.org,http://web-backend,https://web-backend" >> deploy/compose/.env
+          echo "CARNOT_USER_SALT=${{ secrets.CARNOT_USER_SALT }}" >> deploy/compose/.env
+
           # Copy compose bundle to EC2
           scp -r -o StrictHostKeyChecking=no -i deployer_key.pem deploy/compose ubuntu@$EC2_PUBLIC_IP:~/
 
@@ -241,15 +252,6 @@ jobs:
           # Login & deploy using pulled images
           ssh -o StrictHostKeyChecking=no -i deployer_key.pem ubuntu@$EC2_PUBLIC_IP "
             cd compose
-            export DOCKERHUB_USERNAME=${{ vars.DOCKERHUB_USERNAME }}
-            export ENV_NAME=${ENV_NAME}
-            export LOCAL_ENV="false"
-            export SETTINGS_ENCRYPTION_KEY="${{ secrets.SETTINGS_ENCRYPTION_KEY }}"
-            export AUTH0_DOMAIN="${{ secrets.AUTH0_CUSTOM_DOMAIN }}"
-            export AUTH0_AUDIENCE="${{ secrets.AUTH0_AUDIENCE }}"
-            export AUTH0_CLAIMS_NAMESPACE="${{ secrets.AUTH0_CLAIMS_NAMESPACE }}"
-            export BASE_ORIGINS="http://${SUBDOMAIN}.carnot-research.org,https://${SUBDOMAIN}.carnot-research.org,http://web-backend,https://web-backend"
-            export CARNOT_USER_SALT="${{ secrets.CARNOT_USER_SALT }}"
             docker login -u '${{ vars.DOCKERHUB_USERNAME }}' -p '${{ secrets.DOCKERHUB_TOKEN }}'
             docker compose pull
             docker compose up -d
