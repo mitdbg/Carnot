@@ -157,6 +157,9 @@ class BaseFileService(ABC):
         """Save an uploaded file to the upload directory. Returns the uploaded file paths."""
         # get list of files and the paths they will be uploaded to
         file_bytes_streams, upload_paths = [file.file], [str(Path(DATA_DIR, file.filename).resolve())]
+        logger.info(
+            f"Pre S3 upload | DATA_DIR: {DATA_DIR} | file.filename: {file.filename} | path: {upload_paths[0]}"
+        )
         if any(file.filename.lower().endswith(ext) for ext in ARCHIVE_EXTENSIONS):
             file_bytes_streams, upload_paths = _extract_archive(file, DATA_DIR)
 
