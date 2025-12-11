@@ -93,7 +93,7 @@ class Message(Base):
     row_count = Column(Integer, nullable=True)  # For result messages
     created_at = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc))
 
-# Dependency to get database session
+# dependency to get database session
 async def get_db():
     async with AsyncSessionLocal() as session:
         try:
@@ -101,8 +101,7 @@ async def get_db():
         finally:
             await session.close()
 
-# Initialize database
+# database initialization is handled by Alembic migrations
 async def init_db():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    pass
 

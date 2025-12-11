@@ -34,7 +34,8 @@ services:
       POSTGRES_DB_FILE: /run/secrets/db_name
     ports:
       - "8000:8000"
-    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    command: >
+      sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"
     secrets:
       - db_password
       - db_user
