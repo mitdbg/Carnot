@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timezone
 
 from sqlalchemy import Column, ForeignKey, Integer, String, Text
@@ -15,8 +16,8 @@ def read_secret(secret_name: str) -> str:
 DB_USER = read_secret("db_user")
 DB_PASSWORD = read_secret("db_password")
 DB_NAME = read_secret("db_name")
-DB_HOST = "db"
-DB_PORT = 5432
+DB_HOST = os.getenv("DB_HOST", "db")
+DB_PORT = os.getenv("DB_PORT", 5432)
 
 # Database URL
 DATABASE_URL = f"postgresql+asyncpg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
