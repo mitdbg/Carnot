@@ -177,7 +177,6 @@ class LocalFileService(BaseFileService):
 class S3FileService(BaseFileService):
     """File service for AWS S3"""
     def __init__(self):
-        self.s3 = boto3.client('s3')
         self.s3_bucket = DATA_DIR.replace("s3://", "").split("/")[0]
 
     def _get_s3_key_from_path(self, path: str) -> str:
@@ -185,8 +184,9 @@ class S3FileService(BaseFileService):
 
     def exists(self, path: str) -> bool:
         """Check if a file or directory exists"""
+        s3 = boto3.client('s3')
         s3_prefix = self._get_s3_key_from_path(path)
-        response = self.s3.list_objects_v2(Bucket=self.s3_bucket, Prefix=s3_prefix, MaxKeys=1)
+        response = s3.list_objects_v2(Bucket=self.s3_bucket, Prefix=s3_prefix, MaxKeys=1)
         return 'Contents' in response
 
     def is_dir(self, path: str) -> bool:
@@ -195,9 +195,11 @@ class S3FileService(BaseFileService):
 
     def list_all_subfiles(self, path: str) -> list[str]:
         """List all files under the given s3 prefix"""
+        s3 = boto3.client('s3')
+
         file_paths = []
         prefix = self._get_s3_key_from_path(path)
-        paginator = self.s3.get_paginator('list_objects_v2')
+        paginator = s3.get_paginator('list_objects_v2')
         result_iterator = paginator.paginate(Bucket=self.s3_bucket, Prefix=prefix)
 
         for page in result_iterator:
@@ -208,8 +210,9 @@ class S3FileService(BaseFileService):
 
     def read_file(self, path: str) -> str:
         """Read the contents of a file from s3"""
+        s3 = boto3.client('s3')
         s3_key = self._get_s3_key_from_path(path)
-        response = self.s3.get_object(Bucket=self.s3_bucket, Key=s3_key)
+        response = s3.get_object(Bucket=self.s3_bucket, Key=s3_key)
         content = response['Body'].read().decode('utf-8')
         return content
 
