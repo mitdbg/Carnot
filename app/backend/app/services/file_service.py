@@ -159,9 +159,6 @@ class BaseFileService(ABC):
         """Save an uploaded file to the upload directory. Returns the uploaded file paths."""
         # get list of files and the paths they will be uploaded to
         file_bytes_streams, upload_paths = [file.file], [os.path.join(DATA_DIR, file.filename)]
-        logger.info(
-            f"Pre S3 upload | DATA_DIR: {DATA_DIR} | file.filename: {file.filename} | path: {upload_paths[0]}"
-        )
         if any(file.filename.lower().endswith(ext) for ext in ARCHIVE_EXTENSIONS):
             file_bytes_streams, upload_paths = _extract_archive(file, DATA_DIR)
 
@@ -306,8 +303,4 @@ class S3FileService(BaseFileService):
     def _write_file_to_path(self, file_bytes_stream: IO[bytes], path: str) -> None:
         """Save an uploaded file to the given s3 path"""
         s3_key = self._get_s3_key_from_path(path)
-        logger.info(
-            f"Starting S3 upload | Path: {path} | Bucket: {self.s3_bucket} | Key: {s3_key}"
-        )
         self.s3.upload_fileobj(file_bytes_stream, self.s3_bucket, s3_key)
-        logger.info(f"Completed S3 upload | Path: {path}")

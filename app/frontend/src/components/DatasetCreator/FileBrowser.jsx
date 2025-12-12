@@ -29,8 +29,6 @@ function FileBrowser({ selectedFiles, onFileToggle }) {
             setBasePathFull(fullPath);
             setBaseDirName(fullPath.split('/').filter(Boolean).pop());
             loadDirectory('');
-            console.log("basePathFull set to:", basePathFull);
-            console.log("baseDirName set to:", baseDirName);
         } catch (err) {
             setError('Failed to load config: ' + err.message)
         }
@@ -46,11 +44,9 @@ function FileBrowser({ selectedFiles, onFileToggle }) {
     try {
       setLoading(true)
       setError(null)
-      console.log("Loading directory:", path);
       const response = await filesApi.browse(path)
       const loadedItems = response.data || []
       setItems(loadedItems)
-      console.log("Loaded items:", loadedItems);
     } catch (err) {
       setError('Failed to load directory: ' + err.message)
     } finally {
@@ -129,17 +125,14 @@ function FileBrowser({ selectedFiles, onFileToggle }) {
 
     const loadDirRecursive = async (path) => {
       try {
-        console.log("Recursively loading directory:", path);
         const response = await filesApi.browse(path)
         const items = response.data || []
 
         for (const item of items) {
           if (item.is_directory) {
-            console.log("Entering subdirectory:", item.path);
             // recursively load subdirectory
             await loadDirRecursive(item.path)
           } else {
-            console.log("Found file:", item.path);
             // add file path to list of files
             allFiles.push(item.path)
           }

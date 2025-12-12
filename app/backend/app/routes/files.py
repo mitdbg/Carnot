@@ -99,11 +99,7 @@ async def browse_directory(path: str | None = None):
     try:
         # return the root level (i.e. "data/") if no path is provided
         if path is None or path == "":
-            file_items = file_service.list_directory(BASE_DIR)
-            logger.info(
-                f"browse directory | Path: {path} | BASE_DIR: {BASE_DIR} | Returning: {file_items}"
-            )
-            return file_items
+            return file_service.list_directory(BASE_DIR)
 
         # normalize the incoming path from the frontend
         normalized_path = normalize_path(path)
@@ -118,10 +114,6 @@ async def browse_directory(path: str | None = None):
         # get list of directory contents and then sort them so that directories come first
         items = file_service.list_directory(normalized_path)
         items.sort(key=lambda file: (not file.is_directory, file.path.lower()))
-
-        logger.info(
-            f"browse directory | Path: {path} | normalized_path: {normalized_path} | Returning: {items}"
-        )
 
         return items
 

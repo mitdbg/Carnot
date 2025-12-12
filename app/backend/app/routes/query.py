@@ -273,7 +273,7 @@ async def stream_query_execution(
         else:
             context_id = f"session_{session_id[:8]}"
             ctx = carnot.TextFileContext(
-                path=str(session_dir),
+                paths=[str(session_dir)],
                 id=context_id,
                 description=f"Query on {len(datasets)} dataset(s)",
                 llm_config=user_config,
