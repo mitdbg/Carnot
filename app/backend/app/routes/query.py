@@ -52,15 +52,15 @@ class OutputCapture:
 
     def _open_stream(self):
         """Open the stream using fsspec."""
-        try:
-            # open the stream in append mode ('a') since stdout/stderr writes are sequential
-            # and may be interleaved. 'w' would overwrite the previous stream's output.
-            fs = fsspec.filesystem(FILESYSTEM)
-            self.file_handle = fs.open(self.filepath, mode='a', encoding='utf-8')
-            self.file_stream = self.file_handle.__enter__()
-        except Exception as e:
-            self.original_stream.write(f"Error opening output stream for {self.filepath}: {e}\n")
-            raise
+        # try:
+        # open the stream in append mode ('a') since stdout/stderr writes are sequential
+        # and may be interleaved. 'w' would overwrite the previous stream's output.
+        fs = fsspec.filesystem(FILESYSTEM)
+        self.file_handle = fs.open(self.filepath, mode='a', encoding='utf-8')
+        self.file_stream = self.file_handle.__enter__()
+        # except Exception as e:
+        #     self.original_stream.write(f"Error opening output stream for {self.filepath}: {e}\n")
+        #     raise
 
     def write(self, data: str):
         """Write data to both the file stream (S3/local) and the original stream (console/terminal)."""
@@ -184,244 +184,244 @@ async def save_message(
 async def stream_query_execution(
     query: str, dataset_ids: list[int], session_id: str, user_config: dict,
 ):
-    try:
-        cleanup_old_sessions()
+    # try:
+    cleanup_old_sessions()
 
-        session_id = session_id or str(uuid4())
-        conversation_id = await get_or_create_conversation(
-            session_id, query, dataset_ids
-        )
-        await save_message(conversation_id, "user", query)
+    session_id = session_id or str(uuid4())
+    conversation_id = await get_or_create_conversation(
+        session_id, query, dataset_ids
+    )
+    await save_message(conversation_id, "user", query)
 
-        yield f"data: {json.dumps({'type': 'status', 'message': 'Starting query execution...', 'session_id': session_id})}\n\n"
-        await asyncio.sleep(0.1)
-        yield f"data: {json.dumps({'type': 'status', 'message': 'Loading datasets...'})}\n\n"
-        await asyncio.sleep(0.1)
+    yield f"data: {json.dumps({'type': 'status', 'message': 'Starting query execution...', 'session_id': session_id})}\n\n"
+    await asyncio.sleep(0.1)
+    yield f"data: {json.dumps({'type': 'status', 'message': 'Loading datasets...'})}\n\n"
+    await asyncio.sleep(0.1)
 
-        async with AsyncSessionLocal() as db:
-            datasets = []
-            for dataset_id in dataset_ids:
-                dataset_result = await db.execute(
-                    select(Dataset).where(Dataset.id == dataset_id)
-                )
-                dataset = dataset_result.scalar_one_or_none()
-                if not dataset:
-                    yield f"data: {json.dumps({'type': 'error', 'message': f'Dataset {dataset_id} not found'})}\n\n"
-                    return
-
-                files_result = await db.execute(
-                    select(FileRecord)
-                    .join(DatasetFile, FileRecord.id == DatasetFile.file_id)
-                    .where(DatasetFile.dataset_id == dataset_id)
-                )
-                files = files_result.scalars().all()
-                datasets.append([file.file_path for file in files])
-
-        yield f"data: {json.dumps({'type': 'status', 'message': f'Loaded {len(datasets)} dataset(s)'})}\n\n"
-        await asyncio.sleep(0.1)
-
-        all_files = [
-            S3Path(path) if path.startswith("s3://") else Path(path)
-            for dataset in datasets
-            for path in dataset
-        ]
-        if not all_files:
-            yield f"data: {json.dumps({'type': 'error', 'message': 'No files found in selected datasets'})}\n\n"
-            return
-
-        yield f"data: {json.dumps({'type': 'status', 'message': f'Processing {len(all_files)} files...'})}\n\n"
-        await asyncio.sleep(0.1)
-
-        session_exists = session_id in active_sessions
-        if session_exists and set(active_sessions[session_id]["dataset_ids"]) != set(
-            dataset_ids
-        ):
-            session_exists = False
-
-        session_dir = Path(BASE_DIR, "sessions", session_id) if IS_LOCAL_ENV else S3Path(BASE_DIR, "sessions", session_id)
-        file_service.create_dir(str(session_dir))
-
-        yield f"data: {json.dumps({'type': 'status', 'message': 'Preparing data context...'})}\n\n"
-        await asyncio.sleep(0.1)
-
-        # NOTE: this copies files to a session-specific directory; we cannot make copies of large datasets
-        if not session_exists:
-            text_file_count = 0
-            for file_path in all_files:
-                if file_path.suffix.lower() in {".pdf", ".jpg", ".jpeg", ".png", ".gif", ".zip", ".exe", ".bin"}:
-                    continue
-
-                destination = session_dir / file_path.name
-                try:
-                    destination.write_bytes(file_path.read_bytes())
-                    text_file_count += 1
-                except OSError as exc:
-                    logger.debug("Skipping file %s: %s", file_path, exc)
-
-            if text_file_count == 0:
-                yield f"data: {json.dumps({'type': 'error', 'message': 'No text files found in selected datasets'})}\n\n"
+    async with AsyncSessionLocal() as db:
+        datasets = []
+        for dataset_id in dataset_ids:
+            dataset_result = await db.execute(
+                select(Dataset).where(Dataset.id == dataset_id)
+            )
+            dataset = dataset_result.scalar_one_or_none()
+            if not dataset:
+                yield f"data: {json.dumps({'type': 'error', 'message': f'Dataset {dataset_id} not found'})}\n\n"
                 return
 
-            yield f"data: {json.dumps({'type': 'status', 'message': f'Processing {text_file_count} text files...'})}\n\n"
-            await asyncio.sleep(0.1)
-        else:
-            yield f"data: {json.dumps({'type': 'status', 'message': 'Continuing conversation...'})}\n\n"
-            await asyncio.sleep(0.1)
-
-        if session_exists:
-            ctx = active_sessions[session_id]["context"]
-        else:
-            context_id = f"session_{session_id[:8]}"
-            ctx = carnot.TextFileContext(
-                paths=[str(session_dir)],
-                id=context_id,
-                description=f"Query on {len(datasets)} dataset(s)",
-                llm_config=user_config,
+            files_result = await db.execute(
+                select(FileRecord)
+                .join(DatasetFile, FileRecord.id == DatasetFile.file_id)
+                .where(DatasetFile.dataset_id == dataset_id)
             )
+            files = files_result.scalars().all()
+            datasets.append([file.file_path for file in files])
 
-        yield f"data: {json.dumps({'type': 'status', 'message': f'Executing query: {query}'})}\n\n"
+    yield f"data: {json.dumps({'type': 'status', 'message': f'Loaded {len(datasets)} dataset(s)'})}\n\n"
+    await asyncio.sleep(0.1)
+
+    all_files = [
+        S3Path(path) if path.startswith("s3://") else Path(path)
+        for dataset in datasets
+        for path in dataset
+    ]
+    if not all_files:
+        yield f"data: {json.dumps({'type': 'error', 'message': 'No files found in selected datasets'})}\n\n"
+        return
+
+    yield f"data: {json.dumps({'type': 'status', 'message': f'Processing {len(all_files)} files...'})}\n\n"
+    await asyncio.sleep(0.1)
+
+    session_exists = session_id in active_sessions
+    if session_exists and set(active_sessions[session_id]["dataset_ids"]) != set(
+        dataset_ids
+    ):
+        session_exists = False
+
+    session_dir = Path(BASE_DIR, "sessions", session_id) if IS_LOCAL_ENV else S3Path(BASE_DIR, "sessions", session_id)
+    file_service.create_dir(str(session_dir))
+
+    yield f"data: {json.dumps({'type': 'status', 'message': 'Preparing data context...'})}\n\n"
+    await asyncio.sleep(0.1)
+
+    # NOTE: this copies files to a session-specific directory; we cannot make copies of large datasets
+    if not session_exists:
+        text_file_count = 0
+        for file_path in all_files:
+            if file_path.suffix.lower() in {".pdf", ".jpg", ".jpeg", ".png", ".gif", ".zip", ".exe", ".bin"}:
+                continue
+
+            destination = session_dir / file_path.name
+            try:
+                destination.write_bytes(file_path.read_bytes())
+                text_file_count += 1
+            except OSError as exc:
+                logger.debug("Skipping file %s: %s", file_path, exc)
+
+        if text_file_count == 0:
+            yield f"data: {json.dumps({'type': 'error', 'message': 'No text files found in selected datasets'})}\n\n"
+            return
+
+        yield f"data: {json.dumps({'type': 'status', 'message': f'Processing {text_file_count} text files...'})}\n\n"
+        await asyncio.sleep(0.1)
+    else:
+        yield f"data: {json.dumps({'type': 'status', 'message': 'Continuing conversation...'})}\n\n"
         await asyncio.sleep(0.1)
 
-        # setup progress logging and clear old progress log if it exists
-        fs = fsspec.filesystem(FILESYSTEM)
-        progress_log = str(Path(session_dir, "progress.jsonl") if IS_LOCAL_ENV else S3Path(session_dir, "progress.jsonl"))
-        if fs.exists(progress_log):
-            fs.rm(progress_log, recursive=False)
-
-        compute_ctx = ctx.compute(query)
-        config = carnot.QueryProcessorConfig(
-            policy=carnot.MaxQuality(),
+    if session_exists:
+        ctx = active_sessions[session_id]["context"]
+    else:
+        context_id = f"session_{session_id[:8]}"
+        ctx = carnot.TextFileContext(
+            paths=[str(session_dir)],
+            id=context_id,
+            description=f"Query on {len(datasets)} dataset(s)",
             llm_config=user_config,
-            progress=True,  # Enable console progress
-            session_id=session_id,  # Add session ID for tracking
-            progress_log_file=progress_log,  # Add progress log file path
         )
 
-        yield f"data: {json.dumps({'type': 'status', 'message': 'Running Carnot query processor...'})}\n\n"
-        await asyncio.sleep(0.1)
+    yield f"data: {json.dumps({'type': 'status', 'message': f'Executing query: {query}'})}\n\n"
+    await asyncio.sleep(0.1)
 
-        output_log = str(Path(session_dir, "output.txt") if IS_LOCAL_ENV else S3Path(session_dir, "output.txt"))
-        if fs.exists(output_log):
-            fs.rm(output_log, recursive=False)
+    # setup progress logging and clear old progress log if it exists
+    fs = fsspec.filesystem(FILESYSTEM)
+    progress_log = str(Path(session_dir, "progress.jsonl") if IS_LOCAL_ENV else S3Path(session_dir, "progress.jsonl"))
+    if fs.exists(progress_log):
+        fs.rm(progress_log, recursive=False)
 
-        original_stdout = sys.stdout
-        original_stderr = sys.stderr
-        def run_query_with_capture():
-            stdout_capture = OutputCapture(output_log, original_stdout)
-            stderr_capture = OutputCapture(output_log, original_stderr)
-            try:
-                sys.stdout = stdout_capture
-                sys.stderr = stderr_capture
-                return compute_ctx.run(config=config)
-            finally:
-                sys.stdout = original_stdout
-                sys.stderr = original_stderr
-                stdout_capture.close()
-                stderr_capture.close()
+    compute_ctx = ctx.compute(query)
+    config = carnot.QueryProcessorConfig(
+        policy=carnot.MaxQuality(),
+        llm_config=user_config,
+        progress=True,  # Enable console progress
+        session_id=session_id,  # Add session ID for tracking
+        progress_log_file=progress_log,  # Add progress log file path
+    )
 
-        loop = asyncio.get_event_loop()
-        output = await loop.run_in_executor(None, run_query_with_capture)
+    yield f"data: {json.dumps({'type': 'status', 'message': 'Running Carnot query processor...'})}\n\n"
+    await asyncio.sleep(0.1)
 
-        active_sessions[session_id] = {
-            "context": compute_ctx,
-            "last_access": datetime.now(),
-            "dataset_ids": dataset_ids,
-            "session_dir": str(session_dir),
-        }
+    output_log = str(Path(session_dir, "output.txt") if IS_LOCAL_ENV else S3Path(session_dir, "output.txt"))
+    if fs.exists(output_log):
+        fs.rm(output_log, recursive=False)
 
-        plan_text = extract_plan_from_output(output)
-        if plan_text:
-            await save_message(conversation_id, "plan", plan_text)
-            yield f"data: {json.dumps({'type': 'plan', 'message': plan_text, 'session_id': session_id})}\n\n"
-            await asyncio.sleep(0.1)
-
-        yield f"data: {json.dumps({'type': 'status', 'message': 'Processing results...'})}\n\n"
-        await asyncio.sleep(0.1)
-
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        csv_filename = f"query_results_{timestamp}.csv"
-        results_dir = Path(BASE_DIR, "results") if IS_LOCAL_ENV else S3Path(BASE_DIR, "results")
-        file_service.create_dir(str(results_dir))
-        csv_path = results_dir / csv_filename
-
+    original_stdout = sys.stdout
+    original_stderr = sys.stderr
+    def run_query_with_capture():
+        stdout_capture = OutputCapture(output_log, original_stdout)
+        stderr_capture = OutputCapture(output_log, original_stderr)
         try:
-            # First, save to our timestamp-based file
-            df = output.to_df()
-            df.to_csv(csv_path, index=False)
+            sys.stdout = stdout_capture
+            sys.stderr = stderr_capture
+            return compute_ctx.run(config=config)
+        finally:
+            sys.stdout = original_stdout
+            sys.stderr = original_stderr
+            stdout_capture.close()
+            stderr_capture.close()
 
-            # Try to extract the actual filename from Carnot's output
-            csv_filename_from_output = None
-            if not df.empty:
-                # Check all columns for CSV filename mentions
-                # Pattern to match CSV filenames (e.g., "filtered_enron_emails.csv" or "output.csv")
-                csv_pattern = r'\b([a-zA-Z0-9_\-]+\.csv)\b'
-                for col in df.columns:
-                    for value in df[col]:
-                        if isinstance(value, str):
-                            # Look for any CSV filename in the text
-                            matches = re.findall(csv_pattern, value, re.IGNORECASE)
-                            if matches:
-                                # Use the last match (most likely the output file)
-                                csv_filename_from_output = matches[-1]
-                                break
-                    if csv_filename_from_output:
-                        break
-                
-                # If we found a filename, check if that file exists and use it
+    loop = asyncio.get_event_loop()
+    output = await loop.run_in_executor(None, run_query_with_capture)
+
+    active_sessions[session_id] = {
+        "context": compute_ctx,
+        "last_access": datetime.now(),
+        "dataset_ids": dataset_ids,
+        "session_dir": str(session_dir),
+    }
+
+    plan_text = extract_plan_from_output(output)
+    if plan_text:
+        await save_message(conversation_id, "plan", plan_text)
+        yield f"data: {json.dumps({'type': 'plan', 'message': plan_text, 'session_id': session_id})}\n\n"
+        await asyncio.sleep(0.1)
+
+    yield f"data: {json.dumps({'type': 'status', 'message': 'Processing results...'})}\n\n"
+    await asyncio.sleep(0.1)
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    csv_filename = f"query_results_{timestamp}.csv"
+    results_dir = Path(BASE_DIR, "results") if IS_LOCAL_ENV else S3Path(BASE_DIR, "results")
+    file_service.create_dir(str(results_dir))
+    csv_path = results_dir / csv_filename
+
+    try:
+        # First, save to our timestamp-based file
+        df = output.to_df()
+        df.to_csv(csv_path, index=False)
+
+        # Try to extract the actual filename from Carnot's output
+        csv_filename_from_output = None
+        if not df.empty:
+            # Check all columns for CSV filename mentions
+            # Pattern to match CSV filenames (e.g., "filtered_enron_emails.csv" or "output.csv")
+            csv_pattern = r'\b([a-zA-Z0-9_\-]+\.csv)\b'
+            for col in df.columns:
+                for value in df[col]:
+                    if isinstance(value, str):
+                        # Look for any CSV filename in the text
+                        matches = re.findall(csv_pattern, value, re.IGNORECASE)
+                        if matches:
+                            # Use the last match (most likely the output file)
+                            csv_filename_from_output = matches[-1]
+                            break
                 if csv_filename_from_output:
-                    actual_csv_path = BACKEND_ROOT / csv_filename_from_output
-                    if actual_csv_path.exists() and actual_csv_path != csv_path:
-                        # Use the file that Carnot created
-                        csv_filename = csv_filename_from_output
-                        csv_path = actual_csv_path
-                        df = pd.read_csv(csv_path)  # Re-read from the actual file
-                    else:
-                        # File doesn't exist, rename our file to match
-                        csv_path.rename(actual_csv_path)
-                        csv_path = actual_csv_path
-                        csv_filename = csv_filename_from_output
-
-            if df.empty:
-                message_text = "No results found for your query."
-                await save_message(conversation_id, "result", message_text)
-                yield f"data: {json.dumps({'type': 'result', 'message': message_text, 'session_id': session_id})}\n\n"
-            else:
-                if len(df.columns) >= 2:
-                    result_column = df.iloc[:, 1]
-                    lines = [
-                        f"  {index + 1}. {value}"
-                        for index, value in enumerate(result_column.tolist())
-                    ]
-                    body = "\n".join(lines)
+                    break
+            
+            # If we found a filename, check if that file exists and use it
+            if csv_filename_from_output:
+                actual_csv_path = BACKEND_ROOT / csv_filename_from_output
+                if actual_csv_path.exists() and actual_csv_path != csv_path:
+                    # Use the file that Carnot created
+                    csv_filename = csv_filename_from_output
+                    csv_path = actual_csv_path
+                    df = pd.read_csv(csv_path)  # Re-read from the actual file
                 else:
-                    body = df.to_string(index=False)
+                    # File doesn't exist, rename our file to match
+                    csv_path.rename(actual_csv_path)
+                    csv_path = actual_csv_path
+                    csv_filename = csv_filename_from_output
 
-                message_text = (
-                    "Query completed successfully!\n\n"
-                    f"Found {len(df)} result(s):\n\n{body}"
-                )
-                await save_message(
-                    conversation_id, "result", message_text, csv_filename, len(df)
-                )
-                yield f"data: {json.dumps({'type': 'result', 'message': message_text, 'csv_file': csv_filename, 'row_count': len(df), 'session_id': session_id})}\n\n"
+        if df.empty:
+            message_text = "No results found for your query."
+            await save_message(conversation_id, "result", message_text)
+            yield f"data: {json.dumps({'type': 'result', 'message': message_text, 'session_id': session_id})}\n\n"
+        else:
+            if len(df.columns) >= 2:
+                result_column = df.iloc[:, 1]
+                lines = [
+                    f"  {index + 1}. {value}"
+                    for index, value in enumerate(result_column.tolist())
+                ]
+                body = "\n".join(lines)
+            else:
+                body = df.to_string(index=False)
 
-        except Exception as exc:
-            logger.exception("Error processing query results")
-            error_msg = f"Error processing results: {exc}"
-            await save_message(conversation_id, "error", error_msg)
-            yield f"data: {json.dumps({'type': 'error', 'message': error_msg})}\n\n"
-
-        yield f"data: {json.dumps({'type': 'done', 'message': 'Query execution complete'})}\n\n"
+            message_text = (
+                "Query completed successfully!\n\n"
+                f"Found {len(df)} result(s):\n\n{body}"
+            )
+            await save_message(
+                conversation_id, "result", message_text, csv_filename, len(df)
+            )
+            yield f"data: {json.dumps({'type': 'result', 'message': message_text, 'csv_file': csv_filename, 'row_count': len(df), 'session_id': session_id})}\n\n"
 
     except Exception as exc:
-        logger.exception("Query execution failed")
-        error_msg = f"Error executing query: {exc}"
-        if "conversation_id" in locals():
-            try:
-                await save_message(conversation_id, "error", error_msg)
-            except Exception:
-                logger.exception("Failed to save error message")
+        logger.exception("Error processing query results")
+        error_msg = f"Error processing results: {exc}"
+        await save_message(conversation_id, "error", error_msg)
         yield f"data: {json.dumps({'type': 'error', 'message': error_msg})}\n\n"
+
+    yield f"data: {json.dumps({'type': 'done', 'message': 'Query execution complete'})}\n\n"
+
+    # except Exception as exc:
+    #     logger.exception("Query execution failed")
+    #     error_msg = f"Error executing query: {exc}"
+    #     if "conversation_id" in locals():
+    #         try:
+    #             await save_message(conversation_id, "error", error_msg)
+    #         except Exception:
+    #             logger.exception("Failed to save error message")
+    #     yield f"data: {json.dumps({'type': 'error', 'message': error_msg})}\n\n"
 
 @router.post("/execute")
 async def execute_query(
