@@ -310,10 +310,20 @@ async def stream_query_execution(
 
     original_stdout = sys.stdout
     original_stderr = sys.stderr
+
+    stdout_capture = OutputCapture(output_log, original_stdout)
+    stderr_capture = OutputCapture(output_log, original_stderr)
+
+    active_sessions[session_id] = {
+        "context": None,
+        "last_access": datetime.now(),
+        "dataset_ids": dataset_ids,
+        "session_dir": str(session_dir),
+        "local_output_path": str(stdout_capture.temp_filepath),
+    }
+
     def run_query_with_capture():
         local_output_path = None
-        stdout_capture = OutputCapture(output_log, original_stdout)
-        stderr_capture = OutputCapture(output_log, original_stderr)
         try:
             sys.stdout = stdout_capture
             sys.stderr = stderr_capture
@@ -339,12 +349,7 @@ async def stream_query_execution(
     loop = asyncio.get_event_loop()
     output = await loop.run_in_executor(None, run_query_with_capture)
 
-    active_sessions[session_id] = {
-        "context": compute_ctx,
-        "last_access": datetime.now(),
-        "dataset_ids": dataset_ids,
-        "session_dir": str(session_dir),
-    }
+    active_sessions[session_id]["context"] = compute_ctx
 
     plan_text = extract_plan_from_output(output)
     if plan_text:
@@ -362,73 +367,73 @@ async def stream_query_execution(
     csv_path = results_dir / csv_filename
     fs = fsspec.filesystem(FILESYSTEM)
 
-    try:
-        # First, save to our timestamp-based file
-        df = output.to_df()
-        with fs.open(str(csv_path), 'w', encoding='utf-8') as f:
-            df.to_csv(f, index=False)
+    # try:
+    # First, save to our timestamp-based file
+    df = output.to_df()
+    with fs.open(str(csv_path), 'w', encoding='utf-8') as f:
+        df.to_csv(f, index=False)
 
-        # Try to extract the actual filename from Carnot's output
-        csv_filename_from_output = None
-        if not df.empty:
-            # Check all columns for CSV filename mentions
-            # Pattern to match CSV filenames (e.g., "filtered_enron_emails.csv" or "output.csv")
-            csv_pattern = r'\b([a-zA-Z0-9_\-]+\.csv)\b'
-            for col in df.columns:
-                for value in df[col]:
-                    if isinstance(value, str):
-                        # Look for any CSV filename in the text
-                        matches = re.findall(csv_pattern, value, re.IGNORECASE)
-                        if matches:
-                            # Use the last match (most likely the output file)
-                            csv_filename_from_output = matches[-1]
-                            break
-                if csv_filename_from_output:
-                    break
-            
-            # If we found a filename, check if that file exists and use it
+    # Try to extract the actual filename from Carnot's output
+    csv_filename_from_output = None
+    if not df.empty:
+        # Check all columns for CSV filename mentions
+        # Pattern to match CSV filenames (e.g., "filtered_enron_emails.csv" or "output.csv")
+        csv_pattern = r'\b([a-zA-Z0-9_\-]+\.csv)\b'
+        for col in df.columns:
+            for value in df[col]:
+                if isinstance(value, str):
+                    # Look for any CSV filename in the text
+                    matches = re.findall(csv_pattern, value, re.IGNORECASE)
+                    if matches:
+                        # Use the last match (most likely the output file)
+                        csv_filename_from_output = matches[-1]
+                        break
             if csv_filename_from_output:
-                actual_csv_path = BACKEND_ROOT / csv_filename_from_output
-                if actual_csv_path.exists() and actual_csv_path != csv_path:
-                    # Use the file that Carnot created
-                    csv_filename = csv_filename_from_output
-                    csv_path = actual_csv_path
-                    df = pd.read_csv(csv_path)  # Re-read from the actual file
-                else:
-                    # File doesn't exist, rename our file to match
-                    csv_path.rename(actual_csv_path)
-                    csv_path = actual_csv_path
-                    csv_filename = csv_filename_from_output
-
-        if df.empty:
-            message_text = "No results found for your query."
-            await save_message(conversation_id, "result", message_text)
-            yield f"data: {json.dumps({'type': 'result', 'message': message_text, 'session_id': session_id})}\n\n"
-        else:
-            if len(df.columns) >= 2:
-                result_column = df.iloc[:, 1]
-                lines = [
-                    f"  {index + 1}. {value}"
-                    for index, value in enumerate(result_column.tolist())
-                ]
-                body = "\n".join(lines)
+                break
+        
+        # If we found a filename, check if that file exists and use it
+        if csv_filename_from_output:
+            actual_csv_path = BACKEND_ROOT / csv_filename_from_output
+            if actual_csv_path.exists() and actual_csv_path != csv_path:
+                # Use the file that Carnot created
+                csv_filename = csv_filename_from_output
+                csv_path = actual_csv_path
+                df = pd.read_csv(csv_path)  # Re-read from the actual file
             else:
-                body = df.to_string(index=False)
+                # File doesn't exist, rename our file to match
+                csv_path.rename(actual_csv_path)
+                csv_path = actual_csv_path
+                csv_filename = csv_filename_from_output
 
-            message_text = (
-                "Query completed successfully!\n\n"
-                f"Found {len(df)} result(s):\n\n{body}"
-            )
-            await save_message(
-                conversation_id, "result", message_text, csv_filename, len(df)
-            )
-            yield f"data: {json.dumps({'type': 'result', 'message': message_text, 'csv_file': csv_filename, 'row_count': len(df), 'session_id': session_id})}\n\n"
+    if df.empty:
+        message_text = "No results found for your query."
+        await save_message(conversation_id, "result", message_text)
+        yield f"data: {json.dumps({'type': 'result', 'message': message_text, 'session_id': session_id})}\n\n"
+    else:
+        if len(df.columns) >= 2:
+            result_column = df.iloc[:, 1]
+            lines = [
+                f"  {index + 1}. {value}"
+                for index, value in enumerate(result_column.tolist())
+            ]
+            body = "\n".join(lines)
+        else:
+            body = df.to_string(index=False)
 
-    except Exception as exc:
-        logger.exception("Error processing query results")
-        error_msg = f"Error processing results: {exc}"
-        await save_message(conversation_id, "error", error_msg)
-        yield f"data: {json.dumps({'type': 'error', 'message': error_msg})}\n\n"
+        message_text = (
+            "Query completed successfully!\n\n"
+            f"Found {len(df)} result(s):\n\n{body}"
+        )
+        await save_message(
+            conversation_id, "result", message_text, csv_filename, len(df)
+        )
+        yield f"data: {json.dumps({'type': 'result', 'message': message_text, 'csv_file': csv_filename, 'row_count': len(df), 'session_id': session_id})}\n\n"
+
+    # except Exception as exc:
+    #     logger.exception("Error processing query results")
+    #     error_msg = f"Error processing results: {exc}"
+    #     await save_message(conversation_id, "error", error_msg)
+    #     yield f"data: {json.dumps({'type': 'error', 'message': error_msg})}\n\n"
 
     yield f"data: {json.dumps({'type': 'done', 'message': 'Query execution complete'})}\n\n"
 
@@ -511,9 +516,20 @@ async def get_output(session_id: str, last_line: int = 0):
     Get terminal output for a session, returns lines after last_line
     """
     # try:
-    fs = fsspec.filesystem(FILESYSTEM)
-    session_dir = str(Path(BASE_DIR, "sessions", session_id) if IS_LOCAL_ENV else S3Path(BASE_DIR, "sessions", session_id))
-    output_file = str(Path(session_dir, "output.txt") if IS_LOCAL_ENV else S3Path(session_dir, "output.txt"))
+    # fs = fsspec.filesystem(FILESYSTEM)
+    # session_dir = str(Path(BASE_DIR, "sessions", session_id) if IS_LOCAL_ENV else S3Path(BASE_DIR, "sessions", session_id))
+    # output_file = str(Path(session_dir, "output.txt") if IS_LOCAL_ENV else S3Path(session_dir, "output.txt"))
+    # Check if the session is currently active/running
+    if session_id in active_sessions and "local_output_path" in active_sessions[session_id]:
+        # If active, read from the local file path
+        output_file = active_sessions[session_id]["local_output_path"]
+        fs = fsspec.filesystem("file") # Always use the local filesystem
+    else:
+        # If not active, read from the final S3/local destination
+        fs = fsspec.filesystem(FILESYSTEM)
+        session_dir = str(Path(BASE_DIR, "sessions", session_id) if IS_LOCAL_ENV else S3Path(BASE_DIR, "sessions", session_id))
+        output_file = str(Path(session_dir, "output.txt") if IS_LOCAL_ENV else S3Path(session_dir, "output.txt"))
+
     if not fs.exists(output_file):
         return {"lines": [], "total_lines": 0}
 
