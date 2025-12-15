@@ -81,8 +81,6 @@ return result
     def forward(self, query: str, target_k: int):
         return self.generate_code(query=query, target_k=target_k, Demos=self.few_shot_examples)
 
-# --- Main Generation Logic ---
-
 def generate_strategies(queries_path: str, output_dir: str, target_k: int, llm_model: str):
     """
     Generates Python strategy files for each query in the input file using DSPy.

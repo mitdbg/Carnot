@@ -3,22 +3,11 @@ import numpy as np
 import logging
 from typing import List, Dict, Union, Any
 
-# Re-use the existing jsonl reader from your library
 from chroma_utils import read_jsonl
 
 def calculate_recall_stats(gold_path: str, pred_path: str) -> Dict[str, Any]:
     """
-    Calculates Recall metrics for predictions against a gold standard based on the full predicted list.
-    
-    Args:
-        gold_path: Path to the ground truth JSONL (must have "query" and "docs").
-        pred_path: Path to the prediction JSONL (must have "query" and "docs").
-                  
-    Returns:
-        A dictionary containing:
-        - 'per_query': List of dicts with detailed stats per query.
-        - 'summary': Dict of average scores (e.g., {"avg_recall": 0.75, "avg_pred_size": 12.5}).
-        - 'missing_count': Number of queries in gold but missing in pred.
+    Calculates Recall metrics for predictions against a gold standard.
     """
     if not os.path.exists(gold_path):
         raise FileNotFoundError(f"Gold file not found: {gold_path}")
@@ -67,7 +56,7 @@ def calculate_recall_stats(gold_path: str, pred_path: str) -> Dict[str, Any]:
         pred_set = set(pred_docs)
         intersection = gold_docs.intersection(pred_set)
         
-        recall = len(intersection) / len(gold_docs)
+        recall = len(intersection) / len(gold_docs) if len(gold_docs) > 0 else 0
         
         query_res = {
             "query": query, 
@@ -119,3 +108,10 @@ def write_analysis_report(stats: Dict, output_path: str):
                 f.write(f"  - Recall={recall:.2f} (Size: {size}) ({covered}/{gold_count}) | Query: \"{q}\"\n")
                 
     print(f"Report written to: {output_path}")
+
+def analyze_results(gold_path: str, pred_path: str, output_report_path: str):
+    """
+    Main entry point used by the pipeline script.
+    """
+    stats = calculate_recall_stats(gold_path, pred_path)
+    write_analysis_report(stats, output_report_path)

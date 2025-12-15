@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 # Import from lib
 from lib.decomposition_generator import generate_strategies
 from lib.decomposition_executor import execute_all_strategies
-from lib.analyze_decomposition_results import analyze_results
+from lib.analyze_retrieval_results import analyze_results
 
 CONFIG_PATH = "config.yaml"
 
@@ -55,9 +55,7 @@ def main():
     pred_output_path = f"decomposition/pred_set_ops_{subset_name}.jsonl"
     report_output_path = f"decomposition/results/recall_report_{subset_name}.txt"
 
-    # ==========================================
-    # MODE: GENERATE (Default)
-    # ==========================================
+    # MODE: GENERATE
     if args.mode in ["generate", "auto"]:
         logger.info("=== Step 1: Generating Decompositions ===")
         generate_strategies(
@@ -75,9 +73,7 @@ def main():
             logger.info("="*60 + "\n")
             return
 
-    # ==========================================
     # MODE: EXECUTE
-    # ==========================================
     if args.mode in ["execute", "auto"]:
         logger.info("=== Step 2: Executing Strategies ===")
         
@@ -90,11 +86,9 @@ def main():
             queries_path=queries_path,
             output_path=pred_output_path,
             config=config
-        ) #
+        )
 
-    # ==========================================
-    # MODE: ANALYZE (Runs automatically after execute)
-    # ==========================================
+    # MODE: ANALYZE (runs automatically after execute)
     if args.mode in ["execute", "analyze", "auto"]:
         logger.info("=== Step 3: Analyzing Results ===")
         if os.path.exists(pred_output_path):
