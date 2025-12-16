@@ -124,8 +124,8 @@ async def list_uploaded_files(db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Error listing files: {str(e)}") from e
 
 
-@router.post("/delete-batch")
-async def delete_files_batch(data: FileBatchDelete, db: AsyncSession = Depends(get_db)):
+@router.post("/delete")
+async def delete_files(data: FileBatchDelete, db: AsyncSession = Depends(get_db)):
     """
     Delete a batch of files from storage and the database.
     """
