@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 import torch
+import yaml
 from typing import Dict, List
 from sentence_transformers import SentenceTransformer, util
 
@@ -20,6 +21,7 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
     datefmt='%H:%M:%S'
 )
+
 logger = logging.getLogger(__name__)
 
 def get_gold_chunk(gold_item: Dict, title: str, query: str) -> str:
@@ -280,11 +282,24 @@ def run_similarity_analysis(
     logger.info(f"Report saved to: {output_path}")
 
 def main():
+    # Load Config to set dynamic defaults
+    config_path = "config.yaml"
+    if not os.path.exists(config_path):
+        logger.error("config.yaml not found.")
+        sys.exit(1)
+        
+    with open(config_path, "r") as f:
+        config = yaml.safe_load(f)
+
+    # Config values for defaults
+    default_gold_path = config['data']['queries_file'] # Uses the queries_file from config.yaml
+    default_model_name = config['indexing']['embedding_model']
+    
     parser = argparse.ArgumentParser(description="Analyze embedding similarity between Query, Gold Chunks, and Retrieved Chunks.")
     
-    # Default parameters based on user's original script
-    parser.add_argument("--gold", type=str, default="data/train_subset3.jsonl",
-                        help="Path to gold standard JSONL file.")
+    # Defaults are updated to use config values
+    parser.add_argument("--gold", type=str, default=default_gold_path,
+                        help=f"Path to gold standard JSONL file (default: {default_gold_path}).")
     parser.add_argument("--retrieved", type=str, default="full_document/pred_unranked.jsonl",
                         help="Path to retrieved predictions JSONL file.")
     parser.add_argument("--out", type=str, default="gold_vs_retrieved_similarity_report.txt",
@@ -295,8 +310,8 @@ def main():
     parser.add_argument("--unrelated-query", type=str, 
                         default="1947 Science Linguistics books",
                         help="An unrelated query string to fetch baseline chunks.")
-    parser.add_argument("--model", type=str, default="BAAI/bge-small-en-v1.5",
-                        help="HuggingFace model name for embeddings.")
+    parser.add_argument("--model", type=str, default=default_model_name,
+                        help=f"HuggingFace model name for embeddings (default: {default_model_name}).")
 
     args = parser.parse_args()
 

@@ -10,12 +10,7 @@ from tqdm import tqdm
 from transformers import AutoTokenizer
 
 # Import tools from the library
-from lib.chroma_utils import (
-    get_db_collection, 
-    read_jsonl, 
-    stable_entity_id, 
-    chunk_by_tokens
-)
+from lib.chroma_utils import get_db_collection, read_jsonl, stable_entity_id, chunk_by_tokens
 
 # Setup Logging
 logging.basicConfig(
@@ -72,8 +67,8 @@ def main():
     batch_ids, batch_docs, batch_metas = [], [], []
     running_total = 0
     
-    # Graceful Interrupt Handling
     interrupted = False
+    
     def handle_sigint(sig, frame):
         nonlocal interrupted
         interrupted = True
@@ -90,7 +85,6 @@ def main():
             text = (raw.get("text") or "").strip()
             entity_id = stable_entity_id(title, text)
             
-            # --- STRATEGY A: First 512 Tokens Only ---
             if idx_conf['index_first_512']:
                 toks = tokenizer.encode(text, add_special_tokens=False)
                 truncated = toks[:idx_conf['chunk_size']]
@@ -108,7 +102,6 @@ def main():
                 })
                 running_total += 1
 
-            # --- STRATEGY B: Full Sliding Window ---
             else:
                 chunks = chunk_by_tokens(
                     text, tokenizer, 
@@ -136,7 +129,6 @@ def main():
             p_units.total = running_total
             p_units.refresh()
 
-            # Flush Batch
             if len(batch_ids) >= idx_conf['batch_size']:
                 upsert_in_batches(collection, batch_ids, batch_docs, batch_metas, idx_conf['batch_size'])
                 p_units.update(len(batch_ids))

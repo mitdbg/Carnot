@@ -6,21 +6,14 @@ from typing import List, Set
 from lib.chroma_utils import read_jsonl
 
 def calculate_recall(gold_docs: Set[str], predicted_docs: List[str]) -> float:
-    """
-    Calculates Recall: |Intersection| / |Gold|
-    Consistent with logic in lib.analyze_retrieval_results.
-    """
     if not gold_docs:
-        return 1.0  # Trivial success if gold set is empty
+        return 1.0
     
     pred_set = set(predicted_docs)
     intersection = gold_docs.intersection(pred_set)
     return len(intersection) / len(gold_docs)
 
 def run_analysis(gold_path: str, pred_path: str, output_path: str, query_index: int):
-    """
-    Main logic: Loads data using project utils, calculates stats, and writes CSV.
-    """
     # 2. Load Gold Data (using chroma_utils)
     gold_examples = list(read_jsonl(gold_path))
     
@@ -53,8 +46,6 @@ def run_analysis(gold_path: str, pred_path: str, output_path: str, query_index: 
             if k1 is None or k2 is None:
                 continue
 
-            # Extract doc lists
-            # Note: Handling both 'docs' (final) and intermediate steps if available
             docs_1 = pred.get("docs_1", [])
             docs_2 = pred.get("docs_2", [])
             docs_final = pred.get("docs", []) 

@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 # Import from lib
 from lib.chroma_utils import get_db_collection, read_jsonl
 from lib.retriever import retrieve_batch
-from baseline_quest.lib.retrieval_analyzer import analyze_results
+from lib.retrieval_analyzer import analyze_results
 
 CONFIG_PATH = "config.yaml"
 
@@ -31,8 +31,7 @@ def main():
     # 1. Load Configuration
     logger.info(f"Loading configuration from {CONFIG_PATH}...")
     config = load_config(CONFIG_PATH)
-
-    # Extract key settings from the 'retrieval' block
+    
     queries_path = config['data']['queries_file']
     top_k = config['retrieval'].get('top_k', 100)
     include_chunks = config['retrieval'].get('include_chunks', False)
@@ -58,7 +57,7 @@ def main():
     results = retrieve_batch(
         collection, 
         query_texts, 
-        k=top_k, 
+        k=top_k,
         include_chunks=include_chunks
     )
 

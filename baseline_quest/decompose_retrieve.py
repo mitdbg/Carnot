@@ -32,13 +32,13 @@ def main():
     parser = argparse.ArgumentParser(description="Run Decomposition Pipeline")
     parser.add_argument(
         "--mode", 
-        choices=["generate", "execute", "analyze", "auto"], 
+        # Removed "auto" from choices
+        choices=["generate", "execute", "analyze"], 
         default="generate",
         help=(
             "generate: Create strategy files only (then stop for review). "
             "execute: Run existing strategy files and analyze results. "
-            "analyze: Run analysis on existing predictions only. "
-            "auto: Run the full pipeline without stopping (use with caution)."
+            "analyze: Run analysis on existing predictions only."
         )
     )
     args = parser.parse_args()
@@ -46,7 +46,6 @@ def main():
     logger.info(f"Loading configuration from {CONFIG_PATH}...")
     config = load_config(CONFIG_PATH)
 
-    # --- Paths Setup ---
     queries_path = config['data']['queries_file']
     subset_name = os.path.splitext(os.path.basename(queries_path))[0]
     target_k = config['decomposition'].get('top_k', 100)
@@ -56,25 +55,24 @@ def main():
     report_output_path = f"results/decomposition/results/recall_report_{subset_name}.txt"
 
     # MODE: GENERATE
-    if args.mode in ["generate", "auto"]:
+    if args.mode == "generate":
         logger.info("=== Step 1: Generating Decompositions ===")
         generate_strategies(
             queries_path=queries_path,
             output_dir=strategies_dir,
             target_k=target_k,
             llm_model=config.get('decomposition', {}).get('llm_model', 'gpt-4o-mini') 
-        ) #
+        )
         
-        if args.mode == "generate":
-            logger.info("\n" + "="*60)
-            logger.info(f"GENERATION COMPLETE. Strategies saved to: {strategies_dir}")
-            logger.info("IMPORTANT: Please review/edit the generated Python files.")
-            logger.info("When ready, run this script again with: --mode execute")
-            logger.info("="*60 + "\n")
-            return
+        logger.info("\n" + "="*60)
+        logger.info(f"GENERATION COMPLETE. Strategies saved to: {strategies_dir}")
+        logger.info("IMPORTANT: Please review/edit the generated Python files.")
+        logger.info("When ready, run this script again with: --mode execute")
+        logger.info("="*60 + "\n")
+        return # Stop execution after generation
 
     # MODE: EXECUTE
-    if args.mode in ["execute", "auto"]:
+    elif args.mode == "execute":
         logger.info("=== Step 2: Executing Strategies ===")
         
         if not os.path.exists(strategies_dir) or not os.listdir(strategies_dir):
@@ -87,9 +85,9 @@ def main():
             output_path=pred_output_path,
             config=config
         )
+        # Fall through to analysis (Step 3)
 
-    # MODE: ANALYZE (runs automatically after execute)
-    if args.mode in ["execute", "analyze", "auto"]:
+    if args.mode in ["execute", "analyze"]:
         logger.info("=== Step 3: Analyzing Results ===")
         if os.path.exists(pred_output_path):
             analyze_results(
