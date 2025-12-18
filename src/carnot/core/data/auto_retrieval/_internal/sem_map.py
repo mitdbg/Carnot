@@ -207,25 +207,28 @@ def sem_map(
         return {}, concept_schema_cols
 
     dataset = pz.MemoryDataset(id="sem-map", vals=rows)
-    dataset = dataset.sem_map(cols=concept_schema_cols)
+    cols_for_pz = [dict(c) for c in concept_schema_cols]
+    dataset = dataset.sem_map(cols=cols_for_pz)
     output = dataset.run(max_quality=True)
-    df = output.to_df()
-
+    
     col_names = [c["name"] for c in concept_schema_cols]
     results: Dict[str, Dict[str, Any]] = {}
 
-    for _, row in df.iterrows():
-        doc_id = str(row.get("id", "")).strip()
+    for rec in getattr(output, "data_records", []):
+        doc_id = str(getattr(rec, "id", "")).strip()
         if not doc_id:
             continue
+
         out: Dict[str, Any] = {}
         for c in col_names:
-            v = row.get(c, None)
+            v = getattr(rec, c, None)
+
             v = _dedupe_list(v)
             if v is None or v == "" or v == []:
                 continue
             out[c] = v
-        results[doc_id] = out
+
+        results[doc_id] = out    
 
     return results, concept_schema_cols
 
@@ -337,41 +340,87 @@ def expand_sem_map_results_to_tags(
 
 # Example usage
 if __name__ == "__main__":
-    import random
-    
-    api_key = os.environ.get("OPENAI_API_KEY", "")
+    def _type_to_str(tp: Any) -> str:
+        if tp is str:
+            return "str"
+        if tp is int:
+            return "int"
+        if tp is float:
+            return "float"
+        if tp is bool:
+            return "bool"
+        origin = get_origin(tp)
+        args = get_args(tp)
+        if origin is list and len(args) == 1:
+            return f"List[{_type_to_str(args[0])}]"
+        return str(tp)
+
+    def _load_example_rows(example_path: Path) -> List[Dict[str, str]]:
+        lines = example_path.read_text(encoding="utf-8").splitlines()
+        rows: List[Dict[str, str]] = []
+        for i, line in enumerate(lines, start=1):
+            text = " ".join(line.strip().split())
+            if not text:
+                continue
+            rows.append({"id": f"doc_{i:03d}", "text": text})
+        return rows
+
+    api_key = os.environ.get("OPENAI_API_KEY", "").strip()
+    if not api_key:
+        raise RuntimeError("Missing OPENAI_API_KEY in environment.")
+
     lm = dspy.LM("openai/gpt-5.1", temperature=1.0, max_tokens=16000, api_key=api_key)
     dspy.configure(lm=lm)
 
-    concepts=['amphibian location', 'film classification', 'fish classification', 'book region', 'crime film theme']
+    here = Path(__file__).resolve().parent
+    example_path = here / "example_sem_map.txt"
+    data_rows = _load_example_rows(example_path)
+
+    concepts = [
+        "amphibian location",
+        "film classification",
+        "fish classification",
+        "book release-year",
+        "crime film theme",
+    ]
+    strategy = SemMapStrategy.HIERARCHY_FIRST
+
+    sem_results, concept_schema_cols = sem_map(concepts=concepts, data=data_rows, strategy=strategy)
+
+    expanded_results, expanded_schema, expanded_stats = expand_sem_map_results_to_tags(
+        sem_results, concept_schema_cols
+    )
+
+    sem_payload = {
+        "strategy": strategy.value,
+        "concepts": list(concepts),
+        "concept_schema_cols": [
+            {"name": c["name"], "type": _type_to_str(c["type"]), "desc": c.get("desc", "")}
+            for c in concept_schema_cols
+        ],
+        "results": sem_results,
+    }
+    expanded_payload = {
+        "schema": [
+            {"name": c["name"], "type": _type_to_str(c["type"]), "desc": c.get("desc", "")}
+            for c in expanded_schema
+        ],
+        "results": expanded_results,
+        "stats": expanded_stats,
+    }
+
+    sem_out_path = here / "sem_map/example_sem_map_output.json"
+    expanded_out_path = here / "sem_map/example_sem_map_tagified_output.json"
     
-    print(f"concepts={concepts}")
+    sem_out_path.parent.mkdir(parents=True, exist_ok=True)
+    expanded_out_path.parent.mkdir(parents=True, exist_ok=True)
 
-    for strat in (SemMapStrategy.FLAT, SemMapStrategy.HIERARCHY_FIRST):
-        model: dspy.Module = FlatConceptSchemaModel() if strat is SemMapStrategy.FLAT else HierarchyFirstConceptSchemaModel()
-        
-        concept_schema_cols: List[Dict[str, Any]] = []
+    sem_out_path.write_text(json.dumps(sem_payload, indent=2, ensure_ascii=False), encoding="utf-8")
+    expanded_out_path.write_text(
+        json.dumps(expanded_payload, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
 
-        for concept in concepts:
-            raw_output = model([concept])
-            
-            try:
-                schema_list = json.loads(raw_output)
-                if not isinstance(schema_list, list):
-                     print(f"Warning: Output for '{concept}' is not a list. Skipping.")
-                     continue
-            except Exception as e:
-                print(f"Error parsing '{concept}': {e}")
-                continue
-
-            for col in schema_list:
-                concept_schema_cols.append(
-                    {"name": col["name"], "type": _type_from_str(col["type"]), "desc": col.get("desc", "...")}
-                )
-
-        print(f"\nstrategy={strat.value}")
-        print("concept_schema_cols=")
-        for c in concept_schema_cols:
-            print(c)
+    print(f"Wrote sem_map output to: {sem_out_path}")
+    print(f"Wrote expanded tag output to: {expanded_out_path}")
 
     raise SystemExit(0)
