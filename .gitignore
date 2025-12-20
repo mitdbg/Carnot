@@ -216,3 +216,7 @@ venv_web/
 backend.log
 frontend.log
 secrets/
+
+# auto-retrieval
+src/carnot/core/data/auto_retrieval/chroma_collections
+src/carnot/core/data/auto_retrieval/tmp
