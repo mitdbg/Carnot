@@ -366,12 +366,16 @@ class TextFileContext(Context):
             paths = [paths]
 
         self.file_service = S3FileService() if FILESYSTEM == "s3" else LocalFileService()
-        self.filepaths = [
-            fp 
-            for path in paths
-            for fp in self.file_service.list_all_subfiles(path)
-            if not any(fp.lower().endswith(suffix) for suffix in SKIP_SUFFIXES)
-        ]
+        self.filepaths = []
+        for path in paths:
+            if self.file_service.is_dir(path):
+                self.filepaths.extend([
+                    fp
+                    for fp in self.file_service.list_all_subfiles(path)
+                    if not any(fp.lower().endswith(suffix) for suffix in SKIP_SUFFIXES)
+                ])
+            else:
+                self.filepaths.append(path)
 
         # call parent constructor to set id, operator, and schema
         schema = create_schema_from_fields([{"name": "context", "desc": "The context", "type": str | Any}])
