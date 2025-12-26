@@ -126,6 +126,18 @@ resource "aws_iam_role_policy" "s3_access" {
         "arn:aws:s3:::carnot-research-${local.env_name}",
         "arn:aws:s3:::carnot-research-${local.env_name}/*"
       ]
+    },
+    {
+      Effect = "Allow"
+      Action = [
+        "secretsmanager:GetSecretValue",
+        "secretsmanager:CreateSecret",
+        "secretsmanager:DescribeSecret",
+        "secretsmanager:PutSecretValue"
+      ]
+      Resource = [
+        "arn:aws:secretsmanager:${var.aws_region}:${data.terraform_remote_state.global.outputs.aws_account_id}:secret:carnot/${local.env_name}/*"
+      ]
     }]
   })
 }

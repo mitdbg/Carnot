@@ -27,6 +27,7 @@ COMPANY_ENV = os.getenv("COMPANY_ENV", "dev")
 BACKEND_ROOT = "/code/backend/"
 BASE_DIR = f"s3://carnot-research-{COMPANY_ENV}/"
 DATA_DIR = f"s3://carnot-research-{COMPANY_ENV}/data/"
+SHARED_DATA_DIR = f"s3://carnot-research-{COMPANY_ENV}/shared/"
 SKIP_SUFFIXES = {".jpg", ".jpeg", ".png", ".gif", ".zip", ".exe", ".bin"}
 
 def get_text_from_pdf(pdf_bytes):
