@@ -6,6 +6,7 @@ on:
     - main
     - wl-prod
     - wm-prod
+    - dev
 
 permissions:
   id-token: write

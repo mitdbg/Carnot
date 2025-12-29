@@ -263,6 +263,10 @@ class BaseFileService(ABC):
 
 class LocalFileService(BaseFileService):
     """File service for local filesystem"""
+    def __init__(self):
+        self.create_dir(DATA_DIR)
+        self.create_dir(SHARED_DATA_DIR)
+
     def exists(self, path: str) -> bool:
         return os.path.exists(path)
 
@@ -324,6 +328,9 @@ class S3FileService(BaseFileService):
     def __init__(self):
         self.s3 = boto3.client('s3')
         self.s3_bucket = DATA_DIR.replace("s3://", "").split("/")[0]
+
+        self.create_dir(DATA_DIR)
+        self.create_dir(SHARED_DATA_DIR)
 
     def _get_s3_key_from_path(self, path: str) -> str:
         return "/".join(path.replace("s3://", "").split("/")[1:])
