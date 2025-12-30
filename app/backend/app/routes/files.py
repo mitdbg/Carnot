@@ -19,14 +19,16 @@ file_service = LocalFileService() if IS_LOCAL_ENV else S3FileService()
 
 
 @router.get("/browse", response_model=list[FileItem])
-async def browse_directory(path: str | None = None, user_id: str = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def browse_directory(path: str | None = None, user_id: str = Depends(get_current_user)):
     """
     Browse directory contents (uploaded files and user's data directory)
     """
     try:
         # return the root level (i.e. "data/") if no path is provided
         if path is None or path == "":
+            logger.info(f"Browsing base directory for path {path}")
             filepaths = file_service.list_directory(BASE_DIR)
+            logger.info(f"Filepaths: {filepaths}")
             return [fp for fp in filepaths if not fp.is_hidden]
 
         # normalize the incoming path from the frontend
