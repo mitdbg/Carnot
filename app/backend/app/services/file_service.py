@@ -352,9 +352,9 @@ class S3FileService(BaseFileService):
 
     def list_directory(self, path: str) -> list[FileItem]:
         """List contents of an s3 prefix"""
-        logger.info(f"Listing directory for path: {path}")
         items = []
         prefix = self._get_s3_key_from_path(path).rstrip("/") + "/"
+        prefix = "" if prefix == "/" else prefix
         paginator = self.s3.get_paginator('list_objects_v2')
         result_iterator = paginator.paginate(Bucket=self.s3_bucket, Prefix=prefix, Delimiter='/')
 
@@ -388,8 +388,6 @@ class S3FileService(BaseFileService):
                     size=obj['Size'],
                     modified=obj['LastModified'],
                 ))
-
-        logger.info(f"Items: {items}")
 
         return items
 
