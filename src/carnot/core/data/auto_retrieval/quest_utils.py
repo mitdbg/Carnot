@@ -87,6 +87,7 @@ def prepare_quest_documents(
     index_first_512: bool = False,
     chunk_size: int = 512,
     overlap: int = 80,
+    max_docs: int = None,
 ) -> Iterable[Dict[str, Any]]:
     """
     For each JSON line (raw record), we:
@@ -113,6 +114,9 @@ def prepare_quest_documents(
     logger.info(f"indexing first 512 tokens: {index_first_512}.")
 
     for idx, raw in enumerate(read_jsonl(jsonl_path)):
+        if max_docs is not None and idx >= max_docs:
+            logger.info(f"Reached limit of {max_docs} documents. Stopping.")
+            break
         if idx % 1000 == 0:
             logger.info(f"Processing document {idx}...")
         title = (raw.get("title") or "").strip() or "untitled"

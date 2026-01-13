@@ -1,0 +1,7486 @@
+{
+  "animal:geographic:distribution": {
+    "type": "bool",
+    "allowed_values": [
+      {
+        "value": "afghanistan",
+        "frequency": 5
+      },
+      {
+        "value": "africa",
+        "frequency": 16
+      },
+      {
+        "value": "alaska",
+        "frequency": 5
+      },
+      {
+        "value": "americas",
+        "frequency": 3
+      },
+      {
+        "value": "andhra pradesh",
+        "frequency": 3
+      },
+      {
+        "value": "angola",
+        "frequency": 4
+      },
+      {
+        "value": "arabian peninsula",
+        "frequency": 4
+      },
+      {
+        "value": "argentina",
+        "frequency": 17
+      },
+      {
+        "value": "arizona",
+        "frequency": 7
+      },
+      {
+        "value": "asia",
+        "frequency": 12
+      },
+      {
+        "value": "assam",
+        "frequency": 3
+      },
+      {
+        "value": "australasia",
+        "frequency": 3
+      },
+      {
+        "value": "australia",
+        "frequency": 13
+      },
+      {
+        "value": "bahamas",
+        "frequency": 3
+      },
+      {
+        "value": "baja california",
+        "frequency": 10
+      },
+      {
+        "value": "baja california sur",
+        "frequency": 4
+      },
+      {
+        "value": "bangladesh",
+        "frequency": 5
+      },
+      {
+        "value": "barbados",
+        "frequency": 7
+      },
+      {
+        "value": "bhutan",
+        "frequency": 3
+      },
+      {
+        "value": "borneo",
+        "frequency": 6
+      },
+      {
+        "value": "brava",
+        "frequency": 3
+      },
+      {
+        "value": "brazil",
+        "frequency": 10
+      },
+      {
+        "value": "british columbia",
+        "frequency": 4
+      },
+      {
+        "value": "california",
+        "frequency": 12
+      },
+      {
+        "value": "cambodia",
+        "frequency": 3
+      },
+      {
+        "value": "canada",
+        "frequency": 8
+      },
+      {
+        "value": "canary islands",
+        "frequency": 4
+      },
+      {
+        "value": "cape verde",
+        "frequency": 10
+      },
+      {
+        "value": "cape verde islands",
+        "frequency": 3
+      },
+      {
+        "value": "caribbean",
+        "frequency": 9
+      },
+      {
+        "value": "central africa",
+        "frequency": 6
+      },
+      {
+        "value": "central african republic",
+        "frequency": 3
+      },
+      {
+        "value": "central america",
+        "frequency": 14
+      },
+      {
+        "value": "central asia",
+        "frequency": 4
+      },
+      {
+        "value": "central chile",
+        "frequency": 3
+      },
+      {
+        "value": "central mexico",
+        "frequency": 3
+      },
+      {
+        "value": "chile",
+        "frequency": 3
+      },
+      {
+        "value": "china",
+        "frequency": 6
+      },
+      {
+        "value": "chubut province",
+        "frequency": 3
+      },
+      {
+        "value": "colombia",
+        "frequency": 6
+      },
+      {
+        "value": "colorado",
+        "frequency": 5
+      },
+      {
+        "value": "costa rica",
+        "frequency": 3
+      },
+      {
+        "value": "cuba",
+        "frequency": 6
+      },
+      {
+        "value": "democratic republic of the congo",
+        "frequency": 3
+      },
+      {
+        "value": "dominican republic",
+        "frequency": 3
+      },
+      {
+        "value": "east africa",
+        "frequency": 5
+      },
+      {
+        "value": "eastern africa",
+        "frequency": 6
+      },
+      {
+        "value": "egypt",
+        "frequency": 4
+      },
+      {
+        "value": "ethiopia",
+        "frequency": 4
+      },
+      {
+        "value": "eurasia",
+        "frequency": 6
+      },
+      {
+        "value": "europe",
+        "frequency": 18
+      },
+      {
+        "value": "fiji",
+        "frequency": 4
+      },
+      {
+        "value": "florida",
+        "frequency": 11
+      },
+      {
+        "value": "fogo",
+        "frequency": 4
+      },
+      {
+        "value": "france",
+        "frequency": 6
+      },
+      {
+        "value": "gangetic plains",
+        "frequency": 3
+      },
+      {
+        "value": "germany",
+        "frequency": 7
+      },
+      {
+        "value": "global",
+        "frequency": 3
+      },
+      {
+        "value": "great basin",
+        "frequency": 3
+      },
+      {
+        "value": "grenada",
+        "frequency": 4
+      },
+      {
+        "value": "guatemala",
+        "frequency": 5
+      },
+      {
+        "value": "gulf of california islands",
+        "frequency": 3
+      },
+      {
+        "value": "haiti",
+        "frequency": 3
+      },
+      {
+        "value": "hispaniola",
+        "frequency": 3
+      },
+      {
+        "value": "india",
+        "frequency": 16
+      },
+      {
+        "value": "indian ocean",
+        "frequency": 4
+      },
+      {
+        "value": "indian subcontinent",
+        "frequency": 13
+      },
+      {
+        "value": "indonesia",
+        "frequency": 10
+      },
+      {
+        "value": "iran",
+        "frequency": 4
+      },
+      {
+        "value": "iraq",
+        "frequency": 3
+      },
+      {
+        "value": "jamaica",
+        "frequency": 6
+      },
+      {
+        "value": "japan",
+        "frequency": 3
+      },
+      {
+        "value": "java",
+        "frequency": 4
+      },
+      {
+        "value": "karnataka",
+        "frequency": 3
+      },
+      {
+        "value": "kazakhstan",
+        "frequency": 4
+      },
+      {
+        "value": "kenya",
+        "frequency": 3
+      },
+      {
+        "value": "kerala",
+        "frequency": 3
+      },
+      {
+        "value": "laos",
+        "frequency": 3
+      },
+      {
+        "value": "lesser antilles",
+        "frequency": 6
+      },
+      {
+        "value": "malay peninsula",
+        "frequency": 4
+      },
+      {
+        "value": "malaysia",
+        "frequency": 9
+      },
+      {
+        "value": "martinique",
+        "frequency": 3
+      },
+      {
+        "value": "mekong basin",
+        "frequency": 3
+      },
+      {
+        "value": "mexico",
+        "frequency": 27
+      },
+      {
+        "value": "middle east",
+        "frequency": 5
+      },
+      {
+        "value": "mojave desert",
+        "frequency": 5
+      },
+      {
+        "value": "mongolia",
+        "frequency": 3
+      },
+      {
+        "value": "montana",
+        "frequency": 4
+      },
+      {
+        "value": "myanmar",
+        "frequency": 3
+      },
+      {
+        "value": "nepal",
+        "frequency": 4
+      },
+      {
+        "value": "nevada",
+        "frequency": 4
+      },
+      {
+        "value": "new guinea",
+        "frequency": 7
+      },
+      {
+        "value": "new mexico",
+        "frequency": 5
+      },
+      {
+        "value": "new zealand",
+        "frequency": 8
+      },
+      {
+        "value": "norfolk island",
+        "frequency": 3
+      },
+      {
+        "value": "north africa",
+        "frequency": 6
+      },
+      {
+        "value": "north america",
+        "frequency": 46
+      },
+      {
+        "value": "northeastern south america",
+        "frequency": 4
+      },
+      {
+        "value": "northern australia",
+        "frequency": 5
+      },
+      {
+        "value": "northern central america",
+        "frequency": 3
+      },
+      {
+        "value": "northern mexico",
+        "frequency": 5
+      },
+      {
+        "value": "northern south america",
+        "frequency": 5
+      },
+      {
+        "value": "northwestern mexico",
+        "frequency": 7
+      },
+      {
+        "value": "oklahoma",
+        "frequency": 3
+      },
+      {
+        "value": "oregon",
+        "frequency": 3
+      },
+      {
+        "value": "pakistan",
+        "frequency": 6
+      },
+      {
+        "value": "palau",
+        "frequency": 3
+      },
+      {
+        "value": "panama",
+        "frequency": 5
+      },
+      {
+        "value": "papua new guinea",
+        "frequency": 10
+      },
+      {
+        "value": "patagonia",
+        "frequency": 6
+      },
+      {
+        "value": "peninsular india",
+        "frequency": 3
+      },
+      {
+        "value": "peninsular malaysia",
+        "frequency": 4
+      },
+      {
+        "value": "peru",
+        "frequency": 8
+      },
+      {
+        "value": "philippines",
+        "frequency": 3
+      },
+      {
+        "value": "puerto rico",
+        "frequency": 5
+      },
+      {
+        "value": "russia",
+        "frequency": 6
+      },
+      {
+        "value": "santa cruz province",
+        "frequency": 3
+      },
+      {
+        "value": "santiago",
+        "frequency": 4
+      },
+      {
+        "value": "siberia",
+        "frequency": 4
+      },
+      {
+        "value": "singapore",
+        "frequency": 4
+      },
+      {
+        "value": "solomon islands",
+        "frequency": 4
+      },
+      {
+        "value": "sonora",
+        "frequency": 4
+      },
+      {
+        "value": "sonoran desert",
+        "frequency": 6
+      },
+      {
+        "value": "south africa",
+        "frequency": 9
+      },
+      {
+        "value": "south america",
+        "frequency": 31
+      },
+      {
+        "value": "south india",
+        "frequency": 3
+      },
+      {
+        "value": "southeast asia",
+        "frequency": 18
+      },
+      {
+        "value": "southern africa",
+        "frequency": 8
+      },
+      {
+        "value": "southern asia",
+        "frequency": 3
+      },
+      {
+        "value": "southern british columbia",
+        "frequency": 3
+      },
+      {
+        "value": "southern california",
+        "frequency": 6
+      },
+      {
+        "value": "southern europe",
+        "frequency": 5
+      },
+      {
+        "value": "southern india",
+        "frequency": 5
+      },
+      {
+        "value": "southern mexico",
+        "frequency": 3
+      },
+      {
+        "value": "southwestern united states",
+        "frequency": 8
+      },
+      {
+        "value": "spain",
+        "frequency": 6
+      },
+      {
+        "value": "sri lanka",
+        "frequency": 9
+      },
+      {
+        "value": "sulawesi",
+        "frequency": 3
+      },
+      {
+        "value": "sumatra",
+        "frequency": 4
+      },
+      {
+        "value": "são nicolau",
+        "frequency": 7
+      },
+      {
+        "value": "tamil nadu",
+        "frequency": 3
+      },
+      {
+        "value": "texas",
+        "frequency": 6
+      },
+      {
+        "value": "thailand",
+        "frequency": 8
+      },
+      {
+        "value": "the americas",
+        "frequency": 3
+      },
+      {
+        "value": "the caribbean",
+        "frequency": 6
+      },
+      {
+        "value": "trinidad and tobago",
+        "frequency": 3
+      },
+      {
+        "value": "turkey",
+        "frequency": 4
+      },
+      {
+        "value": "united states",
+        "frequency": 9
+      },
+      {
+        "value": "uruguay",
+        "frequency": 4
+      },
+      {
+        "value": "usa",
+        "frequency": 3
+      },
+      {
+        "value": "utah",
+        "frequency": 5
+      },
+      {
+        "value": "venezuela",
+        "frequency": 4
+      },
+      {
+        "value": "west africa",
+        "frequency": 5
+      },
+      {
+        "value": "west indies",
+        "frequency": 3
+      },
+      {
+        "value": "western ghats",
+        "frequency": 8
+      },
+      {
+        "value": "western north america",
+        "frequency": 8
+      },
+      {
+        "value": "western pacific ocean",
+        "frequency": 3
+      },
+      {
+        "value": "western palearctic",
+        "frequency": 3
+      },
+      {
+        "value": "western united states",
+        "frequency": 10
+      },
+      {
+        "value": "yemen",
+        "frequency": 9
+      },
+      {
+        "value": "yucatan peninsula",
+        "frequency": 4
+      }
+    ]
+  },
+  "animal:geologic_period": {
+    "type": "bool",
+    "allowed_values": [
+      {
+        "value": "aptian",
+        "frequency": 3
+      },
+      {
+        "value": "barremian",
+        "frequency": 3
+      },
+      {
+        "value": "burdigalian",
+        "frequency": 4
+      },
+      {
+        "value": "campanian",
+        "frequency": 8
+      },
+      {
+        "value": "carboniferous",
+        "frequency": 3
+      },
+      {
+        "value": "cenozoic",
+        "frequency": 3
+      },
+      {
+        "value": "cretaceous",
+        "frequency": 8
+      },
+      {
+        "value": "darriwilian",
+        "frequency": 5
+      },
+      {
+        "value": "devonian",
+        "frequency": 3
+      },
+      {
+        "value": "early bashkirian",
+        "frequency": 4
+      },
+      {
+        "value": "early cretaceous",
+        "frequency": 11
+      },
+      {
+        "value": "early eocene",
+        "frequency": 5
+      },
+      {
+        "value": "early holocene",
+        "frequency": 3
+      },
+      {
+        "value": "early jurassic",
+        "frequency": 4
+      },
+      {
+        "value": "early miocene",
+        "frequency": 12
+      },
+      {
+        "value": "early oligocene",
+        "frequency": 8
+      },
+      {
+        "value": "early paleocene",
+        "frequency": 4
+      },
+      {
+        "value": "early pleistocene",
+        "frequency": 3
+      },
+      {
+        "value": "early pliocene",
+        "frequency": 5
+      },
+      {
+        "value": "eocene",
+        "frequency": 15
+      },
+      {
+        "value": "holocene",
+        "frequency": 4
+      },
+      {
+        "value": "jurassic",
+        "frequency": 4
+      },
+      {
+        "value": "late cretaceous",
+        "frequency": 15
+      },
+      {
+        "value": "late eocene",
+        "frequency": 4
+      },
+      {
+        "value": "late jurassic",
+        "frequency": 4
+      },
+      {
+        "value": "late miocene",
+        "frequency": 8
+      },
+      {
+        "value": "late oligocene",
+        "frequency": 3
+      },
+      {
+        "value": "late paleocene",
+        "frequency": 3
+      },
+      {
+        "value": "late permian",
+        "frequency": 3
+      },
+      {
+        "value": "late pleistocene",
+        "frequency": 10
+      },
+      {
+        "value": "late pliocene",
+        "frequency": 7
+      },
+      {
+        "value": "late serpukhovian",
+        "frequency": 4
+      },
+      {
+        "value": "maastrichtian",
+        "frequency": 8
+      },
+      {
+        "value": "middle carboniferous",
+        "frequency": 4
+      },
+      {
+        "value": "middle eocene",
+        "frequency": 5
+      },
+      {
+        "value": "middle miocene",
+        "frequency": 7
+      },
+      {
+        "value": "middle ordovician",
+        "frequency": 5
+      },
+      {
+        "value": "miocene",
+        "frequency": 12
+      },
+      {
+        "value": "oligocene",
+        "frequency": 12
+      },
+      {
+        "value": "paleocene",
+        "frequency": 10
+      },
+      {
+        "value": "paleogene",
+        "frequency": 5
+      },
+      {
+        "value": "paleozoic",
+        "frequency": 5
+      },
+      {
+        "value": "permian",
+        "frequency": 3
+      },
+      {
+        "value": "pleistocene",
+        "frequency": 9
+      },
+      {
+        "value": "pliocene",
+        "frequency": 15
+      },
+      {
+        "value": "puercan",
+        "frequency": 5
+      },
+      {
+        "value": "upper cretaceous",
+        "frequency": 5
+      }
+    ]
+  },
+  "animal:location": {
+    "type": "bool",
+    "allowed_values": [
+      {
+        "value": "afghanistan",
+        "frequency": 7
+      },
+      {
+        "value": "africa",
+        "frequency": 18
+      },
+      {
+        "value": "alaska",
+        "frequency": 8
+      },
+      {
+        "value": "alberta",
+        "frequency": 3
+      },
+      {
+        "value": "algeria",
+        "frequency": 5
+      },
+      {
+        "value": "americas",
+        "frequency": 3
+      },
+      {
+        "value": "andhra pradesh",
+        "frequency": 3
+      },
+      {
+        "value": "angola",
+        "frequency": 6
+      },
+      {
+        "value": "arabian peninsula",
+        "frequency": 3
+      },
+      {
+        "value": "argentina",
+        "frequency": 29
+      },
+      {
+        "value": "arizona",
+        "frequency": 17
+      },
+      {
+        "value": "asia",
+        "frequency": 11
+      },
+      {
+        "value": "assam",
+        "frequency": 3
+      },
+      {
+        "value": "atlantic ocean",
+        "frequency": 5
+      },
+      {
+        "value": "australasia",
+        "frequency": 3
+      },
+      {
+        "value": "australia",
+        "frequency": 16
+      },
+      {
+        "value": "bahamas",
+        "frequency": 3
+      },
+      {
+        "value": "baja california",
+        "frequency": 13
+      },
+      {
+        "value": "baja california sur",
+        "frequency": 4
+      },
+      {
+        "value": "bangladesh",
+        "frequency": 11
+      },
+      {
+        "value": "barbados",
+        "frequency": 15
+      },
+      {
+        "value": "belize",
+        "frequency": 4
+      },
+      {
+        "value": "bermuda",
+        "frequency": 3
+      },
+      {
+        "value": "bhutan",
+        "frequency": 5
+      },
+      {
+        "value": "bolivia",
+        "frequency": 7
+      },
+      {
+        "value": "borneo",
+        "frequency": 6
+      },
+      {
+        "value": "brava",
+        "frequency": 4
+      },
+      {
+        "value": "brazil",
+        "frequency": 20
+      },
+      {
+        "value": "britain",
+        "frequency": 5
+      },
+      {
+        "value": "british columbia",
+        "frequency": 7
+      },
+      {
+        "value": "california",
+        "frequency": 22
+      },
+      {
+        "value": "cambodia",
+        "frequency": 5
+      },
+      {
+        "value": "canada",
+        "frequency": 16
+      },
+      {
+        "value": "canals",
+        "frequency": 3
+      },
+      {
+        "value": "canary islands",
+        "frequency": 3
+      },
+      {
+        "value": "cape verde",
+        "frequency": 12
+      },
+      {
+        "value": "cape verde archipelago",
+        "frequency": 3
+      },
+      {
+        "value": "cape verde islands",
+        "frequency": 3
+      },
+      {
+        "value": "caribbean",
+        "frequency": 10
+      },
+      {
+        "value": "caribbean islands",
+        "frequency": 3
+      },
+      {
+        "value": "caves",
+        "frequency": 4
+      },
+      {
+        "value": "central africa",
+        "frequency": 3
+      },
+      {
+        "value": "central african republic",
+        "frequency": 3
+      },
+      {
+        "value": "central america",
+        "frequency": 16
+      },
+      {
+        "value": "central asia",
+        "frequency": 3
+      },
+      {
+        "value": "central chile",
+        "frequency": 3
+      },
+      {
+        "value": "central mexico",
+        "frequency": 3
+      },
+      {
+        "value": "chao phraya basin",
+        "frequency": 5
+      },
+      {
+        "value": "chatham islands",
+        "frequency": 3
+      },
+      {
+        "value": "chile",
+        "frequency": 7
+      },
+      {
+        "value": "china",
+        "frequency": 11
+      },
+      {
+        "value": "chubut province",
+        "frequency": 4
+      },
+      {
+        "value": "cliffs",
+        "frequency": 3
+      },
+      {
+        "value": "colombia",
+        "frequency": 14
+      },
+      {
+        "value": "colorado",
+        "frequency": 8
+      },
+      {
+        "value": "costa rica",
+        "frequency": 7
+      },
+      {
+        "value": "cuba",
+        "frequency": 8
+      },
+      {
+        "value": "democratic republic of the congo",
+        "frequency": 5
+      },
+      {
+        "value": "deserts",
+        "frequency": 3
+      },
+      {
+        "value": "dominican republic",
+        "frequency": 4
+      },
+      {
+        "value": "douglas dam",
+        "frequency": 5
+      },
+      {
+        "value": "douglas lake member of the lenoir limestone",
+        "frequency": 3
+      },
+      {
+        "value": "east africa",
+        "frequency": 5
+      },
+      {
+        "value": "eastern africa",
+        "frequency": 3
+      },
+      {
+        "value": "ecuador",
+        "frequency": 7
+      },
+      {
+        "value": "egypt",
+        "frequency": 8
+      },
+      {
+        "value": "england",
+        "frequency": 3
+      },
+      {
+        "value": "eritrea",
+        "frequency": 3
+      },
+      {
+        "value": "estuaries",
+        "frequency": 3
+      },
+      {
+        "value": "ethiopia",
+        "frequency": 6
+      },
+      {
+        "value": "eurasia",
+        "frequency": 4
+      },
+      {
+        "value": "europe",
+        "frequency": 19
+      },
+      {
+        "value": "fiji",
+        "frequency": 4
+      },
+      {
+        "value": "florida",
+        "frequency": 10
+      },
+      {
+        "value": "fogo",
+        "frequency": 4
+      },
+      {
+        "value": "forests",
+        "frequency": 4
+      },
+      {
+        "value": "france",
+        "frequency": 7
+      },
+      {
+        "value": "frenchman formation",
+        "frequency": 3
+      },
+      {
+        "value": "fresh water",
+        "frequency": 3
+      },
+      {
+        "value": "gangetic plains",
+        "frequency": 3
+      },
+      {
+        "value": "germany",
+        "frequency": 9
+      },
+      {
+        "value": "ghana",
+        "frequency": 4
+      },
+      {
+        "value": "great basin",
+        "frequency": 4
+      },
+      {
+        "value": "greater antilles",
+        "frequency": 4
+      },
+      {
+        "value": "grenada",
+        "frequency": 4
+      },
+      {
+        "value": "guatemala",
+        "frequency": 5
+      },
+      {
+        "value": "guinea",
+        "frequency": 4
+      },
+      {
+        "value": "guyana",
+        "frequency": 3
+      },
+      {
+        "value": "haiti",
+        "frequency": 3
+      },
+      {
+        "value": "haryana",
+        "frequency": 3
+      },
+      {
+        "value": "hawaii",
+        "frequency": 3
+      },
+      {
+        "value": "hell creek formation",
+        "frequency": 5
+      },
+      {
+        "value": "himachal pradesh",
+        "frequency": 4
+      },
+      {
+        "value": "himalayas",
+        "frequency": 3
+      },
+      {
+        "value": "hispaniola",
+        "frequency": 6
+      },
+      {
+        "value": "honduras",
+        "frequency": 5
+      },
+      {
+        "value": "india",
+        "frequency": 29
+      },
+      {
+        "value": "indian ocean",
+        "frequency": 6
+      },
+      {
+        "value": "indian subcontinent",
+        "frequency": 11
+      },
+      {
+        "value": "indonesia",
+        "frequency": 11
+      },
+      {
+        "value": "iran",
+        "frequency": 4
+      },
+      {
+        "value": "iraq",
+        "frequency": 4
+      },
+      {
+        "value": "italy",
+        "frequency": 5
+      },
+      {
+        "value": "jamaica",
+        "frequency": 9
+      },
+      {
+        "value": "japan",
+        "frequency": 9
+      },
+      {
+        "value": "java",
+        "frequency": 3
+      },
+      {
+        "value": "jebel qatrani formation",
+        "frequency": 3
+      },
+      {
+        "value": "karnataka",
+        "frequency": 8
+      },
+      {
+        "value": "kazakhstan",
+        "frequency": 4
+      },
+      {
+        "value": "kenya",
+        "frequency": 6
+      },
+      {
+        "value": "kerala",
+        "frequency": 9
+      },
+      {
+        "value": "korea",
+        "frequency": 3
+      },
+      {
+        "value": "la brea tar pits",
+        "frequency": 3
+      },
+      {
+        "value": "lagoons",
+        "frequency": 3
+      },
+      {
+        "value": "lakes",
+        "frequency": 6
+      },
+      {
+        "value": "lance formation",
+        "frequency": 3
+      },
+      {
+        "value": "laos",
+        "frequency": 4
+      },
+      {
+        "value": "large rivers",
+        "frequency": 3
+      },
+      {
+        "value": "lesser antilles",
+        "frequency": 7
+      },
+      {
+        "value": "lord howe island",
+        "frequency": 3
+      },
+      {
+        "value": "madagascar",
+        "frequency": 4
+      },
+      {
+        "value": "madeira",
+        "frequency": 3
+      },
+      {
+        "value": "maharashtra",
+        "frequency": 4
+      },
+      {
+        "value": "maine",
+        "frequency": 3
+      },
+      {
+        "value": "malawi",
+        "frequency": 3
+      },
+      {
+        "value": "malay peninsula",
+        "frequency": 3
+      },
+      {
+        "value": "malaysia",
+        "frequency": 16
+      },
+      {
+        "value": "mangrove forests",
+        "frequency": 3
+      },
+      {
+        "value": "martinique",
+        "frequency": 5
+      },
+      {
+        "value": "mekong basin",
+        "frequency": 5
+      },
+      {
+        "value": "mexico",
+        "frequency": 32
+      },
+      {
+        "value": "middle east",
+        "frequency": 4
+      },
+      {
+        "value": "mojave desert",
+        "frequency": 6
+      },
+      {
+        "value": "mongolia",
+        "frequency": 4
+      },
+      {
+        "value": "montana",
+        "frequency": 11
+      },
+      {
+        "value": "monte hermoso formation",
+        "frequency": 3
+      },
+      {
+        "value": "myanmar",
+        "frequency": 6
+      },
+      {
+        "value": "nearby islands",
+        "frequency": 3
+      },
+      {
+        "value": "nepal",
+        "frequency": 7
+      },
+      {
+        "value": "nevada",
+        "frequency": 9
+      },
+      {
+        "value": "new caledonia",
+        "frequency": 3
+      },
+      {
+        "value": "new guinea",
+        "frequency": 9
+      },
+      {
+        "value": "new jersey",
+        "frequency": 3
+      },
+      {
+        "value": "new mexico",
+        "frequency": 15
+      },
+      {
+        "value": "new south wales",
+        "frequency": 3
+      },
+      {
+        "value": "new york",
+        "frequency": 3
+      },
+      {
+        "value": "new zealand",
+        "frequency": 11
+      },
+      {
+        "value": "nicaragua",
+        "frequency": 4
+      },
+      {
+        "value": "nigeria",
+        "frequency": 4
+      },
+      {
+        "value": "nilgiri hills",
+        "frequency": 4
+      },
+      {
+        "value": "norfolk island",
+        "frequency": 3
+      },
+      {
+        "value": "north africa",
+        "frequency": 6
+      },
+      {
+        "value": "north america",
+        "frequency": 39
+      },
+      {
+        "value": "northeastern mexico",
+        "frequency": 3
+      },
+      {
+        "value": "northern australia",
+        "frequency": 4
+      },
+      {
+        "value": "northern central america",
+        "frequency": 4
+      },
+      {
+        "value": "northern mexico",
+        "frequency": 6
+      },
+      {
+        "value": "northern south america",
+        "frequency": 6
+      },
+      {
+        "value": "northwestern mexico",
+        "frequency": 6
+      },
+      {
+        "value": "nova scotia",
+        "frequency": 3
+      },
+      {
+        "value": "ontario",
+        "frequency": 3
+      },
+      {
+        "value": "oregon",
+        "frequency": 8
+      },
+      {
+        "value": "pakistan",
+        "frequency": 10
+      },
+      {
+        "value": "palau",
+        "frequency": 3
+      },
+      {
+        "value": "panama",
+        "frequency": 8
+      },
+      {
+        "value": "papua new guinea",
+        "frequency": 12
+      },
+      {
+        "value": "patagonia",
+        "frequency": 9
+      },
+      {
+        "value": "peninsular malaysia",
+        "frequency": 5
+      },
+      {
+        "value": "peru",
+        "frequency": 12
+      },
+      {
+        "value": "philippines",
+        "frequency": 3
+      },
+      {
+        "value": "ponds",
+        "frequency": 3
+      },
+      {
+        "value": "puerto rico",
+        "frequency": 5
+      },
+      {
+        "value": "queensland",
+        "frequency": 3
+      },
+      {
+        "value": "rajasthan",
+        "frequency": 3
+      },
+      {
+        "value": "rivers",
+        "frequency": 6
+      },
+      {
+        "value": "rock crevices",
+        "frequency": 3
+      },
+      {
+        "value": "rocky areas",
+        "frequency": 3
+      },
+      {
+        "value": "rocky mountains",
+        "frequency": 3
+      },
+      {
+        "value": "russia",
+        "frequency": 9
+      },
+      {
+        "value": "rwanda",
+        "frequency": 3
+      },
+      {
+        "value": "san diego county",
+        "frequency": 4
+      },
+      {
+        "value": "santa cruz province",
+        "frequency": 3
+      },
+      {
+        "value": "santiago",
+        "frequency": 4
+      },
+      {
+        "value": "saskatchewan",
+        "frequency": 8
+      },
+      {
+        "value": "saudi arabia",
+        "frequency": 5
+      },
+      {
+        "value": "sea",
+        "frequency": 3
+      },
+      {
+        "value": "senegal",
+        "frequency": 6
+      },
+      {
+        "value": "siberia",
+        "frequency": 3
+      },
+      {
+        "value": "sierra leone",
+        "frequency": 3
+      },
+      {
+        "value": "sierra nevada",
+        "frequency": 3
+      },
+      {
+        "value": "sikkim",
+        "frequency": 3
+      },
+      {
+        "value": "singapore",
+        "frequency": 3
+      },
+      {
+        "value": "solomon islands",
+        "frequency": 4
+      },
+      {
+        "value": "somalia",
+        "frequency": 4
+      },
+      {
+        "value": "sonora",
+        "frequency": 3
+      },
+      {
+        "value": "sonoran desert",
+        "frequency": 5
+      },
+      {
+        "value": "south africa",
+        "frequency": 12
+      },
+      {
+        "value": "south america",
+        "frequency": 36
+      },
+      {
+        "value": "south dakota",
+        "frequency": 4
+      },
+      {
+        "value": "south georgia",
+        "frequency": 3
+      },
+      {
+        "value": "south india",
+        "frequency": 4
+      },
+      {
+        "value": "south island",
+        "frequency": 3
+      },
+      {
+        "value": "south sudan",
+        "frequency": 3
+      },
+      {
+        "value": "southeast asia",
+        "frequency": 13
+      },
+      {
+        "value": "southern africa",
+        "frequency": 6
+      },
+      {
+        "value": "southern asia",
+        "frequency": 3
+      },
+      {
+        "value": "southern california",
+        "frequency": 9
+      },
+      {
+        "value": "southern canada",
+        "frequency": 3
+      },
+      {
+        "value": "southern central america",
+        "frequency": 3
+      },
+      {
+        "value": "southern europe",
+        "frequency": 3
+      },
+      {
+        "value": "southern india",
+        "frequency": 3
+      },
+      {
+        "value": "southern texas",
+        "frequency": 3
+      },
+      {
+        "value": "southwestern united states",
+        "frequency": 7
+      },
+      {
+        "value": "spain",
+        "frequency": 8
+      },
+      {
+        "value": "springs",
+        "frequency": 3
+      },
+      {
+        "value": "sri lanka",
+        "frequency": 13
+      },
+      {
+        "value": "streams",
+        "frequency": 4
+      },
+      {
+        "value": "subtropical or tropical dry forests",
+        "frequency": 4
+      },
+      {
+        "value": "subtropical or tropical moist lowland forest",
+        "frequency": 3
+      },
+      {
+        "value": "subtropical or tropical moist lowland forests",
+        "frequency": 5
+      },
+      {
+        "value": "sudan",
+        "frequency": 3
+      },
+      {
+        "value": "sulawesi",
+        "frequency": 3
+      },
+      {
+        "value": "sumatra",
+        "frequency": 3
+      },
+      {
+        "value": "swamps",
+        "frequency": 7
+      },
+      {
+        "value": "são nicolau",
+        "frequency": 7
+      },
+      {
+        "value": "tamil nadu",
+        "frequency": 8
+      },
+      {
+        "value": "tanzania",
+        "frequency": 5
+      },
+      {
+        "value": "tennessee",
+        "frequency": 5
+      },
+      {
+        "value": "texas",
+        "frequency": 13
+      },
+      {
+        "value": "thailand",
+        "frequency": 11
+      },
+      {
+        "value": "the americas",
+        "frequency": 4
+      },
+      {
+        "value": "the caribbean",
+        "frequency": 4
+      },
+      {
+        "value": "trinidad",
+        "frequency": 3
+      },
+      {
+        "value": "tunisia",
+        "frequency": 3
+      },
+      {
+        "value": "turkey",
+        "frequency": 3
+      },
+      {
+        "value": "uganda",
+        "frequency": 4
+      },
+      {
+        "value": "united states",
+        "frequency": 23
+      },
+      {
+        "value": "uruguay",
+        "frequency": 7
+      },
+      {
+        "value": "usa",
+        "frequency": 5
+      },
+      {
+        "value": "utah",
+        "frequency": 10
+      },
+      {
+        "value": "venezuela",
+        "frequency": 11
+      },
+      {
+        "value": "vienna",
+        "frequency": 3
+      },
+      {
+        "value": "vietnam",
+        "frequency": 3
+      },
+      {
+        "value": "west africa",
+        "frequency": 5
+      },
+      {
+        "value": "west bengal",
+        "frequency": 3
+      },
+      {
+        "value": "west indies",
+        "frequency": 3
+      },
+      {
+        "value": "western africa",
+        "frequency": 3
+      },
+      {
+        "value": "western ghats",
+        "frequency": 13
+      },
+      {
+        "value": "western north america",
+        "frequency": 11
+      },
+      {
+        "value": "western united states",
+        "frequency": 9
+      },
+      {
+        "value": "woodland",
+        "frequency": 3
+      },
+      {
+        "value": "woodlands",
+        "frequency": 3
+      },
+      {
+        "value": "wyoming",
+        "frequency": 10
+      },
+      {
+        "value": "yemen",
+        "frequency": 15
+      },
+      {
+        "value": "yucatan peninsula",
+        "frequency": 3
+      },
+      {
+        "value": "zambia",
+        "frequency": 3
+      }
+    ]
+  },
+  "animal:taxonomic-group": {
+    "type": "bool",
+    "allowed_values": [
+      {
+        "value": "afrotheria",
+        "frequency": 5
+      },
+      {
+        "value": "bamboo shark",
+        "frequency": 3
+      },
+      {
+        "value": "bat",
+        "frequency": 8
+      },
+      {
+        "value": "bear",
+        "frequency": 3
+      },
+      {
+        "value": "bird",
+        "frequency": 29
+      },
+      {
+        "value": "bird of prey",
+        "frequency": 4
+      },
+      {
+        "value": "birds",
+        "frequency": 15
+      },
+      {
+        "value": "butterfly",
+        "frequency": 5
+      },
+      {
+        "value": "campephagidae",
+        "frequency": 4
+      },
+      {
+        "value": "cat",
+        "frequency": 3
+      },
+      {
+        "value": "catfish",
+        "frequency": 12
+      },
+      {
+        "value": "cathartidae",
+        "frequency": 3
+      },
+      {
+        "value": "cichlasoma",
+        "frequency": 3
+      },
+      {
+        "value": "cichlasomatinae",
+        "frequency": 3
+      },
+      {
+        "value": "cichlid",
+        "frequency": 20
+      },
+      {
+        "value": "cichlids",
+        "frequency": 3
+      },
+      {
+        "value": "cimolodonta",
+        "frequency": 4
+      },
+      {
+        "value": "condylarthra",
+        "frequency": 4
+      },
+      {
+        "value": "crocodile",
+        "frequency": 3
+      },
+      {
+        "value": "cyprinid fish",
+        "frequency": 4
+      },
+      {
+        "value": "dinosaurs",
+        "frequency": 4
+      },
+      {
+        "value": "dolphin",
+        "frequency": 6
+      },
+      {
+        "value": "dove",
+        "frequency": 3
+      },
+      {
+        "value": "duck",
+        "frequency": 3
+      },
+      {
+        "value": "family bufonidae",
+        "frequency": 3
+      },
+      {
+        "value": "family leiothrichidae",
+        "frequency": 3
+      },
+      {
+        "value": "family noctuidae",
+        "frequency": 5
+      },
+      {
+        "value": "family procaviidae",
+        "frequency": 5
+      },
+      {
+        "value": "fantail",
+        "frequency": 3
+      },
+      {
+        "value": "fish",
+        "frequency": 16
+      },
+      {
+        "value": "freshwater fish",
+        "frequency": 3
+      },
+      {
+        "value": "frog",
+        "frequency": 6
+      },
+      {
+        "value": "gallinaceous birds",
+        "frequency": 3
+      },
+      {
+        "value": "gecko",
+        "frequency": 4
+      },
+      {
+        "value": "geckos",
+        "frequency": 4
+      },
+      {
+        "value": "genus",
+        "frequency": 5
+      },
+      {
+        "value": "goose",
+        "frequency": 3
+      },
+      {
+        "value": "gourami",
+        "frequency": 4
+      },
+      {
+        "value": "grouse",
+        "frequency": 3
+      },
+      {
+        "value": "hummingbird",
+        "frequency": 3
+      },
+      {
+        "value": "hyracoids",
+        "frequency": 3
+      },
+      {
+        "value": "hyrax",
+        "frequency": 6
+      },
+      {
+        "value": "insects",
+        "frequency": 4
+      },
+      {
+        "value": "lizard",
+        "frequency": 7
+      },
+      {
+        "value": "mammal",
+        "frequency": 18
+      },
+      {
+        "value": "mammals",
+        "frequency": 10
+      },
+      {
+        "value": "marsupials",
+        "frequency": 4
+      },
+      {
+        "value": "monarchidae",
+        "frequency": 3
+      },
+      {
+        "value": "moth",
+        "frequency": 16
+      },
+      {
+        "value": "multituberculata",
+        "frequency": 5
+      },
+      {
+        "value": "new world vultures",
+        "frequency": 4
+      },
+      {
+        "value": "notoungulata",
+        "frequency": 3
+      },
+      {
+        "value": "old world monkey",
+        "frequency": 5
+      },
+      {
+        "value": "order hyracoidea",
+        "frequency": 3
+      },
+      {
+        "value": "order siluriformes",
+        "frequency": 3
+      },
+      {
+        "value": "parrot",
+        "frequency": 3
+      },
+      {
+        "value": "passerine",
+        "frequency": 15
+      },
+      {
+        "value": "passerine bird",
+        "frequency": 3
+      },
+      {
+        "value": "passerine birds",
+        "frequency": 5
+      },
+      {
+        "value": "penguin",
+        "frequency": 3
+      },
+      {
+        "value": "penguins",
+        "frequency": 4
+      },
+      {
+        "value": "perissodactyla",
+        "frequency": 3
+      },
+      {
+        "value": "perissodactyls",
+        "frequency": 3
+      },
+      {
+        "value": "phasianidae",
+        "frequency": 3
+      },
+      {
+        "value": "phorusrhacidae",
+        "frequency": 4
+      },
+      {
+        "value": "phyllodactylidae",
+        "frequency": 3
+      },
+      {
+        "value": "pit viper",
+        "frequency": 3
+      },
+      {
+        "value": "placental mammals",
+        "frequency": 3
+      },
+      {
+        "value": "primate",
+        "frequency": 4
+      },
+      {
+        "value": "psilopterinae",
+        "frequency": 3
+      },
+      {
+        "value": "rabbit",
+        "frequency": 3
+      },
+      {
+        "value": "ratites",
+        "frequency": 6
+      },
+      {
+        "value": "ray-finned fish",
+        "frequency": 4
+      },
+      {
+        "value": "reptile",
+        "frequency": 4
+      },
+      {
+        "value": "river dolphin",
+        "frequency": 3
+      },
+      {
+        "value": "river dolphins",
+        "frequency": 4
+      },
+      {
+        "value": "rodents",
+        "frequency": 3
+      },
+      {
+        "value": "seabird",
+        "frequency": 3
+      },
+      {
+        "value": "shark",
+        "frequency": 4
+      },
+      {
+        "value": "snake",
+        "frequency": 5
+      },
+      {
+        "value": "songbird",
+        "frequency": 5
+      },
+      {
+        "value": "songbirds",
+        "frequency": 3
+      },
+      {
+        "value": "sparrow",
+        "frequency": 3
+      },
+      {
+        "value": "starling",
+        "frequency": 3
+      },
+      {
+        "value": "subspecies",
+        "frequency": 3
+      },
+      {
+        "value": "terror birds",
+        "frequency": 3
+      },
+      {
+        "value": "tinamous",
+        "frequency": 3
+      },
+      {
+        "value": "toad",
+        "frequency": 6
+      },
+      {
+        "value": "ungulates",
+        "frequency": 5
+      }
+    ]
+  },
+  "bird:geographic distribution": {
+    "type": "bool",
+    "allowed_values": [
+      {
+        "value": "afghanistan",
+        "frequency": 5
+      },
+      {
+        "value": "africa",
+        "frequency": 6
+      },
+      {
+        "value": "alaska",
+        "frequency": 3
+      },
+      {
+        "value": "americas",
+        "frequency": 3
+      },
+      {
+        "value": "argentina",
+        "frequency": 13
+      },
+      {
+        "value": "arizona",
+        "frequency": 5
+      },
+      {
+        "value": "asia",
+        "frequency": 4
+      },
+      {
+        "value": "assam",
+        "frequency": 4
+      },
+      {
+        "value": "australasia",
+        "frequency": 4
+      },
+      {
+        "value": "australia",
+        "frequency": 13
+      },
+      {
+        "value": "baja california",
+        "frequency": 6
+      },
+      {
+        "value": "bangladesh",
+        "frequency": 14
+      },
+      {
+        "value": "barbados",
+        "frequency": 3
+      },
+      {
+        "value": "belize",
+        "frequency": 4
+      },
+      {
+        "value": "bhutan",
+        "frequency": 8
+      },
+      {
+        "value": "brava",
+        "frequency": 3
+      },
+      {
+        "value": "brazil",
+        "frequency": 10
+      },
+      {
+        "value": "california",
+        "frequency": 6
+      },
+      {
+        "value": "canada",
+        "frequency": 5
+      },
+      {
+        "value": "caribbean",
+        "frequency": 3
+      },
+      {
+        "value": "central america",
+        "frequency": 9
+      },
+      {
+        "value": "chatham islands",
+        "frequency": 3
+      },
+      {
+        "value": "china",
+        "frequency": 5
+      },
+      {
+        "value": "chubut province",
+        "frequency": 3
+      },
+      {
+        "value": "colombia",
+        "frequency": 4
+      },
+      {
+        "value": "colorado",
+        "frequency": 3
+      },
+      {
+        "value": "costa rica",
+        "frequency": 3
+      },
+      {
+        "value": "cuba",
+        "frequency": 4
+      },
+      {
+        "value": "eastern africa",
+        "frequency": 3
+      },
+      {
+        "value": "ecuador",
+        "frequency": 4
+      },
+      {
+        "value": "europe",
+        "frequency": 5
+      },
+      {
+        "value": "fiji",
+        "frequency": 3
+      },
+      {
+        "value": "gangetic plains",
+        "frequency": 4
+      },
+      {
+        "value": "ghana",
+        "frequency": 3
+      },
+      {
+        "value": "guatemala",
+        "frequency": 5
+      },
+      {
+        "value": "guinea",
+        "frequency": 3
+      },
+      {
+        "value": "gujarat",
+        "frequency": 3
+      },
+      {
+        "value": "haryana",
+        "frequency": 3
+      },
+      {
+        "value": "himachal pradesh",
+        "frequency": 3
+      },
+      {
+        "value": "india",
+        "frequency": 22
+      },
+      {
+        "value": "indian subcontinent",
+        "frequency": 16
+      },
+      {
+        "value": "indonesia",
+        "frequency": 3
+      },
+      {
+        "value": "iran",
+        "frequency": 5
+      },
+      {
+        "value": "java",
+        "frequency": 3
+      },
+      {
+        "value": "liberia",
+        "frequency": 3
+      },
+      {
+        "value": "lord howe island",
+        "frequency": 3
+      },
+      {
+        "value": "martinique",
+        "frequency": 3
+      },
+      {
+        "value": "mexico",
+        "frequency": 17
+      },
+      {
+        "value": "myanmar",
+        "frequency": 3
+      },
+      {
+        "value": "nepal",
+        "frequency": 12
+      },
+      {
+        "value": "new guinea",
+        "frequency": 7
+      },
+      {
+        "value": "new mexico",
+        "frequency": 5
+      },
+      {
+        "value": "new zealand",
+        "frequency": 9
+      },
+      {
+        "value": "norfolk island",
+        "frequency": 3
+      },
+      {
+        "value": "north america",
+        "frequency": 14
+      },
+      {
+        "value": "northern central america",
+        "frequency": 3
+      },
+      {
+        "value": "northern india",
+        "frequency": 3
+      },
+      {
+        "value": "northern mexico",
+        "frequency": 4
+      },
+      {
+        "value": "pakistan",
+        "frequency": 12
+      },
+      {
+        "value": "palau",
+        "frequency": 4
+      },
+      {
+        "value": "panama",
+        "frequency": 3
+      },
+      {
+        "value": "patagonia",
+        "frequency": 5
+      },
+      {
+        "value": "peninsular india",
+        "frequency": 3
+      },
+      {
+        "value": "peru",
+        "frequency": 5
+      },
+      {
+        "value": "samoa",
+        "frequency": 4
+      },
+      {
+        "value": "santa cruz province",
+        "frequency": 3
+      },
+      {
+        "value": "sierra leone",
+        "frequency": 3
+      },
+      {
+        "value": "sonora",
+        "frequency": 3
+      },
+      {
+        "value": "south america",
+        "frequency": 14
+      },
+      {
+        "value": "south georgia",
+        "frequency": 4
+      },
+      {
+        "value": "southeast asia",
+        "frequency": 8
+      },
+      {
+        "value": "southern asia",
+        "frequency": 3
+      },
+      {
+        "value": "southern california",
+        "frequency": 5
+      },
+      {
+        "value": "southwestern united states",
+        "frequency": 4
+      },
+      {
+        "value": "sri lanka",
+        "frequency": 11
+      },
+      {
+        "value": "texas",
+        "frequency": 5
+      },
+      {
+        "value": "thailand",
+        "frequency": 3
+      },
+      {
+        "value": "tonga",
+        "frequency": 4
+      },
+      {
+        "value": "united states",
+        "frequency": 5
+      },
+      {
+        "value": "uruguay",
+        "frequency": 3
+      },
+      {
+        "value": "venezuela",
+        "frequency": 3
+      },
+      {
+        "value": "vietnam",
+        "frequency": 3
+      },
+      {
+        "value": "west bengal",
+        "frequency": 4
+      },
+      {
+        "value": "western ghats",
+        "frequency": 7
+      },
+      {
+        "value": "western north america",
+        "frequency": 8
+      },
+      {
+        "value": "western united states",
+        "frequency": 7
+      }
+    ]
+  },
+  "bird:temporal:classification": {
+    "type": "bool",
+    "allowed_values": [
+      {
+        "value": "breeding season",
+        "frequency": 5
+      },
+      {
+        "value": "breeds",
+        "frequency": 3
+      },
+      {
+        "value": "early eocene",
+        "frequency": 3
+      },
+      {
+        "value": "early miocene",
+        "frequency": 7
+      },
+      {
+        "value": "early oligocene",
+        "frequency": 3
+      },
+      {
+        "value": "early pliocene",
+        "frequency": 4
+      },
+      {
+        "value": "extinct",
+        "frequency": 19
+      },
+      {
+        "value": "late miocene",
+        "frequency": 3
+      },
+      {
+        "value": "late pleistocene",
+        "frequency": 4
+      },
+      {
+        "value": "non-migratory",
+        "frequency": 5
+      },
+      {
+        "value": "oligocene",
+        "frequency": 4
+      },
+      {
+        "value": "resident",
+        "frequency": 9
+      },
+      {
+        "value": "winter",
+        "frequency": 3
+      }
+    ]
+  },
+  "book:nationality": {
+    "type": "bool",
+    "allowed_values": [
+      {
+        "value": "american",
+        "frequency": 65
+      },
+      {
+        "value": "australian",
+        "frequency": 24
+      },
+      {
+        "value": "austrian",
+        "frequency": 5
+      },
+      {
+        "value": "belgian",
+        "frequency": 3
+      },
+      {
+        "value": "british",
+        "frequency": 38
+      },
+      {
+        "value": "canadian",
+        "frequency": 6
+      },
+      {
+        "value": "chinese",
+        "frequency": 4
+      },
+      {
+        "value": "czech",
+        "frequency": 3
+      },
+      {
+        "value": "dutch",
+        "frequency": 4
+      },
+      {
+        "value": "english",
+        "frequency": 36
+      },
+      {
+        "value": "finnish",
+        "frequency": 9
+      },
+      {
+        "value": "french",
+        "frequency": 35
+      },
+      {
+        "value": "german",
+        "frequency": 20
+      },
+      {
+        "value": "indian",
+        "frequency": 14
+      },
+      {
+        "value": "irish",
+        "frequency": 8
+      },
+      {
+        "value": "israeli",
+        "frequency": 3
+      },
+      {
+        "value": "italian",
+        "frequency": 21
+      },
+      {
+        "value": "japanese",
+        "frequency": 15
+      },
+      {
+        "value": "jewish",
+        "frequency": 3
+      },
+      {
+        "value": "northern irish",
+        "frequency": 11
+      },
+      {
+        "value": "polish",
+        "frequency": 5
+      },
+      {
+        "value": "russian",
+        "frequency": 12
+      },
+      {
+        "value": "soviet",
+        "frequency": 5
+      },
+      {
+        "value": "spanish",
+        "frequency": 5
+      },
+      {
+        "value": "uk",
+        "frequency": 7
+      },
+      {
+        "value": "united kingdom",
+        "frequency": 3
+      },
+      {
+        "value": "united states",
+        "frequency": 6
+      },
+      {
+        "value": "us",
+        "frequency": 7
+      },
+      {
+        "value": "vietnamese",
+        "frequency": 6
+      },
+      {
+        "value": "vietnamese-american",
+        "frequency": 3
+      }
+    ]
+  },
+  "book:publication:period": {
+    "type": "bool",
+    "allowed_values": [
+      {
+        "value": "1910",
+        "frequency": 4
+      },
+      {
+        "value": "1950s",
+        "frequency": 3
+      },
+      {
+        "value": "1960s",
+        "frequency": 8
+      },
+      {
+        "value": "1970s",
+        "frequency": 4
+      },
+      {
+        "value": "1971",
+        "frequency": 3
+      },
+      {
+        "value": "1980s",
+        "frequency": 5
+      },
+      {
+        "value": "1985",
+        "frequency": 5
+      },
+      {
+        "value": "1986",
+        "frequency": 4
+      },
+      {
+        "value": "1987",
+        "frequency": 4
+      },
+      {
+        "value": "1988",
+        "frequency": 3
+      },
+      {
+        "value": "1989",
+        "frequency": 3
+      },
+      {
+        "value": "1990s",
+        "frequency": 7
+      },
+      {
+        "value": "1991",
+        "frequency": 5
+      },
+      {
+        "value": "1994",
+        "frequency": 6
+      },
+      {
+        "value": "1996",
+        "frequency": 3
+      },
+      {
+        "value": "1997",
+        "frequency": 4
+      },
+      {
+        "value": "1998",
+        "frequency": 3
+      },
+      {
+        "value": "1999",
+        "frequency": 7
+      },
+      {
+        "value": "19th century",
+        "frequency": 4
+      },
+      {
+        "value": "2000",
+        "frequency": 4
+      },
+      {
+        "value": "2001",
+        "frequency": 6
+      },
+      {
+        "value": "2004",
+        "frequency": 4
+      },
+      {
+        "value": "2005",
+        "frequency": 5
+      },
+      {
+        "value": "2006",
+        "frequency": 9
+      },
+      {
+        "value": "2007",
+        "frequency": 12
+      },
+      {
+        "value": "2009",
+        "frequency": 3
+      },
+      {
+        "value": "2010",
+        "frequency": 3
+      },
+      {
+        "value": "2011",
+        "frequency": 5
+      },
+      {
+        "value": "2013",
+        "frequency": 5
+      },
+      {
+        "value": "2016",
+        "frequency": 3
+      },
+      {
+        "value": "2018",
+        "frequency": 15
+      },
+      {
+        "value": "2019",
+        "frequency": 3
+      },
+      {
+        "value": "2021",
+        "frequency": 3
+      }
+    ]
+  },
+  "book:subject": {
+    "type": "bool",
+    "allowed_values": [
+      {
+        "value": "afghanistan",
+        "frequency": 4
+      },
+      {
+        "value": "allegory",
+        "frequency": 3
+      },
+      {
+        "value": "alternate history",
+        "frequency": 3
+      },
+      {
+        "value": "anthology",
+        "frequency": 3
+      },
+      {
+        "value": "archaeology",
+        "frequency": 6
+      },
+      {
+        "value": "autobiography",
+        "frequency": 4
+      },
+      {
+        "value": "birds",
+        "frequency": 3
+      },
+      {
+        "value": "botany",
+        "frequency": 4
+      },
+      {
+        "value": "cold war",
+        "frequency": 6
+      },
+      {
+        "value": "coming of age",
+        "frequency": 9
+      },
+      {
+        "value": "coming-of-age",
+        "frequency": 4
+      },
+      {
+        "value": "continuation war",
+        "frequency": 3
+      },
+      {
+        "value": "crime",
+        "frequency": 5
+      },
+      {
+        "value": "espionage",
+        "frequency": 13
+      },
+      {
+        "value": "expatriate life",
+        "frequency": 3
+      },
+      {
+        "value": "family",
+        "frequency": 12
+      },
+      {
+        "value": "family dynamics",
+        "frequency": 3
+      },
+      {
+        "value": "friendship",
+        "frequency": 6
+      },
+      {
+        "value": "holocaust",
+        "frequency": 7
+      },
+      {
+        "value": "identity",
+        "frequency": 9
+      },
+      {
+        "value": "immigration",
+        "frequency": 7
+      },
+      {
+        "value": "investigation",
+        "frequency": 4
+      },
+      {
+        "value": "jealousy",
+        "frequency": 3
+      },
+      {
+        "value": "jedi",
+        "frequency": 3
+      },
+      {
+        "value": "journalism",
+        "frequency": 4
+      },
+      {
+        "value": "literary criticism",
+        "frequency": 5
+      },
+      {
+        "value": "magic",
+        "frequency": 5
+      },
+      {
+        "value": "marriage",
+        "frequency": 5
+      },
+      {
+        "value": "memory",
+        "frequency": 7
+      },
+      {
+        "value": "murder",
+        "frequency": 5
+      },
+      {
+        "value": "murder investigation",
+        "frequency": 6
+      },
+      {
+        "value": "mystery",
+        "frequency": 8
+      },
+      {
+        "value": "nazi germany",
+        "frequency": 3
+      },
+      {
+        "value": "nuclear war",
+        "frequency": 3
+      },
+      {
+        "value": "ornithology",
+        "frequency": 5
+      },
+      {
+        "value": "poetry",
+        "frequency": 4
+      },
+      {
+        "value": "police investigation",
+        "frequency": 3
+      },
+      {
+        "value": "political intrigue",
+        "frequency": 3
+      },
+      {
+        "value": "post-apocalyptic survival",
+        "frequency": 3
+      },
+      {
+        "value": "poverty",
+        "frequency": 6
+      },
+      {
+        "value": "refugee experience",
+        "frequency": 3
+      },
+      {
+        "value": "relationships",
+        "frequency": 4
+      },
+      {
+        "value": "religion",
+        "frequency": 6
+      },
+      {
+        "value": "romance",
+        "frequency": 11
+      },
+      {
+        "value": "romantic relationships",
+        "frequency": 3
+      },
+      {
+        "value": "science fiction",
+        "frequency": 8
+      },
+      {
+        "value": "science fiction short stories",
+        "frequency": 8
+      },
+      {
+        "value": "sector general series",
+        "frequency": 3
+      },
+      {
+        "value": "short stories",
+        "frequency": 4
+      },
+      {
+        "value": "soviet union",
+        "frequency": 3
+      },
+      {
+        "value": "space exploration",
+        "frequency": 3
+      },
+      {
+        "value": "star wars",
+        "frequency": 8
+      },
+      {
+        "value": "survival",
+        "frequency": 5
+      },
+      {
+        "value": "taliban",
+        "frequency": 3
+      },
+      {
+        "value": "taxonomy",
+        "frequency": 5
+      },
+      {
+        "value": "time travel",
+        "frequency": 4
+      },
+      {
+        "value": "trauma",
+        "frequency": 3
+      },
+      {
+        "value": "travel",
+        "frequency": 5
+      },
+      {
+        "value": "vietnam war",
+        "frequency": 6
+      },
+      {
+        "value": "war",
+        "frequency": 5
+      },
+      {
+        "value": "world war i",
+        "frequency": 3
+      },
+      {
+        "value": "world war ii",
+        "frequency": 13
+      }
+    ]
+  },
+  "book:time-period": {
+    "type": "bool",
+    "allowed_values": [
+      {
+        "value": "1492",
+        "frequency": 3
+      },
+      {
+        "value": "18th century",
+        "frequency": 4
+      },
+      {
+        "value": "1923",
+        "frequency": 3
+      },
+      {
+        "value": "1930s",
+        "frequency": 8
+      },
+      {
+        "value": "1943",
+        "frequency": 3
+      },
+      {
+        "value": "1945",
+        "frequency": 3
+      },
+      {
+        "value": "1947",
+        "frequency": 3
+      },
+      {
+        "value": "1949",
+        "frequency": 3
+      },
+      {
+        "value": "1960s",
+        "frequency": 3
+      },
+      {
+        "value": "1965",
+        "frequency": 3
+      },
+      {
+        "value": "1966",
+        "frequency": 3
+      },
+      {
+        "value": "1970s",
+        "frequency": 4
+      },
+      {
+        "value": "1976",
+        "frequency": 3
+      },
+      {
+        "value": "1977",
+        "frequency": 4
+      },
+      {
+        "value": "1979",
+        "frequency": 3
+      },
+      {
+        "value": "1980s",
+        "frequency": 7
+      },
+      {
+        "value": "1983",
+        "frequency": 3
+      },
+      {
+        "value": "1986",
+        "frequency": 5
+      },
+      {
+        "value": "1988",
+        "frequency": 5
+      },
+      {
+        "value": "1990s",
+        "frequency": 3
+      },
+      {
+        "value": "1999",
+        "frequency": 5
+      },
+      {
+        "value": "19th century",
+        "frequency": 8
+      },
+      {
+        "value": "2000",
+        "frequency": 3
+      },
+      {
+        "value": "2001",
+        "frequency": 3
+      },
+      {
+        "value": "2002",
+        "frequency": 4
+      },
+      {
+        "value": "2003",
+        "frequency": 3
+      },
+      {
+        "value": "2005",
+        "frequency": 3
+      },
+      {
+        "value": "2006",
+        "frequency": 3
+      },
+      {
+        "value": "2007",
+        "frequency": 3
+      },
+      {
+        "value": "2010",
+        "frequency": 3
+      },
+      {
+        "value": "2018",
+        "frequency": 6
+      },
+      {
+        "value": "2019",
+        "frequency": 3
+      },
+      {
+        "value": "21st century",
+        "frequency": 4
+      },
+      {
+        "value": "cold war",
+        "frequency": 8
+      },
+      {
+        "value": "early 20th century",
+        "frequency": 6
+      },
+      {
+        "value": "eighteenth century",
+        "frequency": 4
+      },
+      {
+        "value": "late 19th century",
+        "frequency": 6
+      },
+      {
+        "value": "modern-day",
+        "frequency": 3
+      },
+      {
+        "value": "post-world war ii",
+        "frequency": 4
+      },
+      {
+        "value": "renaissance",
+        "frequency": 4
+      },
+      {
+        "value": "vietnam war",
+        "frequency": 4
+      },
+      {
+        "value": "vietnam war era",
+        "frequency": 3
+      },
+      {
+        "value": "world war i",
+        "frequency": 4
+      },
+      {
+        "value": "world war ii",
+        "frequency": 21
+      }
+    ]
+  },
+  "book:topic": {
+    "type": "bool",
+    "allowed_values": [
+      {
+        "value": "adventure",
+        "frequency": 4
+      },
+      {
+        "value": "afghanistan",
+        "frequency": 3
+      },
+      {
+        "value": "antisemitism",
+        "frequency": 3
+      },
+      {
+        "value": "autobiography",
+        "frequency": 4
+      },
+      {
+        "value": "coming of age",
+        "frequency": 6
+      },
+      {
+        "value": "coming-of-age",
+        "frequency": 3
+      },
+      {
+        "value": "crime",
+        "frequency": 11
+      },
+      {
+        "value": "detective fiction",
+        "frequency": 3
+      },
+      {
+        "value": "espionage",
+        "frequency": 5
+      },
+      {
+        "value": "exile",
+        "frequency": 3
+      },
+      {
+        "value": "family",
+        "frequency": 5
+      },
+      {
+        "value": "family dynamics",
+        "frequency": 4
+      },
+      {
+        "value": "fantasy literature",
+        "frequency": 3
+      },
+      {
+        "value": "historical fiction",
+        "frequency": 8
+      },
+      {
+        "value": "historical novel",
+        "frequency": 3
+      },
+      {
+        "value": "holocaust",
+        "frequency": 4
+      },
+      {
+        "value": "horror",
+        "frequency": 3
+      },
+      {
+        "value": "japan",
+        "frequency": 5
+      },
+      {
+        "value": "jealousy",
+        "frequency": 3
+      },
+      {
+        "value": "journalism",
+        "frequency": 3
+      },
+      {
+        "value": "memoir",
+        "frequency": 3
+      },
+      {
+        "value": "military intelligence",
+        "frequency": 3
+      },
+      {
+        "value": "military service",
+        "frequency": 3
+      },
+      {
+        "value": "murder",
+        "frequency": 4
+      },
+      {
+        "value": "mystery",
+        "frequency": 10
+      },
+      {
+        "value": "political intrigue",
+        "frequency": 3
+      },
+      {
+        "value": "political upheaval",
+        "frequency": 3
+      },
+      {
+        "value": "politics",
+        "frequency": 5
+      },
+      {
+        "value": "publication history",
+        "frequency": 6
+      },
+      {
+        "value": "religion",
+        "frequency": 3
+      },
+      {
+        "value": "romance",
+        "frequency": 8
+      },
+      {
+        "value": "satire",
+        "frequency": 6
+      },
+      {
+        "value": "science fiction",
+        "frequency": 21
+      },
+      {
+        "value": "sector general series",
+        "frequency": 5
+      },
+      {
+        "value": "short stories",
+        "frequency": 5
+      },
+      {
+        "value": "short story collection",
+        "frequency": 4
+      },
+      {
+        "value": "space opera",
+        "frequency": 6
+      },
+      {
+        "value": "taxonomy",
+        "frequency": 4
+      },
+      {
+        "value": "theft",
+        "frequency": 3
+      },
+      {
+        "value": "time travel",
+        "frequency": 4
+      },
+      {
+        "value": "tokyo",
+        "frequency": 5
+      },
+      {
+        "value": "translation",
+        "frequency": 4
+      },
+      {
+        "value": "travel",
+        "frequency": 3
+      },
+      {
+        "value": "vietnam",
+        "frequency": 3
+      },
+      {
+        "value": "war",
+        "frequency": 15
+      }
+    ]
+  },
+  "crime film:theme": {
+    "type": "bool",
+    "allowed_values": [
+      {
+        "value": "murder",
+        "frequency": 7
+      },
+      {
+        "value": "police investigation",
+        "frequency": 5
+      },
+      {
+        "value": "police pursuit",
+        "frequency": 3
+      },
+      {
+        "value": "prostitution",
+        "frequency": 3
+      },
+      {
+        "value": "serial killer",
+        "frequency": 9
+      }
+    ]
+  },
+  "film:genre": {
+    "type": "bool",
+    "allowed_values": [
+      {
+        "value": "action",
+        "frequency": 15
+      },
+      {
+        "value": "action thriller",
+        "frequency": 3
+      },
+      {
+        "value": "action-adventure",
+        "frequency": 3
+      },
+      {
+        "value": "adventure",
+        "frequency": 21
+      },
+      {
+        "value": "animated",
+        "frequency": 20
+      },
+      {
+        "value": "animated film",
+        "frequency": 3
+      },
+      {
+        "value": "animated short",
+        "frequency": 4
+      },
+      {
+        "value": "anthology",
+        "frequency": 10
+      },
+      {
+        "value": "anthology film",
+        "frequency": 3
+      },
+      {
+        "value": "biographical",
+        "frequency": 3
+      },
+      {
+        "value": "black comedy",
+        "frequency": 6
+      },
+      {
+        "value": "cartoon",
+        "frequency": 5
+      },
+      {
+        "value": "comedy",
+        "frequency": 46
+      },
+      {
+        "value": "comedy-drama",
+        "frequency": 13
+      },
+      {
+        "value": "coming-of-age",
+        "frequency": 7
+      },
+      {
+        "value": "computer-animated",
+        "frequency": 13
+      },
+      {
+        "value": "crime",
+        "frequency": 8
+      },
+      {
+        "value": "crime drama",
+        "frequency": 4
+      },
+      {
+        "value": "crime film",
+        "frequency": 3
+      },
+      {
+        "value": "crime thriller",
+        "frequency": 4
+      },
+      {
+        "value": "documentary",
+        "frequency": 40
+      },
+      {
+        "value": "drama",
+        "frequency": 56
+      },
+      {
+        "value": "erotic thriller",
+        "frequency": 4
+      },
+      {
+        "value": "fan film",
+        "frequency": 6
+      },
+      {
+        "value": "fantasy",
+        "frequency": 5
+      },
+      {
+        "value": "feature film",
+        "frequency": 3
+      },
+      {
+        "value": "historical",
+        "frequency": 10
+      },
+      {
+        "value": "historical drama",
+        "frequency": 10
+      },
+      {
+        "value": "horror",
+        "frequency": 27
+      },
+      {
+        "value": "independent",
+        "frequency": 3
+      },
+      {
+        "value": "kaiju",
+        "frequency": 10
+      },
+      {
+        "value": "lgbt",
+        "frequency": 3
+      },
+      {
+        "value": "musical",
+        "frequency": 18
+      },
+      {
+        "value": "musical comedy",
+        "frequency": 6
+      },
+      {
+        "value": "mystery",
+        "frequency": 5
+      },
+      {
+        "value": "parody",
+        "frequency": 5
+      },
+      {
+        "value": "propaganda film",
+        "frequency": 4
+      },
+      {
+        "value": "romance",
+        "frequency": 18
+      },
+      {
+        "value": "romantic comedy",
+        "frequency": 13
+      },
+      {
+        "value": "romantic comedy-drama",
+        "frequency": 4
+      },
+      {
+        "value": "romantic drama",
+        "frequency": 12
+      },
+      {
+        "value": "science fiction",
+        "frequency": 33
+      },
+      {
+        "value": "short",
+        "frequency": 10
+      },
+      {
+        "value": "short film",
+        "frequency": 9
+      },
+      {
+        "value": "silent",
+        "frequency": 5
+      },
+      {
+        "value": "silent comedy",
+        "frequency": 3
+      },
+      {
+        "value": "silent drama",
+        "frequency": 7
+      },
+      {
+        "value": "silent film",
+        "frequency": 10
+      },
+      {
+        "value": "slasher",
+        "frequency": 8
+      },
+      {
+        "value": "sports comedy",
+        "frequency": 4
+      },
+      {
+        "value": "spy",
+        "frequency": 5
+      },
+      {
+        "value": "superhero",
+        "frequency": 24
+      },
+      {
+        "value": "suspense",
+        "frequency": 3
+      },
+      {
+        "value": "technicolor",
+        "frequency": 3
+      },
+      {
+        "value": "teen film",
+        "frequency": 3
+      },
+      {
+        "value": "television film",
+        "frequency": 9
+      },
+      {
+        "value": "thriller",
+        "frequency": 23
+      },
+      {
+        "value": "war",
+        "frequency": 8
+      },
+      {
+        "value": "war drama",
+        "frequency": 4
+      },
+      {
+        "value": "war film",
+        "frequency": 11
+      },
+      {
+        "value": "western",
+        "frequency": 10
+      }
+    ]
+  },
+  "film:nationality": {
+    "type": "bool",
+    "allowed_values": [
+      {
+        "value": "american",
+        "frequency": 227
+      },
+      {
+        "value": "australian",
+        "frequency": 6
+      },
+      {
+        "value": "austrian",
+        "frequency": 5
+      },
+      {
+        "value": "belgian",
+        "frequency": 4
+      },
+      {
+        "value": "british",
+        "frequency": 30
+      },
+      {
+        "value": "canadian",
+        "frequency": 6
+      },
+      {
+        "value": "chinese",
+        "frequency": 7
+      },
+      {
+        "value": "czech",
+        "frequency": 5
+      },
+      {
+        "value": "czechoslovak",
+        "frequency": 6
+      },
+      {
+        "value": "danish",
+        "frequency": 16
+      },
+      {
+        "value": "estonian",
+        "frequency": 3
+      },
+      {
+        "value": "filipino",
+        "frequency": 4
+      },
+      {
+        "value": "finnish",
+        "frequency": 20
+      },
+      {
+        "value": "french",
+        "frequency": 17
+      },
+      {
+        "value": "german",
+        "frequency": 13
+      },
+      {
+        "value": "indian",
+        "frequency": 10
+      },
+      {
+        "value": "iranian",
+        "frequency": 3
+      },
+      {
+        "value": "italian",
+        "frequency": 25
+      },
+      {
+        "value": "japanese",
+        "frequency": 14
+      },
+      {
+        "value": "mexican",
+        "frequency": 5
+      },
+      {
+        "value": "polish",
+        "frequency": 3
+      },
+      {
+        "value": "russian",
+        "frequency": 5
+      },
+      {
+        "value": "south african",
+        "frequency": 7
+      },
+      {
+        "value": "south korean",
+        "frequency": 8
+      },
+      {
+        "value": "soviet",
+        "frequency": 11
+      },
+      {
+        "value": "swedish",
+        "frequency": 10
+      },
+      {
+        "value": "taiwanese",
+        "frequency": 21
+      },
+      {
+        "value": "uk",
+        "frequency": 3
+      },
+      {
+        "value": "united states",
+        "frequency": 4
+      }
+    ]
+  },
+  "film:setting": {
+    "type": "bool",
+    "allowed_values": [
+      {
+        "value": "africa",
+        "frequency": 4
+      },
+      {
+        "value": "arizona",
+        "frequency": 3
+      },
+      {
+        "value": "arkham asylum",
+        "frequency": 3
+      },
+      {
+        "value": "at sea",
+        "frequency": 4
+      },
+      {
+        "value": "baltimore",
+        "frequency": 3
+      },
+      {
+        "value": "barbados",
+        "frequency": 4
+      },
+      {
+        "value": "beach",
+        "frequency": 4
+      },
+      {
+        "value": "berlin",
+        "frequency": 7
+      },
+      {
+        "value": "california",
+        "frequency": 9
+      },
+      {
+        "value": "canada",
+        "frequency": 3
+      },
+      {
+        "value": "chicago",
+        "frequency": 8
+      },
+      {
+        "value": "china",
+        "frequency": 3
+      },
+      {
+        "value": "denmark",
+        "frequency": 3
+      },
+      {
+        "value": "earth",
+        "frequency": 9
+      },
+      {
+        "value": "east high school",
+        "frequency": 3
+      },
+      {
+        "value": "england",
+        "frequency": 8
+      },
+      {
+        "value": "estonia",
+        "frequency": 3
+      },
+      {
+        "value": "europe",
+        "frequency": 3
+      },
+      {
+        "value": "finland",
+        "frequency": 11
+      },
+      {
+        "value": "florida",
+        "frequency": 5
+      },
+      {
+        "value": "forest",
+        "frequency": 5
+      },
+      {
+        "value": "france",
+        "frequency": 6
+      },
+      {
+        "value": "germany",
+        "frequency": 3
+      },
+      {
+        "value": "gotham city",
+        "frequency": 10
+      },
+      {
+        "value": "helsinki",
+        "frequency": 6
+      },
+      {
+        "value": "high school",
+        "frequency": 8
+      },
+      {
+        "value": "hollywood",
+        "frequency": 3
+      },
+      {
+        "value": "india",
+        "frequency": 4
+      },
+      {
+        "value": "ireland",
+        "frequency": 3
+      },
+      {
+        "value": "italy",
+        "frequency": 3
+      },
+      {
+        "value": "japan",
+        "frequency": 10
+      },
+      {
+        "value": "karelia",
+        "frequency": 3
+      },
+      {
+        "value": "korea",
+        "frequency": 4
+      },
+      {
+        "value": "london",
+        "frequency": 19
+      },
+      {
+        "value": "los angeles",
+        "frequency": 16
+      },
+      {
+        "value": "louisiana",
+        "frequency": 4
+      },
+      {
+        "value": "manhattan",
+        "frequency": 4
+      },
+      {
+        "value": "mars",
+        "frequency": 3
+      },
+      {
+        "value": "massachusetts",
+        "frequency": 5
+      },
+      {
+        "value": "melbourne",
+        "frequency": 3
+      },
+      {
+        "value": "metropolis",
+        "frequency": 4
+      },
+      {
+        "value": "mississippi",
+        "frequency": 4
+      },
+      {
+        "value": "missouri",
+        "frequency": 3
+      },
+      {
+        "value": "nazi germany",
+        "frequency": 4
+      },
+      {
+        "value": "new jersey",
+        "frequency": 9
+      },
+      {
+        "value": "new orleans",
+        "frequency": 5
+      },
+      {
+        "value": "new york",
+        "frequency": 21
+      },
+      {
+        "value": "new york city",
+        "frequency": 18
+      },
+      {
+        "value": "north carolina",
+        "frequency": 3
+      },
+      {
+        "value": "paris",
+        "frequency": 16
+      },
+      {
+        "value": "poland",
+        "frequency": 3
+      },
+      {
+        "value": "prague",
+        "frequency": 3
+      },
+      {
+        "value": "rome",
+        "frequency": 7
+      },
+      {
+        "value": "san francisco",
+        "frequency": 8
+      },
+      {
+        "value": "shanghai",
+        "frequency": 4
+      },
+      {
+        "value": "sicily",
+        "frequency": 3
+      },
+      {
+        "value": "south africa",
+        "frequency": 5
+      },
+      {
+        "value": "soviet union",
+        "frequency": 8
+      },
+      {
+        "value": "space",
+        "frequency": 5
+      },
+      {
+        "value": "stockholm",
+        "frequency": 4
+      },
+      {
+        "value": "sweden",
+        "frequency": 4
+      },
+      {
+        "value": "taipei",
+        "frequency": 6
+      },
+      {
+        "value": "taiwan",
+        "frequency": 6
+      },
+      {
+        "value": "texas",
+        "frequency": 9
+      },
+      {
+        "value": "tokyo",
+        "frequency": 9
+      },
+      {
+        "value": "toronto",
+        "frequency": 4
+      },
+      {
+        "value": "train",
+        "frequency": 3
+      },
+      {
+        "value": "united kingdom",
+        "frequency": 4
+      },
+      {
+        "value": "united states",
+        "frequency": 27
+      },
+      {
+        "value": "utah",
+        "frequency": 3
+      },
+      {
+        "value": "virginia",
+        "frequency": 3
+      },
+      {
+        "value": "war of 1812",
+        "frequency": 4
+      },
+      {
+        "value": "west orange",
+        "frequency": 3
+      },
+      {
+        "value": "world war ii",
+        "frequency": 8
+      }
+    ]
+  },
+  "film:thematic_category": {
+    "type": "bool",
+    "allowed_values": [
+      {
+        "value": "abolition",
+        "frequency": 3
+      },
+      {
+        "value": "adventure",
+        "frequency": 4
+      },
+      {
+        "value": "biographical",
+        "frequency": 4
+      },
+      {
+        "value": "civil rights",
+        "frequency": 3
+      },
+      {
+        "value": "cold war",
+        "frequency": 3
+      },
+      {
+        "value": "comedy",
+        "frequency": 10
+      },
+      {
+        "value": "coming of age",
+        "frequency": 4
+      },
+      {
+        "value": "coming out",
+        "frequency": 3
+      },
+      {
+        "value": "coming-of-age",
+        "frequency": 25
+      },
+      {
+        "value": "conspiracy",
+        "frequency": 3
+      },
+      {
+        "value": "corruption",
+        "frequency": 4
+      },
+      {
+        "value": "crime",
+        "frequency": 24
+      },
+      {
+        "value": "detective",
+        "frequency": 5
+      },
+      {
+        "value": "drama",
+        "frequency": 5
+      },
+      {
+        "value": "espionage",
+        "frequency": 4
+      },
+      {
+        "value": "family",
+        "frequency": 15
+      },
+      {
+        "value": "family relationships",
+        "frequency": 3
+      },
+      {
+        "value": "friendship",
+        "frequency": 16
+      },
+      {
+        "value": "grief",
+        "frequency": 3
+      },
+      {
+        "value": "haunting",
+        "frequency": 3
+      },
+      {
+        "value": "heist",
+        "frequency": 5
+      },
+      {
+        "value": "heroism",
+        "frequency": 4
+      },
+      {
+        "value": "historical",
+        "frequency": 4
+      },
+      {
+        "value": "holocaust",
+        "frequency": 5
+      },
+      {
+        "value": "homophobia",
+        "frequency": 3
+      },
+      {
+        "value": "identity",
+        "frequency": 7
+      },
+      {
+        "value": "infidelity",
+        "frequency": 4
+      },
+      {
+        "value": "jealousy",
+        "frequency": 3
+      },
+      {
+        "value": "journalism",
+        "frequency": 3
+      },
+      {
+        "value": "justice",
+        "frequency": 3
+      },
+      {
+        "value": "lgbt",
+        "frequency": 13
+      },
+      {
+        "value": "love triangle",
+        "frequency": 3
+      },
+      {
+        "value": "marriage",
+        "frequency": 8
+      },
+      {
+        "value": "military",
+        "frequency": 15
+      },
+      {
+        "value": "monster",
+        "frequency": 5
+      },
+      {
+        "value": "murder",
+        "frequency": 5
+      },
+      {
+        "value": "murder investigation",
+        "frequency": 4
+      },
+      {
+        "value": "murder mystery",
+        "frequency": 3
+      },
+      {
+        "value": "music",
+        "frequency": 3
+      },
+      {
+        "value": "music competition",
+        "frequency": 3
+      },
+      {
+        "value": "mystery",
+        "frequency": 7
+      },
+      {
+        "value": "nazism",
+        "frequency": 3
+      },
+      {
+        "value": "origin story",
+        "frequency": 3
+      },
+      {
+        "value": "parody",
+        "frequency": 3
+      },
+      {
+        "value": "patriotism",
+        "frequency": 4
+      },
+      {
+        "value": "police investigation",
+        "frequency": 3
+      },
+      {
+        "value": "police procedural",
+        "frequency": 3
+      },
+      {
+        "value": "propaganda",
+        "frequency": 4
+      },
+      {
+        "value": "prostitution",
+        "frequency": 4
+      },
+      {
+        "value": "race relations",
+        "frequency": 9
+      },
+      {
+        "value": "racism",
+        "frequency": 4
+      },
+      {
+        "value": "redemption",
+        "frequency": 5
+      },
+      {
+        "value": "remake",
+        "frequency": 5
+      },
+      {
+        "value": "resistance",
+        "frequency": 4
+      },
+      {
+        "value": "revenge",
+        "frequency": 9
+      },
+      {
+        "value": "revolution",
+        "frequency": 3
+      },
+      {
+        "value": "romance",
+        "frequency": 45
+      },
+      {
+        "value": "sacrifice",
+        "frequency": 5
+      },
+      {
+        "value": "satire",
+        "frequency": 3
+      },
+      {
+        "value": "science fiction",
+        "frequency": 3
+      },
+      {
+        "value": "sequel",
+        "frequency": 6
+      },
+      {
+        "value": "serial killer",
+        "frequency": 11
+      },
+      {
+        "value": "slavery",
+        "frequency": 7
+      },
+      {
+        "value": "social issues",
+        "frequency": 4
+      },
+      {
+        "value": "space exploration",
+        "frequency": 4
+      },
+      {
+        "value": "sports",
+        "frequency": 6
+      },
+      {
+        "value": "superhero",
+        "frequency": 9
+      },
+      {
+        "value": "supernatural",
+        "frequency": 9
+      },
+      {
+        "value": "survival",
+        "frequency": 10
+      },
+      {
+        "value": "teen",
+        "frequency": 4
+      },
+      {
+        "value": "time travel",
+        "frequency": 6
+      },
+      {
+        "value": "true crime",
+        "frequency": 3
+      },
+      {
+        "value": "vigilantism",
+        "frequency": 4
+      },
+      {
+        "value": "war",
+        "frequency": 37
+      },
+      {
+        "value": "world war ii",
+        "frequency": 11
+      }
+    ]
+  },
+  "film:time-period": {
+    "type": "bool",
+    "allowed_values": [
+      {
+        "value": "1891",
+        "frequency": 3
+      },
+      {
+        "value": "1911",
+        "frequency": 8
+      },
+      {
+        "value": "1915",
+        "frequency": 5
+      },
+      {
+        "value": "1916",
+        "frequency": 3
+      },
+      {
+        "value": "1919",
+        "frequency": 4
+      },
+      {
+        "value": "1921",
+        "frequency": 3
+      },
+      {
+        "value": "1923",
+        "frequency": 3
+      },
+      {
+        "value": "1925",
+        "frequency": 5
+      },
+      {
+        "value": "1930s",
+        "frequency": 11
+      },
+      {
+        "value": "1934",
+        "frequency": 23
+      },
+      {
+        "value": "1936",
+        "frequency": 16
+      },
+      {
+        "value": "1940",
+        "frequency": 6
+      },
+      {
+        "value": "1940s",
+        "frequency": 4
+      },
+      {
+        "value": "1941",
+        "frequency": 6
+      },
+      {
+        "value": "1942",
+        "frequency": 11
+      },
+      {
+        "value": "1943",
+        "frequency": 4
+      },
+      {
+        "value": "1946",
+        "frequency": 4
+      },
+      {
+        "value": "1949",
+        "frequency": 6
+      },
+      {
+        "value": "1950s",
+        "frequency": 7
+      },
+      {
+        "value": "1952",
+        "frequency": 3
+      },
+      {
+        "value": "1955",
+        "frequency": 3
+      },
+      {
+        "value": "1957",
+        "frequency": 4
+      },
+      {
+        "value": "1960s",
+        "frequency": 7
+      },
+      {
+        "value": "1961",
+        "frequency": 3
+      },
+      {
+        "value": "1962",
+        "frequency": 3
+      },
+      {
+        "value": "1963",
+        "frequency": 4
+      },
+      {
+        "value": "1964",
+        "frequency": 8
+      },
+      {
+        "value": "1965",
+        "frequency": 6
+      },
+      {
+        "value": "1966",
+        "frequency": 6
+      },
+      {
+        "value": "1967",
+        "frequency": 7
+      },
+      {
+        "value": "1971",
+        "frequency": 3
+      },
+      {
+        "value": "1976",
+        "frequency": 3
+      },
+      {
+        "value": "1977",
+        "frequency": 3
+      },
+      {
+        "value": "1980s",
+        "frequency": 4
+      },
+      {
+        "value": "1984",
+        "frequency": 4
+      },
+      {
+        "value": "1985",
+        "frequency": 8
+      },
+      {
+        "value": "1987",
+        "frequency": 7
+      },
+      {
+        "value": "1988",
+        "frequency": 6
+      },
+      {
+        "value": "1989",
+        "frequency": 13
+      },
+      {
+        "value": "1990",
+        "frequency": 3
+      },
+      {
+        "value": "1990s",
+        "frequency": 8
+      },
+      {
+        "value": "1992",
+        "frequency": 4
+      },
+      {
+        "value": "1994",
+        "frequency": 4
+      },
+      {
+        "value": "1995",
+        "frequency": 7
+      },
+      {
+        "value": "1996",
+        "frequency": 5
+      },
+      {
+        "value": "1997",
+        "frequency": 12
+      },
+      {
+        "value": "1999",
+        "frequency": 12
+      },
+      {
+        "value": "19th century",
+        "frequency": 3
+      },
+      {
+        "value": "2000",
+        "frequency": 6
+      },
+      {
+        "value": "2001",
+        "frequency": 5
+      },
+      {
+        "value": "2002",
+        "frequency": 7
+      },
+      {
+        "value": "2003",
+        "frequency": 9
+      },
+      {
+        "value": "2004",
+        "frequency": 7
+      },
+      {
+        "value": "2005",
+        "frequency": 6
+      },
+      {
+        "value": "2006",
+        "frequency": 11
+      },
+      {
+        "value": "2007",
+        "frequency": 11
+      },
+      {
+        "value": "2008",
+        "frequency": 14
+      },
+      {
+        "value": "2009",
+        "frequency": 8
+      },
+      {
+        "value": "2010",
+        "frequency": 6
+      },
+      {
+        "value": "2010s",
+        "frequency": 5
+      },
+      {
+        "value": "2011",
+        "frequency": 5
+      },
+      {
+        "value": "2012",
+        "frequency": 7
+      },
+      {
+        "value": "2013",
+        "frequency": 6
+      },
+      {
+        "value": "2014",
+        "frequency": 6
+      },
+      {
+        "value": "2015",
+        "frequency": 14
+      },
+      {
+        "value": "2016",
+        "frequency": 4
+      },
+      {
+        "value": "2017",
+        "frequency": 10
+      },
+      {
+        "value": "2018",
+        "frequency": 5
+      },
+      {
+        "value": "2019",
+        "frequency": 11
+      },
+      {
+        "value": "2020",
+        "frequency": 8
+      },
+      {
+        "value": "2021",
+        "frequency": 12
+      },
+      {
+        "value": "2022",
+        "frequency": 9
+      },
+      {
+        "value": "american civil war",
+        "frequency": 5
+      },
+      {
+        "value": "cold war",
+        "frequency": 4
+      },
+      {
+        "value": "continuation war",
+        "frequency": 4
+      },
+      {
+        "value": "second world war",
+        "frequency": 4
+      },
+      {
+        "value": "war of 1812",
+        "frequency": 8
+      },
+      {
+        "value": "winter war",
+        "frequency": 3
+      },
+      {
+        "value": "world war i",
+        "frequency": 4
+      },
+      {
+        "value": "world war ii",
+        "frequency": 24
+      }
+    ]
+  },
+  "film:topic": {
+    "type": "bool",
+    "allowed_values": [
+      {
+        "value": "adaptation",
+        "frequency": 8
+      },
+      {
+        "value": "adaptation of novel",
+        "frequency": 6
+      },
+      {
+        "value": "adolescence",
+        "frequency": 4
+      },
+      {
+        "value": "aliens",
+        "frequency": 4
+      },
+      {
+        "value": "antisemitism",
+        "frequency": 3
+      },
+      {
+        "value": "assassination",
+        "frequency": 3
+      },
+      {
+        "value": "astronauts",
+        "frequency": 3
+      },
+      {
+        "value": "bank robbery",
+        "frequency": 3
+      },
+      {
+        "value": "batman",
+        "frequency": 13
+      },
+      {
+        "value": "box office performance",
+        "frequency": 3
+      },
+      {
+        "value": "boxing",
+        "frequency": 3
+      },
+      {
+        "value": "bullying",
+        "frequency": 4
+      },
+      {
+        "value": "censorship",
+        "frequency": 4
+      },
+      {
+        "value": "chase",
+        "frequency": 3
+      },
+      {
+        "value": "coming of age",
+        "frequency": 5
+      },
+      {
+        "value": "corruption",
+        "frequency": 4
+      },
+      {
+        "value": "covid-19 pandemic delays",
+        "frequency": 3
+      },
+      {
+        "value": "crime",
+        "frequency": 6
+      },
+      {
+        "value": "dating",
+        "frequency": 3
+      },
+      {
+        "value": "dc comics",
+        "frequency": 4
+      },
+      {
+        "value": "deception",
+        "frequency": 6
+      },
+      {
+        "value": "detective investigation",
+        "frequency": 3
+      },
+      {
+        "value": "detective work",
+        "frequency": 3
+      },
+      {
+        "value": "divorce",
+        "frequency": 4
+      },
+      {
+        "value": "education",
+        "frequency": 3
+      },
+      {
+        "value": "escape",
+        "frequency": 5
+      },
+      {
+        "value": "family",
+        "frequency": 8
+      },
+      {
+        "value": "family conflict",
+        "frequency": 3
+      },
+      {
+        "value": "family dynamics",
+        "frequency": 6
+      },
+      {
+        "value": "family relationships",
+        "frequency": 7
+      },
+      {
+        "value": "film production",
+        "frequency": 3
+      },
+      {
+        "value": "friendship",
+        "frequency": 16
+      },
+      {
+        "value": "graduation",
+        "frequency": 3
+      },
+      {
+        "value": "high school",
+        "frequency": 7
+      },
+      {
+        "value": "high school life",
+        "frequency": 4
+      },
+      {
+        "value": "homophobia",
+        "frequency": 3
+      },
+      {
+        "value": "identity",
+        "frequency": 3
+      },
+      {
+        "value": "immigration",
+        "frequency": 3
+      },
+      {
+        "value": "infidelity",
+        "frequency": 7
+      },
+      {
+        "value": "investigation",
+        "frequency": 6
+      },
+      {
+        "value": "jealousy",
+        "frequency": 3
+      },
+      {
+        "value": "joker",
+        "frequency": 3
+      },
+      {
+        "value": "journalism",
+        "frequency": 10
+      },
+      {
+        "value": "kidnapping",
+        "frequency": 8
+      },
+      {
+        "value": "love",
+        "frequency": 7
+      },
+      {
+        "value": "mad scientist",
+        "frequency": 3
+      },
+      {
+        "value": "marriage",
+        "frequency": 18
+      },
+      {
+        "value": "mining",
+        "frequency": 3
+      },
+      {
+        "value": "murder",
+        "frequency": 22
+      },
+      {
+        "value": "murder investigation",
+        "frequency": 11
+      },
+      {
+        "value": "music",
+        "frequency": 5
+      },
+      {
+        "value": "nasa",
+        "frequency": 3
+      },
+      {
+        "value": "nazism",
+        "frequency": 3
+      },
+      {
+        "value": "organized crime",
+        "frequency": 4
+      },
+      {
+        "value": "origin story",
+        "frequency": 3
+      },
+      {
+        "value": "persecution of jews",
+        "frequency": 3
+      },
+      {
+        "value": "piracy",
+        "frequency": 3
+      },
+      {
+        "value": "police",
+        "frequency": 3
+      },
+      {
+        "value": "police investigation",
+        "frequency": 10
+      },
+      {
+        "value": "poverty",
+        "frequency": 6
+      },
+      {
+        "value": "pregnancy",
+        "frequency": 3
+      },
+      {
+        "value": "prisoners of war",
+        "frequency": 3
+      },
+      {
+        "value": "prostitution",
+        "frequency": 5
+      },
+      {
+        "value": "relationships",
+        "frequency": 14
+      },
+      {
+        "value": "remake",
+        "frequency": 6
+      },
+      {
+        "value": "rescue",
+        "frequency": 3
+      },
+      {
+        "value": "rescue mission",
+        "frequency": 4
+      },
+      {
+        "value": "revenge",
+        "frequency": 7
+      },
+      {
+        "value": "road trip",
+        "frequency": 3
+      },
+      {
+        "value": "robbery",
+        "frequency": 4
+      },
+      {
+        "value": "robin",
+        "frequency": 3
+      },
+      {
+        "value": "romance",
+        "frequency": 25
+      },
+      {
+        "value": "secret agents",
+        "frequency": 3
+      },
+      {
+        "value": "serial killer",
+        "frequency": 9
+      },
+      {
+        "value": "serial killings",
+        "frequency": 6
+      },
+      {
+        "value": "slavery",
+        "frequency": 6
+      },
+      {
+        "value": "space exploration",
+        "frequency": 4
+      },
+      {
+        "value": "space travel",
+        "frequency": 4
+      },
+      {
+        "value": "superman",
+        "frequency": 4
+      },
+      {
+        "value": "survival",
+        "frequency": 5
+      },
+      {
+        "value": "time travel",
+        "frequency": 8
+      },
+      {
+        "value": "vigilantism",
+        "frequency": 4
+      },
+      {
+        "value": "violence",
+        "frequency": 3
+      },
+      {
+        "value": "visual effects",
+        "frequency": 4
+      },
+      {
+        "value": "war",
+        "frequency": 5
+      },
+      {
+        "value": "war of 1812",
+        "frequency": 3
+      },
+      {
+        "value": "wedding",
+        "frequency": 4
+      },
+      {
+        "value": "weddings",
+        "frequency": 3
+      }
+    ]
+  },
+  "fish:location": {
+    "type": "bool",
+    "allowed_values": [
+      {
+        "value": "borneo",
+        "frequency": 5
+      },
+      {
+        "value": "cambodia",
+        "frequency": 4
+      },
+      {
+        "value": "central america",
+        "frequency": 3
+      },
+      {
+        "value": "chao phraya basin",
+        "frequency": 4
+      },
+      {
+        "value": "estuaries",
+        "frequency": 3
+      },
+      {
+        "value": "florida",
+        "frequency": 5
+      },
+      {
+        "value": "fresh water",
+        "frequency": 3
+      },
+      {
+        "value": "indonesia",
+        "frequency": 7
+      },
+      {
+        "value": "karnataka",
+        "frequency": 3
+      },
+      {
+        "value": "lakes",
+        "frequency": 3
+      },
+      {
+        "value": "laos",
+        "frequency": 3
+      },
+      {
+        "value": "large rivers",
+        "frequency": 3
+      },
+      {
+        "value": "malay peninsula",
+        "frequency": 3
+      },
+      {
+        "value": "malaysia",
+        "frequency": 12
+      },
+      {
+        "value": "mekong basin",
+        "frequency": 5
+      },
+      {
+        "value": "mexico",
+        "frequency": 8
+      },
+      {
+        "value": "middle america",
+        "frequency": 3
+      },
+      {
+        "value": "nicaragua",
+        "frequency": 3
+      },
+      {
+        "value": "papua new guinea",
+        "frequency": 9
+      },
+      {
+        "value": "peninsular malaysia",
+        "frequency": 4
+      },
+      {
+        "value": "rivers",
+        "frequency": 3
+      },
+      {
+        "value": "singapore",
+        "frequency": 3
+      },
+      {
+        "value": "south america",
+        "frequency": 3
+      },
+      {
+        "value": "southeast asia",
+        "frequency": 6
+      },
+      {
+        "value": "sumatra",
+        "frequency": 4
+      },
+      {
+        "value": "swamps",
+        "frequency": 6
+      },
+      {
+        "value": "thailand",
+        "frequency": 8
+      },
+      {
+        "value": "united states",
+        "frequency": 4
+      }
+    ]
+  },
+  "novel:attribute": {
+    "type": "bool",
+    "allowed_values": [
+      {
+        "value": "adapted into film",
+        "frequency": 3
+      },
+      {
+        "value": "adventure",
+        "frequency": 3
+      },
+      {
+        "value": "alternate history",
+        "frequency": 4
+      },
+      {
+        "value": "autobiographical",
+        "frequency": 5
+      },
+      {
+        "value": "award-winning",
+        "frequency": 15
+      },
+      {
+        "value": "bestseller",
+        "frequency": 6
+      },
+      {
+        "value": "bestselling",
+        "frequency": 3
+      },
+      {
+        "value": "character-driven",
+        "frequency": 5
+      },
+      {
+        "value": "children's novel",
+        "frequency": 5
+      },
+      {
+        "value": "collection of short stories",
+        "frequency": 3
+      },
+      {
+        "value": "coming-of-age",
+        "frequency": 6
+      },
+      {
+        "value": "debut novel",
+        "frequency": 10
+      },
+      {
+        "value": "dystopian",
+        "frequency": 5
+      },
+      {
+        "value": "epistolary",
+        "frequency": 5
+      },
+      {
+        "value": "family saga",
+        "frequency": 3
+      },
+      {
+        "value": "fantasy",
+        "frequency": 3
+      },
+      {
+        "value": "first edition",
+        "frequency": 4
+      },
+      {
+        "value": "first novel",
+        "frequency": 4
+      },
+      {
+        "value": "first-person narration",
+        "frequency": 4
+      },
+      {
+        "value": "first-person narrative",
+        "frequency": 5
+      },
+      {
+        "value": "gothic",
+        "frequency": 4
+      },
+      {
+        "value": "graphic novel",
+        "frequency": 7
+      },
+      {
+        "value": "historical",
+        "frequency": 7
+      },
+      {
+        "value": "historical fiction",
+        "frequency": 8
+      },
+      {
+        "value": "historical novel",
+        "frequency": 5
+      },
+      {
+        "value": "humorous",
+        "frequency": 3
+      },
+      {
+        "value": "mixed reviews",
+        "frequency": 4
+      },
+      {
+        "value": "mystery",
+        "frequency": 6
+      },
+      {
+        "value": "part of a series",
+        "frequency": 7
+      },
+      {
+        "value": "part of a trilogy",
+        "frequency": 3
+      },
+      {
+        "value": "post-apocalyptic",
+        "frequency": 4
+      },
+      {
+        "value": "psychological focus",
+        "frequency": 3
+      },
+      {
+        "value": "satirical",
+        "frequency": 5
+      },
+      {
+        "value": "science fiction",
+        "frequency": 12
+      },
+      {
+        "value": "sequel",
+        "frequency": 10
+      },
+      {
+        "value": "serialized",
+        "frequency": 4
+      },
+      {
+        "value": "space opera elements",
+        "frequency": 3
+      },
+      {
+        "value": "young adult",
+        "frequency": 9
+      }
+    ]
+  },
+  "novel:genre": {
+    "type": "bool",
+    "allowed_values": [
+      {
+        "value": "adventure",
+        "frequency": 12
+      },
+      {
+        "value": "alternate history",
+        "frequency": 4
+      },
+      {
+        "value": "autobiographical fiction",
+        "frequency": 3
+      },
+      {
+        "value": "autobiographical novel",
+        "frequency": 4
+      },
+      {
+        "value": "children's literature",
+        "frequency": 4
+      },
+      {
+        "value": "comedy",
+        "frequency": 3
+      },
+      {
+        "value": "coming-of-age",
+        "frequency": 8
+      },
+      {
+        "value": "crime",
+        "frequency": 14
+      },
+      {
+        "value": "crime fiction",
+        "frequency": 3
+      },
+      {
+        "value": "detective",
+        "frequency": 5
+      },
+      {
+        "value": "detective fiction",
+        "frequency": 6
+      },
+      {
+        "value": "epistolary novel",
+        "frequency": 3
+      },
+      {
+        "value": "espionage thriller",
+        "frequency": 3
+      },
+      {
+        "value": "fantasy",
+        "frequency": 11
+      },
+      {
+        "value": "gothic",
+        "frequency": 3
+      },
+      {
+        "value": "graphic novel",
+        "frequency": 5
+      },
+      {
+        "value": "historical fiction",
+        "frequency": 24
+      },
+      {
+        "value": "historical novel",
+        "frequency": 19
+      },
+      {
+        "value": "horror",
+        "frequency": 4
+      },
+      {
+        "value": "literary fiction",
+        "frequency": 20
+      },
+      {
+        "value": "military science fiction",
+        "frequency": 3
+      },
+      {
+        "value": "modernist novel",
+        "frequency": 3
+      },
+      {
+        "value": "mystery",
+        "frequency": 19
+      },
+      {
+        "value": "novel",
+        "frequency": 27
+      },
+      {
+        "value": "post-apocalyptic fiction",
+        "frequency": 4
+      },
+      {
+        "value": "romance",
+        "frequency": 12
+      },
+      {
+        "value": "satire",
+        "frequency": 9
+      },
+      {
+        "value": "science fiction",
+        "frequency": 43
+      },
+      {
+        "value": "space opera",
+        "frequency": 12
+      },
+      {
+        "value": "thriller",
+        "frequency": 8
+      },
+      {
+        "value": "urban fantasy",
+        "frequency": 4
+      },
+      {
+        "value": "war novel",
+        "frequency": 9
+      },
+      {
+        "value": "young adult",
+        "frequency": 11
+      }
+    ]
+  },
+  "plant:attribute": {
+    "type": "bool",
+    "allowed_values": [
+      {
+        "value": "alternate leaves",
+        "frequency": 4
+      },
+      {
+        "value": "anastomosing venation",
+        "frequency": 3
+      },
+      {
+        "value": "and trees",
+        "frequency": 3
+      },
+      {
+        "value": "annual",
+        "frequency": 5
+      },
+      {
+        "value": "annual herb",
+        "frequency": 3
+      },
+      {
+        "value": "aquatic",
+        "frequency": 4
+      },
+      {
+        "value": "biennial",
+        "frequency": 3
+      },
+      {
+        "value": "bipinnate leaves",
+        "frequency": 3
+      },
+      {
+        "value": "compound leaves",
+        "frequency": 3
+      },
+      {
+        "value": "cosmopolitan distribution",
+        "frequency": 4
+      },
+      {
+        "value": "deciduous",
+        "frequency": 21
+      },
+      {
+        "value": "deciduous leaves",
+        "frequency": 4
+      },
+      {
+        "value": "dense foliage",
+        "frequency": 3
+      },
+      {
+        "value": "dioecious",
+        "frequency": 5
+      },
+      {
+        "value": "drought resistant",
+        "frequency": 3
+      },
+      {
+        "value": "economically important",
+        "frequency": 3
+      },
+      {
+        "value": "edible fruit",
+        "frequency": 7
+      },
+      {
+        "value": "endangered",
+        "frequency": 4
+      },
+      {
+        "value": "endemic",
+        "frequency": 34
+      },
+      {
+        "value": "epiphyte",
+        "frequency": 3
+      },
+      {
+        "value": "epiphytic",
+        "frequency": 17
+      },
+      {
+        "value": "evergreen",
+        "frequency": 21
+      },
+      {
+        "value": "evergreen leaves",
+        "frequency": 3
+      },
+      {
+        "value": "evergreen tree",
+        "frequency": 3
+      },
+      {
+        "value": "extinct",
+        "frequency": 9
+      },
+      {
+        "value": "extinct genus",
+        "frequency": 5
+      },
+      {
+        "value": "extinct species",
+        "frequency": 6
+      },
+      {
+        "value": "family asteraceae",
+        "frequency": 7
+      },
+      {
+        "value": "family of flowering plants",
+        "frequency": 6
+      },
+      {
+        "value": "family poaceae",
+        "frequency": 4
+      },
+      {
+        "value": "family podostemaceae",
+        "frequency": 4
+      },
+      {
+        "value": "family vitaceae",
+        "frequency": 5
+      },
+      {
+        "value": "fast growing",
+        "frequency": 3
+      },
+      {
+        "value": "fast-growing",
+        "frequency": 9
+      },
+      {
+        "value": "five petals",
+        "frequency": 3
+      },
+      {
+        "value": "fleshy",
+        "frequency": 3
+      },
+      {
+        "value": "flowering",
+        "frequency": 11
+      },
+      {
+        "value": "flowering plant",
+        "frequency": 25
+      },
+      {
+        "value": "flowering plants",
+        "frequency": 17
+      },
+      {
+        "value": "fragrant flowers",
+        "frequency": 3
+      },
+      {
+        "value": "fruit tree",
+        "frequency": 3
+      },
+      {
+        "value": "genus",
+        "frequency": 7
+      },
+      {
+        "value": "genus of flowering plants",
+        "frequency": 17
+      },
+      {
+        "value": "genus of plants",
+        "frequency": 3
+      },
+      {
+        "value": "herb",
+        "frequency": 3
+      },
+      {
+        "value": "herbaceous",
+        "frequency": 6
+      },
+      {
+        "value": "herbaceous perennial",
+        "frequency": 6
+      },
+      {
+        "value": "herbaceous plants",
+        "frequency": 4
+      },
+      {
+        "value": "hermaphroditic flowers",
+        "frequency": 4
+      },
+      {
+        "value": "invasive species",
+        "frequency": 3
+      },
+      {
+        "value": "large",
+        "frequency": 7
+      },
+      {
+        "value": "leathery leaves",
+        "frequency": 5
+      },
+      {
+        "value": "lianas",
+        "frequency": 6
+      },
+      {
+        "value": "lithophytic",
+        "frequency": 3
+      },
+      {
+        "value": "low-growing",
+        "frequency": 5
+      },
+      {
+        "value": "medium-sized tree",
+        "frequency": 3
+      },
+      {
+        "value": "moist",
+        "frequency": 3
+      },
+      {
+        "value": "monoecious",
+        "frequency": 8
+      },
+      {
+        "value": "monotypic genus",
+        "frequency": 13
+      },
+      {
+        "value": "narrow",
+        "frequency": 3
+      },
+      {
+        "value": "native",
+        "frequency": 4
+      },
+      {
+        "value": "opposite",
+        "frequency": 4
+      },
+      {
+        "value": "ornamental",
+        "frequency": 4
+      },
+      {
+        "value": "palmately arranged leaves",
+        "frequency": 3
+      },
+      {
+        "value": "perennial",
+        "frequency": 16
+      },
+      {
+        "value": "perennial herb",
+        "frequency": 4
+      },
+      {
+        "value": "pink",
+        "frequency": 6
+      },
+      {
+        "value": "plant genus",
+        "frequency": 3
+      },
+      {
+        "value": "purple",
+        "frequency": 5
+      },
+      {
+        "value": "rare",
+        "frequency": 4
+      },
+      {
+        "value": "rare species",
+        "frequency": 4
+      },
+      {
+        "value": "rhizomatous",
+        "frequency": 4
+      },
+      {
+        "value": "robust",
+        "frequency": 3
+      },
+      {
+        "value": "semi-deciduous",
+        "frequency": 3
+      },
+      {
+        "value": "shrub",
+        "frequency": 4
+      },
+      {
+        "value": "shrub or small tree",
+        "frequency": 4
+      },
+      {
+        "value": "shrubs",
+        "frequency": 12
+      },
+      {
+        "value": "simple leaves",
+        "frequency": 4
+      },
+      {
+        "value": "slender",
+        "frequency": 4
+      },
+      {
+        "value": "small",
+        "frequency": 7
+      },
+      {
+        "value": "small tree",
+        "frequency": 5
+      },
+      {
+        "value": "small white flowers",
+        "frequency": 3
+      },
+      {
+        "value": "soft",
+        "frequency": 3
+      },
+      {
+        "value": "species of flowering plant",
+        "frequency": 10
+      },
+      {
+        "value": "species of orchid",
+        "frequency": 5
+      },
+      {
+        "value": "species of sedge",
+        "frequency": 4
+      },
+      {
+        "value": "succulent",
+        "frequency": 3
+      },
+      {
+        "value": "terrestrial",
+        "frequency": 8
+      },
+      {
+        "value": "threatened",
+        "frequency": 3
+      },
+      {
+        "value": "threatened by habitat loss",
+        "frequency": 9
+      },
+      {
+        "value": "tough",
+        "frequency": 6
+      },
+      {
+        "value": "tree",
+        "frequency": 3
+      },
+      {
+        "value": "trees",
+        "frequency": 7
+      },
+      {
+        "value": "tropical",
+        "frequency": 4
+      },
+      {
+        "value": "white",
+        "frequency": 3
+      },
+      {
+        "value": "woody",
+        "frequency": 4
+      }
+    ]
+  },
+  "plant:location": {
+    "type": "bool",
+    "allowed_values": [
+      {
+        "value": "afghanistan",
+        "frequency": 4
+      },
+      {
+        "value": "africa",
+        "frequency": 25
+      },
+      {
+        "value": "alaska",
+        "frequency": 7
+      },
+      {
+        "value": "amazon basin",
+        "frequency": 3
+      },
+      {
+        "value": "amazon rainforest",
+        "frequency": 6
+      },
+      {
+        "value": "americas",
+        "frequency": 3
+      },
+      {
+        "value": "andaman islands",
+        "frequency": 3
+      },
+      {
+        "value": "andes",
+        "frequency": 3
+      },
+      {
+        "value": "angola",
+        "frequency": 5
+      },
+      {
+        "value": "antarctica",
+        "frequency": 6
+      },
+      {
+        "value": "arabian peninsula",
+        "frequency": 3
+      },
+      {
+        "value": "argentina",
+        "frequency": 20
+      },
+      {
+        "value": "arizona",
+        "frequency": 16
+      },
+      {
+        "value": "aru islands",
+        "frequency": 3
+      },
+      {
+        "value": "asia",
+        "frequency": 16
+      },
+      {
+        "value": "australasia",
+        "frequency": 4
+      },
+      {
+        "value": "australia",
+        "frequency": 36
+      },
+      {
+        "value": "austria",
+        "frequency": 4
+      },
+      {
+        "value": "bahamas",
+        "frequency": 7
+      },
+      {
+        "value": "bangladesh",
+        "frequency": 4
+      },
+      {
+        "value": "belarus",
+        "frequency": 4
+      },
+      {
+        "value": "belgium",
+        "frequency": 3
+      },
+      {
+        "value": "belize",
+        "frequency": 11
+      },
+      {
+        "value": "bismarck archipelago",
+        "frequency": 4
+      },
+      {
+        "value": "bolivia",
+        "frequency": 26
+      },
+      {
+        "value": "borneo",
+        "frequency": 7
+      },
+      {
+        "value": "brazil",
+        "frequency": 35
+      },
+      {
+        "value": "british columbia",
+        "frequency": 9
+      },
+      {
+        "value": "burma",
+        "frequency": 4
+      },
+      {
+        "value": "caldas",
+        "frequency": 3
+      },
+      {
+        "value": "california",
+        "frequency": 11
+      },
+      {
+        "value": "cambodia",
+        "frequency": 6
+      },
+      {
+        "value": "cameroon",
+        "frequency": 8
+      },
+      {
+        "value": "campeche",
+        "frequency": 7
+      },
+      {
+        "value": "canada",
+        "frequency": 12
+      },
+      {
+        "value": "canary islands",
+        "frequency": 3
+      },
+      {
+        "value": "caribbean",
+        "frequency": 16
+      },
+      {
+        "value": "caribbean islands",
+        "frequency": 3
+      },
+      {
+        "value": "cayman islands",
+        "frequency": 11
+      },
+      {
+        "value": "central africa",
+        "frequency": 3
+      },
+      {
+        "value": "central america",
+        "frequency": 54
+      },
+      {
+        "value": "central chile",
+        "frequency": 5
+      },
+      {
+        "value": "central europe",
+        "frequency": 3
+      },
+      {
+        "value": "central mexico",
+        "frequency": 8
+      },
+      {
+        "value": "central united states",
+        "frequency": 3
+      },
+      {
+        "value": "chiapas",
+        "frequency": 11
+      },
+      {
+        "value": "chihuahua",
+        "frequency": 7
+      },
+      {
+        "value": "chile",
+        "frequency": 17
+      },
+      {
+        "value": "china",
+        "frequency": 20
+      },
+      {
+        "value": "cloud forest",
+        "frequency": 3
+      },
+      {
+        "value": "coahuila",
+        "frequency": 4
+      },
+      {
+        "value": "coastal areas",
+        "frequency": 4
+      },
+      {
+        "value": "colombia",
+        "frequency": 48
+      },
+      {
+        "value": "colorado",
+        "frequency": 4
+      },
+      {
+        "value": "cook islands",
+        "frequency": 3
+      },
+      {
+        "value": "costa rica",
+        "frequency": 34
+      },
+      {
+        "value": "croatia",
+        "frequency": 4
+      },
+      {
+        "value": "cuba",
+        "frequency": 12
+      },
+      {
+        "value": "djibouti",
+        "frequency": 7
+      },
+      {
+        "value": "dominica",
+        "frequency": 3
+      },
+      {
+        "value": "dominican republic",
+        "frequency": 9
+      },
+      {
+        "value": "douglas dam",
+        "frequency": 5
+      },
+      {
+        "value": "douglas lake member of the lenoir limestone",
+        "frequency": 3
+      },
+      {
+        "value": "durango",
+        "frequency": 10
+      },
+      {
+        "value": "east africa",
+        "frequency": 3
+      },
+      {
+        "value": "eastern asia",
+        "frequency": 5
+      },
+      {
+        "value": "eastern australia",
+        "frequency": 6
+      },
+      {
+        "value": "eastern canada",
+        "frequency": 5
+      },
+      {
+        "value": "eastern cape",
+        "frequency": 3
+      },
+      {
+        "value": "eastern north america",
+        "frequency": 10
+      },
+      {
+        "value": "eastern united states",
+        "frequency": 10
+      },
+      {
+        "value": "ecuador",
+        "frequency": 33
+      },
+      {
+        "value": "egypt",
+        "frequency": 4
+      },
+      {
+        "value": "el salvador",
+        "frequency": 8
+      },
+      {
+        "value": "england",
+        "frequency": 5
+      },
+      {
+        "value": "eritrea",
+        "frequency": 4
+      },
+      {
+        "value": "ethiopia",
+        "frequency": 7
+      },
+      {
+        "value": "eurasia",
+        "frequency": 3
+      },
+      {
+        "value": "europe",
+        "frequency": 18
+      },
+      {
+        "value": "extreme southern florida",
+        "frequency": 3
+      },
+      {
+        "value": "fiji",
+        "frequency": 6
+      },
+      {
+        "value": "florida",
+        "frequency": 23
+      },
+      {
+        "value": "forests",
+        "frequency": 3
+      },
+      {
+        "value": "france",
+        "frequency": 5
+      },
+      {
+        "value": "french guiana",
+        "frequency": 11
+      },
+      {
+        "value": "gabon",
+        "frequency": 4
+      },
+      {
+        "value": "gardens",
+        "frequency": 3
+      },
+      {
+        "value": "georgia",
+        "frequency": 7
+      },
+      {
+        "value": "germany",
+        "frequency": 9
+      },
+      {
+        "value": "gondwana",
+        "frequency": 3
+      },
+      {
+        "value": "gozo",
+        "frequency": 4
+      },
+      {
+        "value": "grand cayman",
+        "frequency": 4
+      },
+      {
+        "value": "greater antilles",
+        "frequency": 4
+      },
+      {
+        "value": "grenada",
+        "frequency": 4
+      },
+      {
+        "value": "guadeloupe",
+        "frequency": 5
+      },
+      {
+        "value": "guatemala",
+        "frequency": 17
+      },
+      {
+        "value": "guerrero",
+        "frequency": 5
+      },
+      {
+        "value": "guyana",
+        "frequency": 15
+      },
+      {
+        "value": "haiti",
+        "frequency": 5
+      },
+      {
+        "value": "hawaii",
+        "frequency": 15
+      },
+      {
+        "value": "henderson island",
+        "frequency": 3
+      },
+      {
+        "value": "hidalgo",
+        "frequency": 4
+      },
+      {
+        "value": "hispaniola",
+        "frequency": 3
+      },
+      {
+        "value": "honduras",
+        "frequency": 15
+      },
+      {
+        "value": "hong kong",
+        "frequency": 4
+      },
+      {
+        "value": "hungary",
+        "frequency": 3
+      },
+      {
+        "value": "india",
+        "frequency": 32
+      },
+      {
+        "value": "indian subcontinent",
+        "frequency": 3
+      },
+      {
+        "value": "indochina",
+        "frequency": 4
+      },
+      {
+        "value": "indomalaya",
+        "frequency": 3
+      },
+      {
+        "value": "indonesia",
+        "frequency": 18
+      },
+      {
+        "value": "iran",
+        "frequency": 4
+      },
+      {
+        "value": "ireland",
+        "frequency": 3
+      },
+      {
+        "value": "italy",
+        "frequency": 8
+      },
+      {
+        "value": "ivory coast",
+        "frequency": 3
+      },
+      {
+        "value": "jalisco",
+        "frequency": 8
+      },
+      {
+        "value": "jamaica",
+        "frequency": 12
+      },
+      {
+        "value": "japan",
+        "frequency": 14
+      },
+      {
+        "value": "java",
+        "frequency": 4
+      },
+      {
+        "value": "kazakhstan",
+        "frequency": 7
+      },
+      {
+        "value": "kenya",
+        "frequency": 8
+      },
+      {
+        "value": "kerala",
+        "frequency": 3
+      },
+      {
+        "value": "korea",
+        "frequency": 3
+      },
+      {
+        "value": "laos",
+        "frequency": 3
+      },
+      {
+        "value": "leeward islands",
+        "frequency": 3
+      },
+      {
+        "value": "lesser antilles",
+        "frequency": 7
+      },
+      {
+        "value": "libya",
+        "frequency": 3
+      },
+      {
+        "value": "lower rio grande valley of texas",
+        "frequency": 3
+      },
+      {
+        "value": "madagascar",
+        "frequency": 14
+      },
+      {
+        "value": "malaysia",
+        "frequency": 10
+      },
+      {
+        "value": "malesia",
+        "frequency": 6
+      },
+      {
+        "value": "malta",
+        "frequency": 6
+      },
+      {
+        "value": "martinique",
+        "frequency": 5
+      },
+      {
+        "value": "mauritius",
+        "frequency": 5
+      },
+      {
+        "value": "mesoamerica",
+        "frequency": 3
+      },
+      {
+        "value": "mexico",
+        "frequency": 60
+      },
+      {
+        "value": "midwestern united states",
+        "frequency": 3
+      },
+      {
+        "value": "minnesota",
+        "frequency": 3
+      },
+      {
+        "value": "mongolia",
+        "frequency": 3
+      },
+      {
+        "value": "montana",
+        "frequency": 8
+      },
+      {
+        "value": "montane forests",
+        "frequency": 3
+      },
+      {
+        "value": "morocco",
+        "frequency": 5
+      },
+      {
+        "value": "mozambique",
+        "frequency": 3
+      },
+      {
+        "value": "myanmar",
+        "frequency": 5
+      },
+      {
+        "value": "namibia",
+        "frequency": 3
+      },
+      {
+        "value": "nayarit",
+        "frequency": 7
+      },
+      {
+        "value": "neotropics",
+        "frequency": 5
+      },
+      {
+        "value": "nepal",
+        "frequency": 3
+      },
+      {
+        "value": "nevada",
+        "frequency": 3
+      },
+      {
+        "value": "new brunswick",
+        "frequency": 4
+      },
+      {
+        "value": "new caledonia",
+        "frequency": 10
+      },
+      {
+        "value": "new guinea",
+        "frequency": 20
+      },
+      {
+        "value": "new mexico",
+        "frequency": 9
+      },
+      {
+        "value": "new zealand",
+        "frequency": 15
+      },
+      {
+        "value": "newfoundland",
+        "frequency": 3
+      },
+      {
+        "value": "nicaragua",
+        "frequency": 9
+      },
+      {
+        "value": "nigeria",
+        "frequency": 3
+      },
+      {
+        "value": "north africa",
+        "frequency": 5
+      },
+      {
+        "value": "north america",
+        "frequency": 30
+      },
+      {
+        "value": "north carolina",
+        "frequency": 4
+      },
+      {
+        "value": "northeastern mexico",
+        "frequency": 3
+      },
+      {
+        "value": "northern australia",
+        "frequency": 5
+      },
+      {
+        "value": "northern brazil",
+        "frequency": 4
+      },
+      {
+        "value": "northern hemisphere",
+        "frequency": 5
+      },
+      {
+        "value": "northern mexico",
+        "frequency": 8
+      },
+      {
+        "value": "northern south america",
+        "frequency": 20
+      },
+      {
+        "value": "northwestern mexico",
+        "frequency": 5
+      },
+      {
+        "value": "oaxaca",
+        "frequency": 20
+      },
+      {
+        "value": "oceania",
+        "frequency": 4
+      },
+      {
+        "value": "ontario",
+        "frequency": 5
+      },
+      {
+        "value": "oregon",
+        "frequency": 6
+      },
+      {
+        "value": "pacific islands",
+        "frequency": 5
+      },
+      {
+        "value": "pakistan",
+        "frequency": 3
+      },
+      {
+        "value": "panama",
+        "frequency": 21
+      },
+      {
+        "value": "pantropical",
+        "frequency": 3
+      },
+      {
+        "value": "papua new guinea",
+        "frequency": 12
+      },
+      {
+        "value": "paraguay",
+        "frequency": 8
+      },
+      {
+        "value": "patagonia",
+        "frequency": 3
+      },
+      {
+        "value": "peninsular malaysia",
+        "frequency": 4
+      },
+      {
+        "value": "peru",
+        "frequency": 40
+      },
+      {
+        "value": "philippines",
+        "frequency": 14
+      },
+      {
+        "value": "poland",
+        "frequency": 5
+      },
+      {
+        "value": "portugal",
+        "frequency": 5
+      },
+      {
+        "value": "puebla",
+        "frequency": 5
+      },
+      {
+        "value": "puerto rico",
+        "frequency": 14
+      },
+      {
+        "value": "queensland",
+        "frequency": 6
+      },
+      {
+        "value": "quintana roo",
+        "frequency": 5
+      },
+      {
+        "value": "rainforests",
+        "frequency": 3
+      },
+      {
+        "value": "roadsides",
+        "frequency": 4
+      },
+      {
+        "value": "rocks",
+        "frequency": 3
+      },
+      {
+        "value": "rocky mountains",
+        "frequency": 3
+      },
+      {
+        "value": "romania",
+        "frequency": 4
+      },
+      {
+        "value": "russia",
+        "frequency": 9
+      },
+      {
+        "value": "russian federation",
+        "frequency": 3
+      },
+      {
+        "value": "rwanda",
+        "frequency": 3
+      },
+      {
+        "value": "ryukyu islands",
+        "frequency": 3
+      },
+      {
+        "value": "saint kitts",
+        "frequency": 3
+      },
+      {
+        "value": "saint vincent",
+        "frequency": 3
+      },
+      {
+        "value": "samoa",
+        "frequency": 3
+      },
+      {
+        "value": "san luis potosi",
+        "frequency": 7
+      },
+      {
+        "value": "sardinia",
+        "frequency": 3
+      },
+      {
+        "value": "saudi arabia",
+        "frequency": 3
+      },
+      {
+        "value": "scotland",
+        "frequency": 6
+      },
+      {
+        "value": "sea level",
+        "frequency": 3
+      },
+      {
+        "value": "seychelles",
+        "frequency": 4
+      },
+      {
+        "value": "sinaloa",
+        "frequency": 15
+      },
+      {
+        "value": "socotra",
+        "frequency": 4
+      },
+      {
+        "value": "solomon islands",
+        "frequency": 4
+      },
+      {
+        "value": "somalia",
+        "frequency": 5
+      },
+      {
+        "value": "sonora",
+        "frequency": 6
+      },
+      {
+        "value": "sonoran desert",
+        "frequency": 3
+      },
+      {
+        "value": "south africa",
+        "frequency": 18
+      },
+      {
+        "value": "south america",
+        "frequency": 49
+      },
+      {
+        "value": "south asia",
+        "frequency": 5
+      },
+      {
+        "value": "southeast asia",
+        "frequency": 11
+      },
+      {
+        "value": "southern africa",
+        "frequency": 11
+      },
+      {
+        "value": "southern brazil",
+        "frequency": 3
+      },
+      {
+        "value": "southern chile",
+        "frequency": 3
+      },
+      {
+        "value": "southern china",
+        "frequency": 4
+      },
+      {
+        "value": "southern florida",
+        "frequency": 6
+      },
+      {
+        "value": "southern mexico",
+        "frequency": 24
+      },
+      {
+        "value": "southwestern united states",
+        "frequency": 9
+      },
+      {
+        "value": "spain",
+        "frequency": 10
+      },
+      {
+        "value": "sri lanka",
+        "frequency": 10
+      },
+      {
+        "value": "sub-saharan africa",
+        "frequency": 3
+      },
+      {
+        "value": "subtropical regions",
+        "frequency": 3
+      },
+      {
+        "value": "sudan",
+        "frequency": 4
+      },
+      {
+        "value": "sulawesi",
+        "frequency": 3
+      },
+      {
+        "value": "sumatra",
+        "frequency": 6
+      },
+      {
+        "value": "suriname",
+        "frequency": 13
+      },
+      {
+        "value": "tabasco",
+        "frequency": 6
+      },
+      {
+        "value": "taiwan",
+        "frequency": 7
+      },
+      {
+        "value": "tamaulipas",
+        "frequency": 5
+      },
+      {
+        "value": "tanzania",
+        "frequency": 10
+      },
+      {
+        "value": "tasmania",
+        "frequency": 3
+      },
+      {
+        "value": "temperate climates",
+        "frequency": 3
+      },
+      {
+        "value": "tennessee",
+        "frequency": 5
+      },
+      {
+        "value": "texas",
+        "frequency": 15
+      },
+      {
+        "value": "thailand",
+        "frequency": 9
+      },
+      {
+        "value": "the americas",
+        "frequency": 3
+      },
+      {
+        "value": "the bahamas",
+        "frequency": 3
+      },
+      {
+        "value": "the caribbean",
+        "frequency": 12
+      },
+      {
+        "value": "the middle east",
+        "frequency": 4
+      },
+      {
+        "value": "the philippines",
+        "frequency": 6
+      },
+      {
+        "value": "trinidad",
+        "frequency": 13
+      },
+      {
+        "value": "trinidad and tobago",
+        "frequency": 5
+      },
+      {
+        "value": "tropical africa",
+        "frequency": 8
+      },
+      {
+        "value": "tropical americas",
+        "frequency": 3
+      },
+      {
+        "value": "tropical areas",
+        "frequency": 4
+      },
+      {
+        "value": "tropical asia",
+        "frequency": 4
+      },
+      {
+        "value": "tropical regions",
+        "frequency": 5
+      },
+      {
+        "value": "tropical south america",
+        "frequency": 3
+      },
+      {
+        "value": "tropics",
+        "frequency": 10
+      },
+      {
+        "value": "turkey",
+        "frequency": 5
+      },
+      {
+        "value": "uganda",
+        "frequency": 6
+      },
+      {
+        "value": "ukraine",
+        "frequency": 7
+      },
+      {
+        "value": "united kingdom",
+        "frequency": 6
+      },
+      {
+        "value": "united states",
+        "frequency": 24
+      },
+      {
+        "value": "uruguay",
+        "frequency": 5
+      },
+      {
+        "value": "usa",
+        "frequency": 4
+      },
+      {
+        "value": "utah",
+        "frequency": 3
+      },
+      {
+        "value": "valle alto formation",
+        "frequency": 3
+      },
+      {
+        "value": "vancouver island",
+        "frequency": 4
+      },
+      {
+        "value": "venezuela",
+        "frequency": 45
+      },
+      {
+        "value": "veracruz",
+        "frequency": 10
+      },
+      {
+        "value": "victoria",
+        "frequency": 3
+      },
+      {
+        "value": "vietnam",
+        "frequency": 12
+      },
+      {
+        "value": "washington",
+        "frequency": 6
+      },
+      {
+        "value": "west africa",
+        "frequency": 5
+      },
+      {
+        "value": "west indies",
+        "frequency": 15
+      },
+      {
+        "value": "western mexico",
+        "frequency": 4
+      },
+      {
+        "value": "western north america",
+        "frequency": 6
+      },
+      {
+        "value": "western texas",
+        "frequency": 4
+      },
+      {
+        "value": "western united states",
+        "frequency": 4
+      },
+      {
+        "value": "worldwide",
+        "frequency": 6
+      },
+      {
+        "value": "wyoming",
+        "frequency": 5
+      },
+      {
+        "value": "yemen",
+        "frequency": 10
+      },
+      {
+        "value": "zambia",
+        "frequency": 3
+      }
+    ]
+  },
+  "tree:location": {
+    "type": "bool",
+    "allowed_values": [
+      {
+        "value": "africa",
+        "frequency": 6
+      },
+      {
+        "value": "amazon basin",
+        "frequency": 3
+      },
+      {
+        "value": "amazon rainforest",
+        "frequency": 5
+      },
+      {
+        "value": "argentina",
+        "frequency": 5
+      },
+      {
+        "value": "arizona",
+        "frequency": 3
+      },
+      {
+        "value": "aru islands",
+        "frequency": 3
+      },
+      {
+        "value": "asia",
+        "frequency": 6
+      },
+      {
+        "value": "australia",
+        "frequency": 15
+      },
+      {
+        "value": "bahamas",
+        "frequency": 4
+      },
+      {
+        "value": "bangladesh",
+        "frequency": 3
+      },
+      {
+        "value": "belize",
+        "frequency": 5
+      },
+      {
+        "value": "bolivia",
+        "frequency": 10
+      },
+      {
+        "value": "brazil",
+        "frequency": 14
+      },
+      {
+        "value": "cambodia",
+        "frequency": 5
+      },
+      {
+        "value": "caribbean",
+        "frequency": 8
+      },
+      {
+        "value": "central america",
+        "frequency": 26
+      },
+      {
+        "value": "central chile",
+        "frequency": 3
+      },
+      {
+        "value": "central mexico",
+        "frequency": 6
+      },
+      {
+        "value": "chile",
+        "frequency": 7
+      },
+      {
+        "value": "china",
+        "frequency": 4
+      },
+      {
+        "value": "colombia",
+        "frequency": 15
+      },
+      {
+        "value": "costa rica",
+        "frequency": 9
+      },
+      {
+        "value": "cuba",
+        "frequency": 3
+      },
+      {
+        "value": "dominican republic",
+        "frequency": 6
+      },
+      {
+        "value": "eastern australia",
+        "frequency": 5
+      },
+      {
+        "value": "eastern north america",
+        "frequency": 5
+      },
+      {
+        "value": "eastern united states",
+        "frequency": 3
+      },
+      {
+        "value": "ecuador",
+        "frequency": 13
+      },
+      {
+        "value": "el salvador",
+        "frequency": 5
+      },
+      {
+        "value": "ethiopia",
+        "frequency": 3
+      },
+      {
+        "value": "europe",
+        "frequency": 5
+      },
+      {
+        "value": "fiji",
+        "frequency": 4
+      },
+      {
+        "value": "florida",
+        "frequency": 12
+      },
+      {
+        "value": "germany",
+        "frequency": 3
+      },
+      {
+        "value": "guatemala",
+        "frequency": 5
+      },
+      {
+        "value": "guyana",
+        "frequency": 3
+      },
+      {
+        "value": "haiti",
+        "frequency": 3
+      },
+      {
+        "value": "hawaii",
+        "frequency": 9
+      },
+      {
+        "value": "honduras",
+        "frequency": 5
+      },
+      {
+        "value": "india",
+        "frequency": 18
+      },
+      {
+        "value": "indonesia",
+        "frequency": 12
+      },
+      {
+        "value": "jalisco",
+        "frequency": 4
+      },
+      {
+        "value": "lower rio grande valley of texas",
+        "frequency": 3
+      },
+      {
+        "value": "madagascar",
+        "frequency": 7
+      },
+      {
+        "value": "malaysia",
+        "frequency": 4
+      },
+      {
+        "value": "malesia",
+        "frequency": 4
+      },
+      {
+        "value": "mauritius",
+        "frequency": 3
+      },
+      {
+        "value": "mexico",
+        "frequency": 22
+      },
+      {
+        "value": "nayarit",
+        "frequency": 5
+      },
+      {
+        "value": "new caledonia",
+        "frequency": 6
+      },
+      {
+        "value": "new guinea",
+        "frequency": 13
+      },
+      {
+        "value": "new zealand",
+        "frequency": 5
+      },
+      {
+        "value": "north america",
+        "frequency": 10
+      },
+      {
+        "value": "northeastern mexico",
+        "frequency": 3
+      },
+      {
+        "value": "northern australia",
+        "frequency": 4
+      },
+      {
+        "value": "northern south america",
+        "frequency": 8
+      },
+      {
+        "value": "oaxaca",
+        "frequency": 5
+      },
+      {
+        "value": "panama",
+        "frequency": 4
+      },
+      {
+        "value": "pantropical",
+        "frequency": 3
+      },
+      {
+        "value": "papua new guinea",
+        "frequency": 6
+      },
+      {
+        "value": "paraguay",
+        "frequency": 3
+      },
+      {
+        "value": "peru",
+        "frequency": 12
+      },
+      {
+        "value": "philippines",
+        "frequency": 8
+      },
+      {
+        "value": "puebla",
+        "frequency": 3
+      },
+      {
+        "value": "puerto rico",
+        "frequency": 3
+      },
+      {
+        "value": "queensland",
+        "frequency": 4
+      },
+      {
+        "value": "sinaloa",
+        "frequency": 5
+      },
+      {
+        "value": "solomon islands",
+        "frequency": 3
+      },
+      {
+        "value": "south africa",
+        "frequency": 7
+      },
+      {
+        "value": "south america",
+        "frequency": 20
+      },
+      {
+        "value": "south asia",
+        "frequency": 4
+      },
+      {
+        "value": "southeast asia",
+        "frequency": 6
+      },
+      {
+        "value": "southern florida",
+        "frequency": 3
+      },
+      {
+        "value": "southern mexico",
+        "frequency": 15
+      },
+      {
+        "value": "southwestern united states",
+        "frequency": 4
+      },
+      {
+        "value": "spain",
+        "frequency": 4
+      },
+      {
+        "value": "sri lanka",
+        "frequency": 8
+      },
+      {
+        "value": "tanzania",
+        "frequency": 3
+      },
+      {
+        "value": "tasmania",
+        "frequency": 3
+      },
+      {
+        "value": "texas",
+        "frequency": 3
+      },
+      {
+        "value": "thailand",
+        "frequency": 4
+      },
+      {
+        "value": "the caribbean",
+        "frequency": 6
+      },
+      {
+        "value": "tropics",
+        "frequency": 4
+      },
+      {
+        "value": "united states",
+        "frequency": 7
+      },
+      {
+        "value": "venezuela",
+        "frequency": 14
+      },
+      {
+        "value": "veracruz",
+        "frequency": 5
+      },
+      {
+        "value": "vietnam",
+        "frequency": 6
+      },
+      {
+        "value": "west africa",
+        "frequency": 4
+      },
+      {
+        "value": "west indies",
+        "frequency": 8
+      },
+      {
+        "value": "western mexico",
+        "frequency": 4
+      }
+    ]
+  }
+}

@@ -2,7 +2,6 @@ from __future__ import annotations
 import logging
 import copy
 from typing import List, Dict, Any, Optional
-
 from pathlib import Path
 import json
 import os
@@ -12,6 +11,7 @@ from typing import get_args, get_origin
 from _internal.sem_map import SemMapStrategy
 from _internal.sem_map import sem_map, expand_sem_map_results_to_tags
 from _internal.chroma_store import ChromaStore
+from _internal.query_planner import LLMQueryPlanner
 from quest_utils import (
     prepare_quest_documents,
     prepare_quest_queries,
@@ -21,7 +21,16 @@ from quest_utils import (
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def expand_metas(metadata: List[Dict[str, Any]], data_rows: List[Dict[str, str]], strategy: SemMapStrategy) -> List[Dict[str, Any]]:
+def expand_metas(
+    metadata: List[Dict[str, Any]], 
+    data_rows: List[Dict[str, str]], 
+    strategy: SemMapStrategy,
+    min_frequency: int = 3
+) -> List[Dict[str, Any]]:
+    """
+    Expand metadata with semantic tags from sem_map.
+    Tags with frequency < min_frequency are NOT upserted to ChromaDB.
+    """
     def _type_to_str(tp: Any) -> str:
         if tp is str: return "str"
         if tp is int: return "int"
@@ -36,40 +45,61 @@ def expand_metas(metadata: List[Dict[str, Any]], data_rows: List[Dict[str, str]]
     api_key = os.environ.get("OPENAI_API_KEY", "").strip()
     if not api_key:
         raise RuntimeError("Missing OPENAI_API_KEY in environment.")
-
     lm = dspy.LM("openai/gpt-5.1", temperature=1.0, max_tokens=16000, api_key=api_key)
     dspy.configure(lm=lm)
 
     here = Path(__file__).resolve().parent
-
-    # Load concepts (final_concepts)
-    concepts_path = here / "tmp/concept_generation_artifacts.json"
+    concepts_path = here / "tmp/clustering_results/concept_generation_artifacts.json"
     obj = json.loads(concepts_path.read_text(encoding="utf-8"))
     concepts = obj["final_concepts"] if isinstance(obj, dict) else obj
     concepts = [" ".join(c.strip().split()) for c in concepts if isinstance(c, str) and c.strip()]
 
     sem_results, concept_schema_cols = sem_map(concepts=concepts, data=data_rows, strategy=strategy)
+    expanded_results, expanded_schema, expanded_stats = expand_sem_map_results_to_tags(sem_results, concept_schema_cols)
 
-    expanded_results, expanded_schema, expanded_stats = expand_sem_map_results_to_tags(
-        sem_results, concept_schema_cols)
+    # expanded_stats already has {tag: {present, total, selectivity}} - use it directly!
+    type_by_name = {s["name"]: s["type"] for s in expanded_schema}
+    frequent_tags = {k for k, s in expanded_stats.items() if s["present"] >= min_frequency}
 
+    # Build filter catalog from expanded_stats (already has frequency/selectivity)
+    # Structure: {base_filter: {type, allowed_values}} for query planning
+    filter_catalog = {}
+    for tag in sorted(frequent_tags):
+        tp = type_by_name[tag]
+        freq = int(expanded_stats[tag]["present"])
+        
+        if tp is bool:
+            # Bool tag "film:topic:murder" -> base="film:topic", value="murder"
+            base, value = tag.rsplit(":", 1)
+            if base not in filter_catalog:
+                filter_catalog[base] = {"type": "bool", "allowed_values": []}
+            filter_catalog[base]["allowed_values"].append({"value": value, "frequency": freq})
+        else:
+            # Scalar (int/float) - collect actual values from expanded_results
+            values = set()
+            for doc_meta in expanded_results.values():
+                v = doc_meta.get(tag)
+                if v is not None:
+                    values.add(v)
+            filter_catalog[tag] = {
+                "type": _type_to_str(tp),
+                "frequency": freq,
+                "allowed_values": sorted(values)
+            }
+
+    logger.info(f"Filters: {len(filter_catalog)} base filters, {len(frequent_tags)} tags (from {len(expanded_stats)})")
+
+    # Merge into metadata (sparse: only True bools, non-null scalars)
     for meta in metadata:
         entity_id = str(meta.get("entity_id", "")).strip()
-        if not entity_id:
-            continue
-
-        expanded_meta = expanded_results.get(entity_id)
-        if not expanded_meta:
-            continue
-
+        expanded_meta = expanded_results.get(entity_id, {})
         for k, v in expanded_meta.items():
-            if isinstance(v, bool):
-                if v:                
-                    meta[k] = True
-            else:
-                if v is not None:
-                    meta[k] = v
+            if k not in frequent_tags:
+                continue
+            if v is not None:
+                meta[k] = v
 
+    # Save outputs
     sem_payload = {
         "strategy": strategy.value,
         "concepts": list(concepts),
@@ -77,24 +107,22 @@ def expand_metas(metadata: List[Dict[str, Any]], data_rows: List[Dict[str, str]]
             {"name": c["name"], "type": _type_to_str(c["type"]), "desc": c.get("desc", "")}
             for c in concept_schema_cols
         ],
-        "results": sem_results[:30],
+        "results": sem_results,
     }
     expanded_payload = {
-        "schema": [
-            {"name": c["name"], "type": _type_to_str(c["type"])}
-            for c in expanded_schema
-        ],
-        "results": expanded_results[:30],
+        "schema": [{"name": c["name"], "type": _type_to_str(c["type"])} for c in expanded_schema],
+        "results": expanded_results,
         "stats": expanded_stats,
     }
 
     sem_out_path = here / "sem_map/quest_sem_map_output.json"
     expanded_out_path = here / "sem_map/quest_sem_map_tagified_output.json"
+    filter_catalog_path = here / "sem_map/filter_catalog.json"
     sem_out_path.parent.mkdir(parents=True, exist_ok=True)
-    expanded_out_path.parent.mkdir(parents=True, exist_ok=True)
 
     sem_out_path.write_text(json.dumps(sem_payload, indent=2, ensure_ascii=False), encoding="utf-8")
     expanded_out_path.write_text(json.dumps(expanded_payload, indent=2, ensure_ascii=False), encoding="utf-8")
+    filter_catalog_path.write_text(json.dumps(filter_catalog, indent=2, ensure_ascii=False), encoding="utf-8")
 
     return metadata
 
@@ -110,13 +138,27 @@ def recall(predicted: List[str], gold: List[str]) -> float:
     covered_docs = gold_set.intersection(predicted_set)
     return len(covered_docs) / len(gold_set)
 
-def create_collections(documents_path: str, collection_name: str, persist_directory: str, if_expand_meta: bool = False) -> ChromaStore:
+def create_collections(documents_path: str, collection_name: str, persist_directory: str, if_expand_meta: bool = False, max_docs: Optional[int] = None) -> ChromaStore:
+    # if if_expand_meta:
+    #     import chromadb
+    #     client = chromadb.PersistentClient(path=persist_directory)
+    #     # Clean up existing collection to ensure fresh start
+    #     if any(c.name == collection_name for c in client.list_collections()):
+    #         client.delete_collection(name=collection_name)
+    
     store = ChromaStore(collection_name=collection_name, persist_directory=persist_directory)
+
+    # Check if collection already has documents
+    existing_count = store.count()
+    if existing_count > 0:
+        logger.info(f"Collection '{collection_name}' already has {existing_count} documents. Skipping ingestion.")
+        return store
 
     logger.info("Preparing documents for ingestion...")
     dataset = prepare_quest_documents(
         jsonl_path=documents_path,
-        index_first_512=True
+        index_first_512=True,
+        max_docs=max_docs
     )
         
     docs_all = []
@@ -135,9 +177,10 @@ def create_collections(documents_path: str, collection_name: str, persist_direct
         
     if if_expand_meta:
         logger.info("Expanding metadata...")
-        metas_all = expand_metas(metas_all, data_rows, SemMapStrategy.HIERARCHY_FIRST)
+        # Tags with frequency < 3 are saved to JSON but not upserted to ChromaDB
+        metas_all = expand_metas(metas_all, data_rows, SemMapStrategy.FLAT, min_frequency=3)
         logger.info("✅ Metadata expanded")
-            
+
     # Upsert all documents at once
     if docs_all:
         store.upsert_documents(documents=docs_all, metadatas=metas_all)
@@ -145,17 +188,13 @@ def create_collections(documents_path: str, collection_name: str, persist_direct
 
     return store
 
-import json
-
-def evaluate_collection(store: ChromaStore, queries: List[QuestQuery], output_path: Optional[str] = None) -> float:
+def evaluate_collection(store: ChromaStore, queries: List[QuestQuery], query_planner: Optional[LLMQueryPlanner] = None, output_path: Optional[str] = None) -> float:
     """
     Evaluates a single ChromaStore collection against a list of queries.
     Returns the average recall.
     If output_path is provided, saves query-level results to a JSONL file.
     """
-    # TODO: LLM-based query rewriter
-    
-    top_k = 100
+    top_k = 20
     
     total_recall = 0.0
     
@@ -168,7 +207,9 @@ def evaluate_collection(store: ChromaStore, queries: List[QuestQuery], output_pa
         return 0.0
     
     for i, q in enumerate(queries):
-        results = store.query(q.query, n_results=top_k)
+        logger.info(f"Query: {q.query}")
+        where_clause = query_planner.plan(q.query) if query_planner else None
+        results = store.query(q.query, n_results=top_k, where_filter=where_clause)
         
         predicted = []
         retrieved_details = []
@@ -186,6 +227,7 @@ def evaluate_collection(store: ChromaStore, queries: List[QuestQuery], output_pa
                 })
         
         score = recall(predicted, q.docs)
+        logger.info(f"Recall@{top_k}: {score}")
         total_recall += score
 
         # Save to file
@@ -214,30 +256,62 @@ def evaluate_collection(store: ChromaStore, queries: List[QuestQuery], output_pa
 
     return total_recall / len(queries) if queries else 0.0
 
-
 if __name__ == "__main__":
+    # Toggle between full dataset and subset
+    USE_SUBSET = True
+    
+    here = Path(__file__).resolve().parent
+    
+    if USE_SUBSET:
+        # Subset configuration (1866 docs, 100 queries)
+        documents_path = str(here / "tmp/subset_documents.jsonl")
+        queries_source = str(here / "tmp/subset_quest_queries.jsonl")
+        collection_suffix = "_subset"
+        max_docs = None  # Use all documents in subset
+    else:
+        # Full dataset configuration
+        documents_path = str(here / "tmp/documents.jsonl")
+        queries_source = "https://storage.googleapis.com/gresearch/quest/val.jsonl"
+        collection_suffix = ""
+        max_docs = 100
+    
     # 1) Base Collection
     # store_base = create_collections(
-    #     documents_path="tmp/documents.jsonl",
-    #     collection_name="quest_base",
+    #     documents_path=documents_path,
+    #     collection_name=f"quest_base{collection_suffix}",
     #     persist_directory="./chroma_collections",
-    #     if_expand_meta=False
+    #     if_expand_meta=False,
+    #     max_docs=max_docs
     # )
+    # print(f"✅ Base collection created")
     
-    # 2) Expanded Collection
+    # # 2) Expanded Collection
     store_expanded = create_collections(
-        documents_path="tmp/documents.jsonl",
-        collection_name="quest_expanded_hierarchy_first",
+        documents_path=documents_path,
+        collection_name=f"quest_expanded_flat{collection_suffix}",
         persist_directory="./chroma_collections",
-        if_expand_meta=True
+        if_expand_meta=True,
+        max_docs=max_docs
+    )
+    print(f"✅ Expanded collection created")
+    
+    # 3) Evaluate
+    queries = prepare_quest_queries(source=queries_source)
+    
+    # Initialize query planner with filter catalog
+    filter_catalog_path = here / "sem_map/filter_catalog.json"
+    query_planner = LLMQueryPlanner(filter_catalog_path) if filter_catalog_path.exists() else None
+    
+    # avg_recall_base = evaluate_collection(
+    #     store_base, queries, 
+    #     output_path=f"quest_eval_results_val_base{collection_suffix}.jsonl"
+    # )
+    avg_recall_expanded = evaluate_collection(
+        store_expanded,
+        queries, 
+        query_planner=query_planner,
+        output_path=f"quest_eval_results_val_expanded{collection_suffix}.jsonl"
     )
     
-    print(f"✅ Expanded collection created")
-    exit(0)
-    # 3) Evaluate
-    queries = prepare_quest_queries(source="https://storage.googleapis.com/gresearch/quest/val.jsonl")
-    # avg_recall_base = evaluate_collection(store_base, queries, output_path="quest_eval_results_val_base.jsonl")
-    avg_recall_expanded = evaluate_collection(store_expanded, queries, output_path="quest_eval_results_val_expanded.jsonl")
-    
-    # print(f"Average Recall (Base Collection): {avg_recall_base:.4f}")
+    # print(f"\nAverage Recall (Base Collection): {avg_recall_base:.4f}")
     print(f"Average Recall (Expanded Collection): {avg_recall_expanded:.4f}")
