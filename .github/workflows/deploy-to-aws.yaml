@@ -128,8 +128,8 @@ jobs:
           echo "Copying homepage files to $HOMEPAGE_PUBLIC_IP"
           sleep 5
 
-          # copy index.html to EC2
-          scp -r -o StrictHostKeyChecking=no -i deployer_key.pem app/index.html .well-known ubuntu@$HOMEPAGE_PUBLIC_IP:~/
+          # copy files to EC2
+          scp -r -o StrictHostKeyChecking=no -i deployer_key.pem app/index.html app/terms-of-service.md app/privacy-statement.md .well-known ubuntu@$HOMEPAGE_PUBLIC_IP:~/
 
           # Copy index.html to the NGINX default location inside the container's volume mount and (re)start container
           ssh -o StrictHostKeyChecking=no -i deployer_key.pem ubuntu@$HOMEPAGE_PUBLIC_IP "
@@ -139,10 +139,12 @@ jobs:
             # Ensure the directory exists in the container and copy files
             sudo docker exec carnot-homepage-nginx mkdir -p /usr/share/nginx/html/.well-known
             sudo docker cp index.html carnot-homepage-nginx:/usr/share/nginx/html/index.html
+            sudo docker cp terms-of-service.md carnot-homepage-nginx:/usr/share/nginx/html/terms-of-service.md
+            sudo docker cp privacy-statement.md carnot-homepage-nginx:/usr/share/nginx/html/privacy-statement.md
             sudo docker cp .well-known/microsoft-identity-association.json carnot-homepage-nginx:/usr/share/nginx/html/.well-known/microsoft-identity-association.json
 
             # Clean up home directory
-            rm -rf index.html .well-known
+            rm -rf index.html terms-of-service.md privacy-statement.md .well-known
 
             sudo docker restart carnot-homepage-nginx
           "
