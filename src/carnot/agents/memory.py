@@ -276,6 +276,37 @@ class SemJoinOperatorStep(MemoryStep):
 
 
 @dataclass
+class SemAggOperatorStep(MemoryStep):
+    task: str
+    output_fields: list[dict]
+    items: list[dict]
+
+    def to_messages(self, summary_mode = False) -> list[ChatMessage]:
+        output_fields_str = "\n".join([
+            f"- {field['name']}" + (f" ({field['type']})" if 'type' in field else "") + f": {field['description']}"
+            for field in self.output_fields
+        ])
+        input_str = json.dumps(self.items, indent=2)
+        content = f"Aggregation Instruction: \"{self.task}\"\n\nOutput Fields:\n{output_fields_str}\n\nInput:\n{input_str}"
+        return [ChatMessage(role=MessageRole.USER, content=[{"type": "text", "text": content}])]
+
+
+@dataclass
+class SemGroupByGroupOperatorStep(MemoryStep):
+    group_by_fields: list[dict]
+    item: dict
+
+    def to_messages(self, summary_mode = False) -> list[ChatMessage]:
+        group_by_fields_str = "\n".join([
+            f"- {field['name']}" + (f" ({field['type']})" if 'type' in field else "") + f": {field['description']}"
+            for field in self.group_by_fields
+        ])
+        input_str = json.dumps(self.item, indent=2)
+        content = f"Group By Fields:\n{group_by_fields_str}\n\nInput:\n{input_str}"
+        return [ChatMessage(role=MessageRole.USER, content=[{"type": "text", "text": content}])]
+
+
+@dataclass
 class SystemPromptStep(MemoryStep):
     system_prompt: str
 
