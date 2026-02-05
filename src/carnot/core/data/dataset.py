@@ -12,14 +12,14 @@ from carnot.core.elements.filters import Filter
 from carnot.core.lib.schemas import create_schema_from_fields, project, relax_schema, union_schemas
 from carnot.operators.logical import (
     Aggregate,
-    ConvertScan,
     Distinct,
     FilteredScan,
     JoinOp,
     LimitScan,
     LogicalOperator,
+    MapScan,
     Project,
-    RetrieveScan,
+    TopK,
 )
 from carnot.policy import construct_policy_from_kwargs
 from carnot.utils.hash_helpers import hash_for_serialized_dict
@@ -331,7 +331,7 @@ class Dataset:
             depends_on = [depends_on]
 
         # construct logical operator
-        operator = ConvertScan(
+        operator = MapScan(
             input_schema=self.schema,
             output_schema=new_output_schema,
             cardinality=cardinality,
@@ -424,7 +424,7 @@ class Dataset:
             depends_on = [depends_on]
 
         # construct logical operator
-        operator = ConvertScan(
+        operator = MapScan(
             input_schema=self.schema,
             output_schema=new_output_schema,
             cardinality=cardinality,
@@ -557,7 +557,7 @@ class Dataset:
         # index = index_factory(index)
 
         # construct logical operator
-        operator = RetrieveScan(
+        operator = TopK(
             input_schema=self.schema,
             output_schema=new_output_schema,
             index=index,
