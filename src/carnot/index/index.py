@@ -108,7 +108,7 @@ class ChromaIndex(CarnotIndex):
 
     def search(self, query: str, k: int) -> list:
         # embed the query
-        response = litellm.embedding(model=self.model, input=[query])
+        response = litellm.embedding(model=self.model, input=[query], api_key=self.api_key)
         query_embedding = response.data[0]["embedding"]
 
         # perform the search
@@ -157,7 +157,7 @@ class FaissIndex(CarnotIndex):
 
     def search(self, query: str, k: int) -> list:
         # embed the query
-        response = litellm.embedding(model=self.model, input=[query])
+        response = litellm.embedding(model=self.model, input=[query], api_key=self.api_key)
         query_embedding = response.data[0]["embedding"]
 
         # perform the search

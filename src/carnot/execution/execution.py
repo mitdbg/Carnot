@@ -192,5 +192,8 @@ class Execution:
         # - list of items (dicts) can be written to a pd.DataFrame --> csv
         # - text can be displayed to the user
         # - for now, assume code state is debug only (exposed in the future)
-        final_dataset_id = operators[-1][0].output_dataset_id
-        return input_datasets[final_dataset_id].items, "The final answer for the query is contained in the output dataset."
+        final_answer_operator = ReasoningOperator(task=self.query, output_dataset_id="final_dataset", model_id="openai/gpt-5-mini", llm_config=self.llm_config)
+        output_datasets = final_answer_operator(input_datasets)
+        final_dataset = output_datasets["final_dataset"]
+
+        return final_dataset.items, final_dataset.code_state.get("final_answer_str", "")

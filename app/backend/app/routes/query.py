@@ -115,267 +115,6 @@ class QueryExecutionStreamer:
         except Exception as e:
             logger.error(f"Heartbeat sender failed: {e}")
 
-    async def _old_run_query_logic(self):
-        """Runs the main query execution logic and puts SSE data into the queue."""
-        conversation_id = None
-
-        try:
-            cleanup_old_sessions()
-
-            session_id = self.session_id or str(uuid4())
-            conversation_id = await get_or_create_conversation(
-                self.user_id, session_id, self.query, self.dataset_ids
-            )
-            await save_message(conversation_id, "user", self.query)
-
-            await self.queue.put(f"data: {json.dumps({'type': 'status', 'message': 'Starting query execution...', 'session_id': session_id})}\n\n")
-            await asyncio.sleep(0.1)
-            await self.queue.put(f"data: {json.dumps({'type': 'status', 'message': 'Loading datasets...'})}\n\n")
-            await asyncio.sleep(0.1)
-
-            async with AsyncSessionLocal() as db:
-                datasets = []
-                for dataset_id in self.dataset_ids:
-                    dataset_result = await db.execute(
-                        select(Dataset).where(Dataset.id == dataset_id)
-                    )
-                    dataset = dataset_result.scalar_one_or_none()
-                    if not dataset:
-                        await self.queue.put(f"data: {json.dumps({'type': 'error', 'message': f'Dataset {dataset_id} not found'})}\n\n")
-                        return
-
-                    files_result = await db.execute(
-                        select(FileRecord)
-                        .join(DatasetFile, FileRecord.id == DatasetFile.file_id)
-                        .where(DatasetFile.dataset_id == dataset_id)
-                    )
-                    files = files_result.scalars().all()
-                    datasets.append([file.file_path for file in files])
-
-            await self.queue.put(f"data: {json.dumps({'type': 'status', 'message': f'Loaded {len(datasets)} dataset(s)'})}\n\n")
-            await asyncio.sleep(0.1)
-
-            all_files = [
-                S3Path(path) if path.startswith("s3://") else Path(path)
-                for dataset in datasets
-                for path in dataset
-            ]
-            if not all_files:
-                await self.queue.put(f"data: {json.dumps({'type': 'error', 'message': 'No files found in selected datasets'})}\n\n")
-                return
-
-            await self.queue.put(f"data: {json.dumps({'type': 'status', 'message': f'Processing {len(all_files)} files...'})}\n\n")
-            await asyncio.sleep(0.1)
-
-            session_exists = session_id in active_sessions
-            if session_exists and set(active_sessions[session_id]["dataset_ids"]) != set(self.dataset_ids):
-                session_exists = False
-
-            session_dir = Path(BASE_DIR, ".sessions", session_id) if IS_LOCAL_ENV else S3Path(BASE_DIR, ".sessions", session_id)
-            file_service.create_dir(str(session_dir))
-
-            await self.queue.put(f"data: {json.dumps({'type': 'status', 'message': 'Preparing data context...'})}\n\n")
-            await asyncio.sleep(0.1)
-
-            # TODO: remove this and place file check into Carnot context
-            if not session_exists:
-                text_file_count = 0
-                for file_path in all_files:
-                    if file_path.suffix.lower() in {".jpg", ".jpeg", ".png", ".gif", ".zip", ".exe", ".bin"}:
-                        continue
-                    text_file_count += 1
-
-                if text_file_count == 0:
-                    await self.queue.put(f"data: {json.dumps({'type': 'error', 'message': 'No text files found in selected datasets'})}\n\n")
-                    return
-
-                await self.queue.put(f"data: {json.dumps({'type': 'status', 'message': f'Processing {text_file_count} text files...'})}\n\n")
-                await asyncio.sleep(0.1)
-            else:
-                await self.queue.put(f"data: {json.dumps({'type': 'status', 'message': 'Continuing conversation...'})}\n\n")
-                await asyncio.sleep(0.1)
-
-            if session_exists:
-                ctx = active_sessions[session_id]["context"]
-            else:
-                context_id = f"session_{session_id[:8]}"
-                ctx = carnot.TextFileContext(
-                    paths=[str(fp) for fp in all_files],
-                    id=context_id,
-                    description=f"Query on {len(datasets)} dataset(s)",
-                    llm_config=self.user_config,
-                )
-
-            await self.queue.put(f"data: {json.dumps({'type': 'status', 'message': f'Executing query: {self.query}'})}\n\n")
-            await asyncio.sleep(0.1)
-
-            # setup progress logging and clear old progress log if it exists
-            fs = fsspec.filesystem(FILESYSTEM)
-            progress_log = str(Path(session_dir, "progress.jsonl") if IS_LOCAL_ENV else str(S3Path(session_dir, "progress.jsonl")))
-            if fs.exists(progress_log):
-                fs.rm(progress_log, recursive=False)
-
-            compute_ctx = ctx.compute(self.query)
-            config = carnot.QueryProcessorConfig(
-                policy=carnot.MaxQuality(),
-                llm_config=self.user_config,
-                progress=True,  # Enable console progress
-                session_id=session_id,  # Add session ID for tracking
-                progress_log_file=progress_log,  # Add progress log file path
-            )
-
-            await self.queue.put(f"data: {json.dumps({'type': 'status', 'message': 'Running Carnot query processor...'})}\n\n")
-            await asyncio.sleep(0.1)
-
-            output_log = str(Path(session_dir, "output.txt") if IS_LOCAL_ENV else str(S3Path(session_dir, "output.txt")))
-            if fs.exists(output_log):
-                fs.rm(output_log, recursive=False)
-
-            original_stdout = sys.stdout
-            original_stderr = sys.stderr
-
-            stdout_capture = OutputCapture(output_log, original_stdout)
-            stderr_capture = OutputCapture(output_log, original_stderr)
-
-            current_local_output_path = (
-                output_log
-                if IS_LOCAL_ENV
-                else str(stdout_capture.temp_filepath)
-            )
-
-            active_sessions[session_id] = {
-                "context": None,
-                "last_access": datetime.now(),
-                "dataset_ids": self.dataset_ids,
-                "session_dir": str(session_dir),
-                "local_output_path": current_local_output_path,
-            }
-
-            def run_query_with_capture():
-                local_output_path = None
-                try:
-                    sys.stdout = stdout_capture
-                    sys.stderr = stderr_capture
-                    return compute_ctx.run(config=config)
-                finally:
-                    sys.stdout = original_stdout
-                    sys.stderr = original_stderr
-                    stdout_capture.close()
-                    stderr_capture.close()
-
-                    # Note: We only need to upload one file since both stdout and stderr write to the same file in OutputCapture
-                    local_output_path = stdout_capture.temp_filepath
-                    if not IS_LOCAL_ENV and local_output_path and Path(local_output_path).exists():
-                        s3_fs = fsspec.filesystem("s3")
-                        try:
-                            s3_fs.put(str(local_output_path), output_log)
-                        except Exception as e:
-                            original_stderr.write(f"Error uploading output.txt to S3: {e}\n")
-                        finally:
-                            # clean up the local temp file
-                            Path(local_output_path).unlink(missing_ok=True)
-
-            loop = asyncio.get_event_loop()
-            output = await loop.run_in_executor(None, run_query_with_capture)
-
-            active_sessions[session_id]["context"] = compute_ctx
-
-            plan_text = extract_plan_from_output(output)
-            if plan_text:
-                await save_message(conversation_id, "plan", plan_text)
-                await self.queue.put(f"data: {json.dumps({'type': 'plan', 'message': plan_text, 'session_id': session_id})}\n\n")
-                await asyncio.sleep(0.1)
-
-            await self.queue.put(f"data: {json.dumps({'type': 'status', 'message': 'Processing results...'})}\n\n")
-            await asyncio.sleep(0.1)
-
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            csv_filename = f"query_results_{timestamp}.csv"
-            results_dir = Path(BASE_DIR, ".results") if IS_LOCAL_ENV else S3Path(BASE_DIR, ".results")
-            file_service.create_dir(str(results_dir))
-            csv_path = results_dir / csv_filename
-            fs = fsspec.filesystem(FILESYSTEM)
-
-            try:
-                # First, save to our timestamp-based file
-                df = output.to_df()
-                with fs.open(str(csv_path), 'w', encoding='utf-8') as f:
-                    df.to_csv(f, index=False)
-
-                # Try to extract the actual filename from Carnot's output
-                csv_filename_from_output = None
-                if not df.empty:
-                    # Check all columns for CSV filename mentions
-                    csv_pattern = r'\b([a-zA-Z0-9_\-]+\.csv)\b'
-                    for col in df.columns:
-                        for value in df[col]:
-                            if isinstance(value, str):
-                                matches = re.findall(csv_pattern, value, re.IGNORECASE)
-                                if matches:
-                                    csv_filename_from_output = matches[-1]
-                                    break
-                        if csv_filename_from_output:
-                            break
-
-                    # If we found a filename, check if that file exists and use it
-                    if csv_filename_from_output:
-                        actual_csv_path = BACKEND_ROOT / csv_filename_from_output
-                        if actual_csv_path.exists() and actual_csv_path != csv_path:
-                            # Use the file that Carnot created
-                            csv_filename = csv_filename_from_output
-                            csv_path = actual_csv_path
-                            df = pd.read_csv(csv_path)  # Re-read from the actual file
-                        else:
-                            # File doesn't exist, rename our file to match
-                            csv_path.rename(actual_csv_path)
-                            csv_path = actual_csv_path
-                            csv_filename = csv_filename_from_output
-
-                if df.empty:
-                    message_text = "No results found for your query."
-                    await save_message(conversation_id, "result", message_text)
-                    await self.queue.put(f"data: {json.dumps({'type': 'result', 'message': message_text, 'session_id': session_id})}\n\n")
-                else:
-                    if len(df.columns) >= 2:
-                        result_column = df.iloc[:, 1]
-                        lines = [
-                            f"  {index + 1}. {value}"
-                            for index, value in enumerate(result_column.tolist())
-                        ]
-                        body = "\n".join(lines)
-                    else:
-                        body = df.to_string(index=False)
-
-                    message_text = (
-                        "Query completed successfully!\n\n"
-                        f"Found {len(df)} result(s):\n\n{body}"
-                    )
-                    await save_message(
-                        conversation_id, "result", message_text, csv_filename, len(df)
-                    )
-                    await self.queue.put(f"data: {json.dumps({'type': 'result', 'message': message_text, 'csv_file': csv_filename, 'row_count': len(df), 'session_id': session_id})}\n\n")
-
-            except Exception as exc:
-                logger.exception("Error processing query results")
-                error_msg = f"Error processing results: {exc}"
-                await save_message(conversation_id, "error", error_msg)
-                await self.queue.put(f"data: {json.dumps({'type': 'error', 'message': error_msg})}\n\n")
-
-            await self.queue.put(f"data: {json.dumps({'type': 'done', 'message': 'Query execution complete'})}\n\n")
-
-        except Exception as exc:
-            logger.exception("Query execution failed")
-            error_msg = f"Error executing query: {exc}"
-            if conversation_id is not None:
-                try:
-                    await save_message(conversation_id, "error", error_msg)
-                except Exception:
-                    logger.exception("Failed to save error message")
-            await self.queue.put(f"data: {json.dumps({'type': 'error', 'message': error_msg})}\n\n")
-        finally:
-            # Signal the consumer in stream_response_iterator to stop iterating
-            await self.queue.put(None)
-
     async def _run_query_logic(self):
         """Runs the main query execution logic and puts SSE data into the queue."""
         conversation_id = None
@@ -566,10 +305,28 @@ class QueryExecutionStreamer:
                 with fs.open(str(csv_path), 'w', encoding='utf-8') as f:
                     df.to_csv(f, index=False)
 
-                if df.empty:
+                if df.empty and (not answer or answer.strip() == ""):
                     message_text = "No results found for your query."
                     await save_message(conversation_id, "result", message_text)
                     await self.queue.put(f"data: {json.dumps({'type': 'result', 'message': message_text, 'session_id': session_id})}\n\n")
+                elif df.empty:
+                    message_text = (
+                        "Query completed successfully!\n\n"
+                        f"Answer Text: {answer}\n\n"
+                        "No tabular results found."
+                    )
+                    await save_message(conversation_id, "result", message_text)
+                    await self.queue.put(f"data: {json.dumps({'type': 'result', 'message': message_text, 'session_id': session_id})}\n\n")
+                elif not answer or answer.strip() == "":
+                    body = str(df.head())
+                    message_text = (
+                        "Query completed successfully!\n\n"
+                        f"Found {len(df)} result(s):\n\n{body}\n..."
+                    )
+                    await save_message(
+                        conversation_id, "result", message_text, csv_filename, len(df),
+                    )
+                    await self.queue.put(f"data: {json.dumps({'type': 'result', 'message': message_text, 'csv_file': csv_filename, 'row_count': len(df), 'session_id': session_id})}\n\n")
                 else:
                     body = str(df.head())
                     message_text = (

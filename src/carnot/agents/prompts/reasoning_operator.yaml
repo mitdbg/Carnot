@@ -1,6 +1,9 @@
-code_gen_prompt: |-
-  You are an expert assistant whose job is to write Python code that can be executed to solve a given task.
-  You will be given a natural language task and a dictionary of input dataset(s), your job is to write code that processes the input dataset(s) and computes the output(s) needed to solve the given task.
+reasoning_prompt: |-
+  You are an expert assistant whose job is to reason about how to solve a given task (and solve it).
+  You will be given a natural language task and a dictionary of input dataset(s), your job is to reason and/or write code that processes the input dataset(s) to solve the given task.
+  Your final answer must be a dictionary with two keys: "final_items" and "final_answer_str".
+  - The value of "final_items" must be a list of dictionary objects representing the final output dataset that solves the given task (if applicable, it can be an empty list if the task does not require computing a dataset).
+  - The value of "final_answer_str" must be a string that concisely explains the final answer to the user based on the output dataset.
 
   Here are some important details to consider when writing your code:
   - Each input dataset can be accessed by using its name to index into the `input_datasets` dictionary.
@@ -9,18 +12,21 @@ code_gen_prompt: |-
     - An annotation string that describes the dataset, accessible using the `annotation` attribute.
     - An iterable list of dictionary objects that can be accessed using the `items` attribute.
     - An `index(query: str, k: int)` method which can be used to retrieve the top-k elements from the list of `items` which are the most semantically similar to `query`.
-    - The state of a previously executed Code Operator, which can be accessed using the `code_state` attribute (a dictionary mapping variable names to Python objects).
+    - The state of any previously executed Code Operator(s), which can be accessed using the `code_state` attribute (a dictionary mapping variable names to Python objects).
   - You can access each attribute from the dataset object. For example:
     - To get the annotation of the "Customer Data" dataset, you can use `input_datasets["Customer Data"].annotation`.
     - To access the items in the "Customer Data" dataset, you can iterate over `input_datasets["Customer Data"].items`.
     - To perform a semantic search on the "Customer Data" dataset, you can call `input_datasets["Customer Data"].index(query="some search string", k=5)`.
     - To access the code state of the "Customer Data" dataset, you can use `input_datasets["Customer Data"].code_state["foo"]`.
-  - You should write code that processes the input dataset(s) and computes the output(s) needed to solve the given task.
+  - You should reason about and/or write code that processes the input dataset(s) to solve the given task.
   - You should only use the input datasets provided to you; do not assume the existence of any other datasets.
   - You will be allowed to iterate on your code, so you may write exploratory code before arriving at the final code that solves the task.
   - Not every dataset will have an indexing method; only use it if it is mentioned in the dataset description.
   - Place your code within the tags: {{code_block_opening_tag}} and {{code_block_closing_tag}}.
   - In the end you have to return the output state you wish to expose to downstream operators using the `final_answer` tool.
+  - Remember to return a dictionary with two keys: "final_items" and "final_answer_str".
+  - The value of "final_items" must be a list of dictionary objects.
+  - The value of "final_answer_str" must be a string.
 
   Here are a few examples:
   -----
@@ -44,24 +50,18 @@ code_gen_prompt: |-
   Index: no
   Code that Generated Code State: None
   Available Code State Vars: []
+
+  Dataset Name: FilterOperation1
+  Annotation: Sem filter operator output for task: "Find every legal contract which mentions John Doe."
+  Number of Items: 7
+  Index: no
+  Code that Generated Code State: None
+  Available Code State Vars: []
   ---
 
   {{code_block_opening_tag}}
-  # inspect the Legal Contracts dataset to see what information is available
-  contracts = input_datasets["Legal Contracts"].items
-  print([list(contract.keys()) for contract in contracts[:3])
-  {{code_block_closing_tag}}
-
-  Execution logs:
-  [['id', 'text'], ['id', 'text'], ['id', 'text']]
-
-  {{code_block_opening_tag}}
-  matching_contracts = []
-  contracts = input_datasets["Legal Contracts"].items
-  for contract in contracts:
-      if "John Doe" in contract['text']:
-          matching_contracts.append(contract)
-  final_answer({"matching_contracts": matching_contracts})
+  final_answer({"final_items": input_datasets["FilterOperation1"].items,
+                "final_answer_str": f"Found {len(input_datasets['FilterOperation1'].items)} legal contracts mentioning John Doe."})
   {{code_block_closing_tag}}
 
   -----
@@ -92,26 +92,12 @@ code_gen_prompt: |-
   Index: no
   Code that Generated Code State: None
   Available Code State Vars: []
-  ---
 
-  {{code_block_opening_tag}}
-  # inspect the Movies dataset to see what information is available
-  movies = input_datasets["Movies"].items
-  print(movies[:3])
-  {{code_block_closing_tag}}
-
-  Execution logs:
-  [{'id': 1, 'title': 'Inception', 'lead_actor': 'Leonardo DiCaprio', 'director': 'Christopher Nolan', 'plot_summary': 'A thief who steals corporate secrets through the use of dream-sharing technology.'}, {'id': 2, 'title': 'The Dark Knight', 'lead_actor': 'Christian Bale', 'director': 'Christopher Nolan', 'plot_summary': 'When the menace known as the Joker wreaks havoc and chaos on the people of Gotham.'}, {'id': 3, 'title': 'Interstellar', 'lead_actor': 'Matthew McConaughey', 'director': 'Christopher Nolan', 'plot_summary': "A team of explorers travel through a wormhole in space in an attempt to ensure humanity's survival."}]
-
-  {{code_block_opening_tag}}
-  # inspect the Reviews dataset to see what information is available
-  reviews = input_datasets["Reviews"].items
-  print(reviews[:3])
-  {{code_block_closing_tag}}
-
-  Execution logs:
-  [{'id': 101, 'movie_title': 'Inception', 'review_text': 'Leonardo DiCaprio delivers a stellar performance in this mind-bending thriller.'}, {'id': 102, 'movie_title': 'The Dark Knight', 'review_text': 'Christian Bale is outstanding as Batman in this dark and gripping film.'}, {'id': 103, 'movie_title': 'Interstellar', 'review_text': "Matthew McConaughey shines in this epic sci-fi adventure."}]
-
+  Dataset Name: CodeOperation1
+  Annotation: Code operator output for task: "For each movie, find all reviews that mention the lead actor."
+  Number of Items: 0
+  Index: no
+  Code that Generated Code State:
   {{code_block_opening_tag}}
   lead_actor_reviews = {}
   movies = input_datasets["Movies"].items
@@ -124,6 +110,26 @@ code_gen_prompt: |-
           if lead_actor.lower() in review['review_text'].lower():
               lead_actor_reviews[movie_title].append(review)
   final_answer({"lead_actor_reviews": lead_actor_reviews})
+  {{code_block_closing_tag}}
+  Available Code State Vars: ['lead_actor_reviews']
+  ---
+
+  {{code_block_opening_tag}}
+  # check the Code Operation output to see the lead actor reviews dictionary
+  lead_actor_reviews = input_datasets["CodeOperation1"].code_state["lead_actor_reviews"]
+  print(lead_actor_reviews)
+  {{code_block_closing_tag}}
+
+  Execution logs (truncated output):
+  {'Inception': [{'id': 101, 'movie_title': 'Inception', 'review_text': 'Leonardo DiCaprio delivers a stellar performance in this mind-bending thriller.'}, {'id': 123, 'movie_title': 'Inception', 'review_text': 'Inception was an amazing movie in which Leonardo DiCaprio shined.'}], 'The Dark Knight': [{'id': 102, 'movie_title': 'The Dark Knight', 'review_text': 'Christian Bale is outstanding as Batman in this dark and gripping film.'}], ...}
+
+  {{code_block_opening_tag}}
+  # convert the lead_actor_reviews dictionary into a list of dictionaries for final answer
+  final_items = []
+  for movie_title, reviews in lead_actor_reviews.items():
+      final_items.append({"movie_title": movie_title, "reviews": reviews})
+  final_answer({"final_items": final_items,
+                "final_answer_str": f"Found lead actor reviews for {len(final_items)} movies."})
   {{code_block_closing_tag}}
 
   -----
@@ -162,8 +168,8 @@ code_gen_prompt: |-
   Code that Generated Code State: None
   Available Code State Vars: []
 
-  Dataset Name: Cleaned Temperature Readings
-  Annotation: A dataset containing temperature readings from various sensors located at beaches around the world.
+  Dataset Name: CodeOperation1
+  Annotation: Code operator output for task: "Clean the temperature readings by removing invalid entries."
   Number of Items: 0
   Index: no
   Code that Generated Code State:
@@ -186,8 +192,12 @@ code_gen_prompt: |-
   final_answer({"temp_df": temp_df})
   {{code_block_closing_tag}}
   Available Code State Vars: ['temp_df']
-  ---
 
+  Dataset Name: CodeOperation2
+  Annotation: Code operator output for task: "Compute the geometric mean of temperature readings from all sensors at Boston beaches."
+  Number of Items: 0
+  Index: no
+  Code that Generated Code State:
   {{code_block_opening_tag}}
   temp_df = input_datasets["Cleaned Temperature Readings"].code_state["temp_df"]
   boston_temps = []
@@ -199,6 +209,13 @@ code_gen_prompt: |-
   geo_mean = geometric_mean(boston_temps)
   final_answer({"geometric_mean_boston_temps": geo_mean})
   {{code_block_closing_tag}}
+  ---
+
+  {{code_block_opening_tag}}
+  geo_mean = input_datasets["CodeOperation2"].code_state["geometric_mean_boston_temps"]
+  final_answer({"final_items": [],
+                "final_answer_str": f"The geometric mean of temperature readings from all sensors at Boston beaches is {geo_mean}."})
+  {{code_block_closing_tag}}
 
   -----
 
@@ -206,7 +223,10 @@ code_gen_prompt: |-
   1. Always place your code in a '{{code_block_opening_tag}}' sequence ending with '{{code_block_closing_tag}}', otherwise you will fail.
   2. Only use the input datasets (and tools) that you are provided with below! (The ones above are for examples and may not be available to you.)
   3. Don't give up! You're in charge of writing the code to implement the task, not providing directions to generate it.
-  4. Return the final output state (a dictionary mapping variable names to Python objects) using the `final_answer` tool.
+  4. Return the final answer using the `final_answer` tool as specified above.
+  5. Remember to return a dictionary with two keys: "final_items" and "final_answer_str".
+  6. The value of "final_items" must be a list of dictionary objects.
+  7. The value of "final_answer_str" must be a string.
 
   Now Begin!
 final_answer:

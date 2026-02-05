@@ -133,7 +133,7 @@ class SemGroupByOperator:
         """
         memory = AgentMemory("")
         memory.system_prompt = SystemPromptStep(system_prompt=system_prompt)
-        memory.steps.append(SemAggOperatorStep(task="Apply the aggregation(s) specified in Output Fields over the Input.", output_fields=self._sem_agg_fields, items=items))
+        memory.steps.append(SemAggOperatorStep(task="Apply the aggregation(s) specified in Output Fields over the Input.", agg_fields=self._sem_agg_fields, items=items))
 
         output_json, step_number = None, 0
         while output_json is None and step_number < self.max_steps:

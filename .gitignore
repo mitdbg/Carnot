@@ -220,3 +220,5 @@ venv_web/
 backend.log
 frontend.log
 secrets/
+how-tos/
+
