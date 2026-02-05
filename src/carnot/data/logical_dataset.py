@@ -6,9 +6,15 @@ class LogicalDataset:
         self.name = name
         self.parents = parents or []
         self.params = kwargs
+        self.output_dataset_id = kwargs.get("output_dataset_id") or name
 
     def serialize(self) -> dict:
-        return {"name": self.name, "params": self.params, "parents": [p.serialize() for p in self.parents]}
+        return {
+            "name": self.name,
+            "output_dataset_id": self.output_dataset_id,
+            "params": self.params,
+            "parents": [p.serialize() for p in self.parents],
+        }
 
     def merge(self, other: LogicalDataset) -> LogicalDataset:
         """
@@ -16,7 +22,7 @@ class LogicalDataset:
         """
         merged_name = f"{self.name}_merged_with_{other.name}"
         params = {"operator": "Merge", "description": f"Merged {self.name} with {other.name}"}
-        return LogicalDataset(merged_name, parents=[self, other], **params)
+        return LogicalDataset(merged_name, parents=[self, other], output_dataset_id=merged_name, **params)
 
     def code(self, task: str) -> LogicalDataset:
         """
@@ -24,7 +30,7 @@ class LogicalDataset:
         """
         coded_name = f"{self.name}_coded_for_{task}"
         params = {"operator": "Code", "description": f"Coded {self.name} for task: {task}", "task": task}
-        return LogicalDataset(coded_name, parents=[self], **params)
+        return LogicalDataset(coded_name, parents=[self], output_dataset_id=coded_name, **params)
 
     def reason(self, task: str) -> LogicalDataset:
         """
@@ -32,7 +38,18 @@ class LogicalDataset:
         """
         reasoned_name = f"{self.name}_reasoned_for_{task}"
         params = {"operator": "Reason", "description": f"Reasoned {self.name} for task: {task}", "task": task}
-        return LogicalDataset(reasoned_name, parents=[self], **params)
+        return LogicalDataset(reasoned_name, parents=[self], output_dataset_id=reasoned_name, **params)
+
+    def sem_aggregate(self, task: str, agg_fields: list[dict]) -> LogicalDataset:
+        """
+        Apply a semantic aggregation to the dataset based on the given aggregation fields.
+        """
+        agg_field_names = [field['name'] for field in agg_fields]
+        agg_name = f"{self.name}_aggregated_on_{'_'.join(agg_field_names)}"
+        for field_dict in agg_fields:
+            field_dict["type"] = field_dict["type"].__name__
+        params = {"operator": "SemanticAgg", "description": f"Aggregated {self.name} on fields: {agg_fields}", "task": task, "agg_fields": agg_fields}
+        return LogicalDataset(agg_name, parents=[self], output_dataset_id=agg_name, **params)
 
     def sem_filter(self, condition: str) -> LogicalDataset:
         """
@@ -40,7 +57,7 @@ class LogicalDataset:
         """
         filtered_name = f"{self.name}_filtered_by_{condition}"
         params = {"operator": "SemanticFilter", "description": f"Filtered {self.name} by condition: {condition}", "condition": condition}
-        return LogicalDataset(filtered_name, parents=[self], **params)
+        return LogicalDataset(filtered_name, parents=[self], output_dataset_id=filtered_name, **params)
 
     def sem_map(self, field: str, type: type, description: str) -> LogicalDataset:
         """
@@ -54,7 +71,7 @@ class LogicalDataset:
             "type": type.__name__,
             "field_desc": description,
         }
-        return LogicalDataset(mapped_name, parents=[self], **params)
+        return LogicalDataset(mapped_name, parents=[self], output_dataset_id=mapped_name, **params)
 
     def sem_flat_map(self, field: str, type: type, description: str) -> LogicalDataset:
         """
@@ -68,21 +85,26 @@ class LogicalDataset:
             "type": type.__name__,
             "field_desc": description,
         }
-        return LogicalDataset(flat_mapped_name, parents=[self], **params)
+        return LogicalDataset(flat_mapped_name, parents=[self], output_dataset_id=flat_mapped_name, **params)
 
-    def sem_groupby(self, gby_fields: list[str], agg_fields: list[str], agg_funcs: list[str]) -> LogicalDataset:
+    def sem_groupby(self, gby_fields: list[dict], agg_fields: list[dict]) -> LogicalDataset:
         """
         Apply a semantic group by operation to the dataset.
         """
-        gby_name = f"{self.name}_grouped_by_{'_'.join(gby_fields)}"
+        gby_field_names = [field['name'] for field in gby_fields]
+        agg_field_names = [field['name'] for field in agg_fields]
+        gby_name = f"{self.name}_grouped_by_{'_'.join(gby_field_names)}"
+        for field_dict in gby_fields:
+            field_dict["type"] = field_dict["type"].__name__
+        for field_dict in agg_fields:
+            field_dict["type"] = field_dict["type"].__name__
         params = {
             "operator": "SemanticGroupBy",
-            "description": f"Grouped {self.name} by fields {gby_fields} with aggregations on {agg_fields} using functions {agg_funcs}",
+            "description": f"Grouped {self.name} by fields {gby_field_names} with aggregations on {agg_field_names}",
             "gby_fields": gby_fields,
             "agg_fields": agg_fields,
-            "agg_funcs": agg_funcs,
         }
-        return LogicalDataset(gby_name, parents=[self], **params)
+        return LogicalDataset(gby_name, parents=[self], output_dataset_id=gby_name, **params)
 
     def sem_join(self, other: LogicalDataset, condition: str) -> LogicalDataset:
         """
@@ -94,4 +116,17 @@ class LogicalDataset:
             "description": f"Joined {self.name} with {other.name} on condition: {condition}",
             "condition": condition,
         }
-        return LogicalDataset(joined_name, parents=[self, other], **params)
+        return LogicalDataset(joined_name, parents=[self, other], output_dataset_id=joined_name, **params)
+
+    def sem_topk(self, search_str: str, k: int = 5) -> LogicalDataset:
+        """
+        Apply a semantic top-k operation with the given search string and k value.
+        """
+        top_k_name = f"{self.name}_top_k={k}_for_{search_str}"
+        params = {
+            "operator": "SemanticTopK",
+            "description": f"Top-{k} items from {self.name} for search string: {search_str}",
+            "search_str": search_str,
+            "k": k,
+        }
+        return LogicalDataset(top_k_name, parents=[self], output_dataset_id=top_k_name, **params)

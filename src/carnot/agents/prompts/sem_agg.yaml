@@ -12,7 +12,7 @@ sem_agg_prompt: |-
   -----
   Aggregation Instruction: "Count the distinct number of scientists in the input."
 
-  Output Fields:
+  Aggregation Output Fields:
   - count (int): the distinct number of scientists
 
   Input:
@@ -44,7 +44,7 @@ sem_agg_prompt: |-
   -----
   Aggregation Instruction: "Output the most common movie review sentiment (POSITIVE or NEGATIVE) and the largest box office haul."
 
-  Output Fields:
+  Aggregation Output Fields:
   - sentiment (str): the most common sentiment among the movie reviews
   - box_office_usd (int): the largest amount of money made at the box office
 
@@ -80,7 +80,7 @@ sem_agg_prompt: |-
   -----
   Aggregation Instruction: "Output the total number of identity thefts in the years 2020 to 2024 inclusive."
 
-  Output Fields:
+  Aggregation Output Fields:
   - num_identity_thefts (int): number of identity thefts in 2020-2024
 
   Input:

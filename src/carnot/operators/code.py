@@ -56,9 +56,10 @@ class CodeOperator:
     """
     Represents a code execution operator.
     """
-    def __init__(self, task: str, model_id: str, tools: list[Tool] | None = None, additional_authorized_imports: list[str] | None = None, max_steps: int = 20):
+    def __init__(self, task: str, output_dataset_id: str, model_id: str, llm_config: dict, tools: list[Tool] | None = None, additional_authorized_imports: list[str] | None = None, max_steps: int = 20):
         self.task = task
-        self.model = LiteLLMModel(model_id=model_id)
+        self.output_dataset_id = output_dataset_id
+        self.model = LiteLLMModel(model_id=model_id, api_key=llm_config.get("OPENAI_API_KEY"))
         self.additional_authorized_imports = additional_authorized_imports if additional_authorized_imports else []
         self.authorized_imports = sorted(set(BASE_BUILTIN_MODULES) | set(self.additional_authorized_imports))
         self.code_block_tags = ["```python", "```"]
@@ -348,11 +349,7 @@ class CodeOperator:
 
 
         # create new dataset and return it with the input datasets
-        name, idx = "CodeOperatorOutput", 0
-        while name in input_datasets:
-            idx += 1
-            name = f"CodeOperatorOutput_{idx}"
-        output_dataset = Dataset(name=name, annotation=f"Code operator output for task: {self.task}", code=output_code, code_state=output_state)
+        output_dataset = Dataset(name=self.output_dataset_id, annotation=f"Code operator output for task: {self.task}", code=output_code, code_state=output_state)
         output_datasets = {**input_datasets, output_dataset.name: output_dataset}
 
         return output_datasets

@@ -7,10 +7,12 @@ class SemTopKOperator:
     """
     Represents a semantic top-k operator.
     """
-    def __init__(self, task: str, k: int, max_workers: int, model_id: str = "openai/text-embedding-3-small", index_type: str = "chroma"):
+    def __init__(self, task: str, k: int, output_dataset_id: str, max_workers: int, model_id: str = "openai/text-embedding-3-small", llm_config: dict | None = None, index_type: str = "chroma"):
         self.task = task
+        self.output_dataset_id = output_dataset_id
         self.k = k
         self.model_id = model_id
+        self.api_key = llm_config.get("OPENAI_API_KEY")
         # self.max_workers = max_workers
         self.index_cls = ChromaIndex if index_type == "chroma" else FaissIndex
         # self.prompt_templates = yaml.safe_load(
@@ -29,7 +31,7 @@ class SemTopKOperator:
         # check if the dataset has an index constructed and construct one on-the-fly if not
         if not input_dataset.has_index():
             name = f"{hash_for_id(input_dataset.name)}_{hash_for_id(self.task)}"
-            index = self.index_cls(name=name, items=input_dataset.items, model=self.model_id)
+            index = self.index_cls(name=name, items=input_dataset.items, model=self.model_id, api_key=self.api_key)
             input_dataset._index = index
 
         # invoke the index() method on the dataset to retrieve items
@@ -58,11 +60,7 @@ class SemTopKOperator:
         # results = [fut.result() for fut in done_futures]
 
         # create new dataset and return it with the input datasets
-        name, idx = "SemTopKOperatorOutput", 0
-        while name in input_datasets:
-            idx += 1
-            name = f"SemTopKOperatorOutput_{idx}"
-        output_dataset = Dataset(name=name, annotation=f"Sem Top-K operator output for task: {self.task}", items=results)
+        output_dataset = Dataset(name=self.output_dataset_id, annotation=f"Sem Top-K operator output for task: {self.task}", items=results)
         output_datasets = {**input_datasets, output_dataset.name: output_dataset}
 
         return output_datasets

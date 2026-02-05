@@ -27,10 +27,11 @@ class SemMapOperator:
     """
     Represents a semantic map operator.
     """
-    def __init__(self, task: str, output_fields: list[dict], model_id: str, max_workers: int, max_steps: int = 3):
+    def __init__(self, task: str, output_fields: list[dict], output_dataset_id: str, model_id: str, llm_config: dict, max_workers: int, max_steps: int = 3):
         self.task = task
+        self.output_dataset_id = output_dataset_id
         self.output_fields = output_fields
-        self.model = LiteLLMModel(model_id=model_id)
+        self.model = LiteLLMModel(model_id=model_id, api_key=llm_config.get("OPENAI_API_KEY"))
         self.max_workers = max_workers
         self.prompt_templates = yaml.safe_load(
             resources.files("carnot.agents.prompts").joinpath("sem_map.yaml").read_text()
@@ -140,11 +141,7 @@ class SemMapOperator:
         results = [fut.result() for fut in done_futures]
 
         # create new dataset and return it with the input datasets
-        name, idx = "SemMapOperatorOutput", 0
-        while name in input_datasets:
-            idx += 1
-            name = f"SemMapOperatorOutput_{idx}"
-        output_dataset = Dataset(name=name, annotation=f"Sem map operator output for task: {self.task}", items=results)
+        output_dataset = Dataset(name=self.output_dataset_id, annotation=f"Sem map operator output for task: {self.task}", items=results)
         output_datasets = {**input_datasets, output_dataset.name: output_dataset}
 
         return output_datasets

@@ -27,9 +27,10 @@ class SemJoinOperator:
     """
     Represents a semantic join operator.
     """
-    def __init__(self, task: str, model_id: str, max_workers: int, max_steps: int = 3):
+    def __init__(self, task: str, model_id: str, llm_config: dict, output_dataset_id: str, max_workers: int, max_steps: int = 3):
         self.task = task
-        self.model = LiteLLMModel(model_id=model_id)
+        self.output_dataset_id = output_dataset_id
+        self.model = LiteLLMModel(model_id=model_id, api_key=llm_config.get("OPENAI_API_KEY"))
         self.max_workers = max_workers
         self.prompt_templates = yaml.safe_load(
             resources.files("carnot.agents.prompts").joinpath("sem_join.yaml").read_text()
@@ -67,13 +68,13 @@ class SemJoinOperator:
 
         is_joined, step_number = None, 0
         while is_joined is None and step_number < self.max_steps:
+            memory_step = ActionStep(step_number=1, timing=Timing(start_time=time.time()))
             try:
                 # convert the steps to messages
                 memory_messages = self.write_memory_to_messages(memory)
                 input_messages = memory_messages.copy()
 
                 ### Generate model output ###
-                memory_step = ActionStep(step_number=1, timing=Timing(start_time=time.time()))
                 memory_step.model_input_messages = input_messages
                 stop_sequences = []
                 try:
@@ -149,11 +150,7 @@ class SemJoinOperator:
         results = list(filter(None, results))
 
         # create new dataset and return it with the input datasets
-        name, idx = "SemJoinOperatorOutput", 0
-        while name in input_datasets:
-            idx += 1
-            name = f"SemJoinOperatorOutput_{idx}"
-        output_dataset = Dataset(name=name, annotation=f"Sem join operator output for task: {self.task}", items=results)
+        output_dataset = Dataset(name=self.output_dataset_id, annotation=f"Sem join operator output for task: {self.task}", items=results)
         output_datasets = {**input_datasets, output_dataset.name: output_dataset}
 
         return output_datasets

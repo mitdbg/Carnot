@@ -27,10 +27,11 @@ class SemAggOperator:
     """
     Represents a semantic aggregation operator.
     """
-    def __init__(self, task: str, output_fields: list[dict], model_id: str, max_workers: int, max_steps: int = 3):
+    def __init__(self, task: str, agg_fields: list[dict], output_dataset_id: str, model_id: str, llm_config: dict, max_workers: int, max_steps: int = 3):
         self.task = task
-        self.output_fields = output_fields
-        self.model = LiteLLMModel(model_id=model_id)
+        self.output_dataset_id = output_dataset_id
+        self.agg_fields = agg_fields
+        self.model = LiteLLMModel(model_id=model_id, api_key=llm_config.get("OPENAI_API_KEY"))
         self.max_workers = max_workers
         self.prompt_templates = yaml.safe_load(
             resources.files("carnot.agents.prompts").joinpath("sem_agg.yaml").read_text()
@@ -64,17 +65,17 @@ class SemAggOperator:
         """
         memory = AgentMemory("")
         memory.system_prompt = SystemPromptStep(system_prompt=system_prompt)
-        memory.steps.append(SemAggOperatorStep(task=self.task, output_fields=self.output_fields, items=items))
+        memory.steps.append(SemAggOperatorStep(task=self.task, agg_fields=self.agg_fields, items=items))
 
         output_json, step_number = None, 0
         while output_json is None and step_number < self.max_steps:
+            memory_step = ActionStep(step_number=1, timing=Timing(start_time=time.time()))
             try:
                 # convert the steps to messages
                 memory_messages = self.write_memory_to_messages(memory)
                 input_messages = memory_messages.copy()
 
                 ### Generate model output ###
-                memory_step = ActionStep(step_number=1, timing=Timing(start_time=time.time()))
                 memory_step.model_input_messages = input_messages
                 stop_sequences = []
                 try:
@@ -101,7 +102,7 @@ class SemAggOperator:
                 step_number += 1
 
         # ensure all output fields are present
-        for field in self.output_fields:
+        for field in self.agg_fields:
             field_name = field['name']
             if field_name not in output_json:
                 output_json[field_name] = None
@@ -136,11 +137,7 @@ class SemAggOperator:
         results = [fut.result() for fut in done_futures]
 
         # create new dataset and return it with the input datasets
-        name, idx = "SemAggOperatorOutput", 0
-        while name in input_datasets:
-            idx += 1
-            name = f"SemAggOperatorOutput_{idx}"
-        output_dataset = Dataset(name=name, annotation=f"Sem agg operator output for task: {self.task}", items=results)
+        output_dataset = Dataset(name=self.output_dataset_id, annotation=f"Sem agg operator output for task: {self.task}", items=results)
         output_datasets = {**input_datasets, output_dataset.name: output_dataset}
 
         return output_datasets

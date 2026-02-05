@@ -1,19 +1,19 @@
 from carnot.operators.logical import (
     Aggregate,
-    ComputeOperator,
-    ConvertScan,
+    Code,
     FilteredScan,
     JoinOp,
-    LimitScan,
+    MapScan,
+    TopK,
 )
 
 LOGICAL_OPERATORS = [
     Aggregate,
-    ComputeOperator,
-    ConvertScan,
+    Code,
     FilteredScan,
     JoinOp,
-    LimitScan,
+    MapScan,
+    TopK,
 ]
 
 __all__ = [

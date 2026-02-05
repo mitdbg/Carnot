@@ -31,12 +31,13 @@ class SemGroupByOperator:
     Supports min, max, mean, sum, count aggregations in addition to semantic aggregations.
     Supports grouping over structured fields as well as grouping over semantic fields.
     """
-    def __init__(self, task: str, group_by_fields: list[dict], agg_fields: list[dict], model_id: str, max_workers: int, max_steps: int = 3):
+    def __init__(self, task: str, group_by_fields: list[dict], agg_fields: list[dict], output_dataset_id: str, model_id: str, llm_config: dict, max_workers: int, max_steps: int = 3):
         self.task = task
+        self.output_dataset_id = output_dataset_id
         self.group_by_fields = group_by_fields
         self.agg_fields = agg_fields
         self._sem_agg_fields = [field for field in agg_fields if field['func'] not in ["min", "max", "count", "sum", "mean"]]
-        self.model = LiteLLMModel(model_id=model_id)
+        self.model = LiteLLMModel(model_id=model_id, api_key=llm_config.get("OPENAI_API_KEY"))
         self.max_workers = max_workers
         self.group_by_prompt_templates = yaml.safe_load(
             resources.files("carnot.agents.prompts").joinpath("sem_groupby.yaml").read_text()
@@ -81,13 +82,13 @@ class SemGroupByOperator:
 
         output_json, step_number = None, 0
         while output_json is None and step_number < self.max_steps:
+            memory_step = ActionStep(step_number=1, timing=Timing(start_time=time.time()))
             try:
                 # convert the steps to messages
                 memory_messages = self.write_memory_to_messages(memory)
                 input_messages = memory_messages.copy()
 
                 ### Generate model output ###
-                memory_step = ActionStep(step_number=1, timing=Timing(start_time=time.time()))
                 memory_step.model_input_messages = input_messages
                 stop_sequences = []
                 try:
@@ -136,13 +137,13 @@ class SemGroupByOperator:
 
         output_json, step_number = None, 0
         while output_json is None and step_number < self.max_steps:
+            memory_step = ActionStep(step_number=1, timing=Timing(start_time=time.time()))
             try:
                 # convert the steps to messages
                 memory_messages = self.write_memory_to_messages(memory)
                 input_messages = memory_messages.copy()
 
                 ### Generate model output ###
-                memory_step = ActionStep(step_number=1, timing=Timing(start_time=time.time()))
                 memory_step.model_input_messages = input_messages
                 stop_sequences = []
                 try:
@@ -302,11 +303,7 @@ class SemGroupByOperator:
             results.append(result)
 
         # create new dataset and return it with the input datasets
-        name, idx = "SemGroupByOperatorOutput", 0
-        while name in input_datasets:
-            idx += 1
-            name = f"SemGroupByOperatorOutput_{idx}"
-        output_dataset = Dataset(name=name, annotation=f"Sem group by operator output for task: {self.task}", items=results)
+        output_dataset = Dataset(name=self.output_dataset_id, annotation=f"Sem group by operator output for task: {self.task}", items=results)
         output_datasets = {**input_datasets, output_dataset.name: output_dataset}
 
         return output_datasets

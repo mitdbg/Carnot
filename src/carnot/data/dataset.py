@@ -1,4 +1,5 @@
 import textwrap
+from collections.abc import Iterator
 
 from carnot.data.item import DataItem
 from carnot.index.index import CarnotIndex
@@ -34,3 +35,6 @@ class Dataset:
         if self._index is None:
             raise NotImplementedError("Dataset does not have an index constructed.")
         return self._index.search(query, k=k)
+
+    def __iter__(self) -> Iterator[DataItem]:
+        return iter(self.items)

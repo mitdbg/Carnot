@@ -261,7 +261,6 @@ class SemFlatMapOperatorStep(MemoryStep):
         content = f"Join Condition: \"{self.task}\"\n\nOutput Fields:\n{output_fields_str}\n\nInput:\n{input_str}"
         return [ChatMessage(role=MessageRole.USER, content=[{"type": "text", "text": content}])]
 
-
 @dataclass
 class SemJoinOperatorStep(MemoryStep):
     task: str
@@ -278,16 +277,16 @@ class SemJoinOperatorStep(MemoryStep):
 @dataclass
 class SemAggOperatorStep(MemoryStep):
     task: str
-    output_fields: list[dict]
+    agg_fields: list[dict]
     items: list[dict]
 
     def to_messages(self, summary_mode = False) -> list[ChatMessage]:
-        output_fields_str = "\n".join([
+        agg_fields_str = "\n".join([
             f"- {field['name']}" + (f" ({field['type']})" if 'type' in field else "") + f": {field['description']}"
-            for field in self.output_fields
+            for field in self.agg_fields
         ])
         input_str = json.dumps(self.items, indent=2)
-        content = f"Aggregation Instruction: \"{self.task}\"\n\nOutput Fields:\n{output_fields_str}\n\nInput:\n{input_str}"
+        content = f"Aggregation Instruction: \"{self.task}\"\n\nAggregation Output Fields:\n{agg_fields_str}\n\nInput:\n{input_str}"
         return [ChatMessage(role=MessageRole.USER, content=[{"type": "text", "text": content}])]
 
 

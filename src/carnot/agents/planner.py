@@ -52,6 +52,7 @@ class Planner(BaseAgent):
         self.authorized_imports = sorted(set(BASE_BUILTIN_MODULES) | set(self.additional_authorized_imports))
         super().__init__(*args, prompt_templates=prompt_templates, **kwargs)
         self.python_executor = self.create_python_executor()
+        self.max_steps = 5
     
     def __enter__(self):
         return self
@@ -82,7 +83,7 @@ class Planner(BaseAgent):
     ) -> Generator[ActionStep | PlanningStep | FinalAnswerStep | ChatMessageStreamDelta]:
         self.step_number = 1
         returned_final_answer = False
-        while not returned_final_answer:
+        while not returned_final_answer and self.step_number <= self.max_steps:
             # Start action step!
             action_step = PlanningStep(model_input_messages=[], model_output_message="", plan="", timing=Timing(start_time=time.time()))
             generator = self._step_generating_logical_plan_stream(action_step)
@@ -311,8 +312,8 @@ class Planner(BaseAgent):
 
         return output
 
-    def compile_physical_plan(self, logical_plan: dict):
-        """
-        Compile a logical plan into a physical execution plan.
-        """
-        logical_plan = LogicalPlan.from_dict(logical_plan)
+    # def compile_physical_plan(self, logical_plan: dict):
+    #     """
+    #     Compile a logical plan into a physical execution plan.
+    #     """
+    #     logical_plan = LogicalPlan.from_dict(logical_plan)

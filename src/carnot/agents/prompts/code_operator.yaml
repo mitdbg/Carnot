@@ -47,10 +47,19 @@ code_gen_prompt: |-
   ---
 
   {{code_block_opening_tag}}
+  # inspect the Legal Contracts dataset to see what information is available
+  contracts = input_datasets["Legal Contracts"].items
+  print([list(contract.keys()) for contract in contracts[:3])
+  {{code_block_closing_tag}}
+
+  Execution logs:
+  [['id', 'text'], ['id', 'text'], ['id', 'text']]
+
+  {{code_block_opening_tag}}
   matching_contracts = []
   contracts = input_datasets["Legal Contracts"].items
   for contract in contracts:
-      if "John Doe" in contract.text:
+      if "John Doe" in contract['text']:
           matching_contracts.append(contract)
   final_answer({"matching_contracts": matching_contracts})
   {{code_block_closing_tag}}

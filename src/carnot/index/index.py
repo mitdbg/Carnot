@@ -51,11 +51,12 @@ class CarnotIndex(ABC):
 
 
 class ChromaIndex(CarnotIndex):
-    def __init__(self, name: str, items: list, model: str = "openai/text-embedding-3-small"):
+    def __init__(self, name: str, items: list, model: str = "openai/text-embedding-3-small", api_key: str = None):
         # construct the index
         super().__init__(name, items)
         self.ids = [f"{idx}" for idx in range(len(items))]
         self.model = model
+        self.api_key = api_key
         self.index = self._get_or_create_index()
         self._add_index_to_catalog()
 
@@ -93,7 +94,7 @@ class ChromaIndex(CarnotIndex):
             # generate embeddings for the batch
             # TODO: check that input does not exceed maximum input token limit for model and is not an empty string
             batch = item_strs[start : start + INDEX_BATCH_SIZE]
-            response = litellm.embedding(model=self.model, input=batch)
+            response = litellm.embedding(model=self.model, input=batch, api_key=self.api_key)
             embeddings = [item["embedding"] for item in response.data]
 
             # insert embeddings into the collection
@@ -116,11 +117,12 @@ class ChromaIndex(CarnotIndex):
 
 
 class FaissIndex(CarnotIndex):
-    def __init__(self, name: str, items: list, model: str = "openai/text-embedding-3-small"):
+    def __init__(self, name: str, items: list, model: str = "openai/text-embedding-3-small", api_key: str = None):
         # construct the index
         super().__init__(name, items)
         self.ids = [f"{idx}" for idx in range(len(items))]
         self.model = model
+        self.api_key = api_key
         self.index = self._get_or_create_index()
         self._add_index_to_catalog()
     
@@ -142,7 +144,7 @@ class FaissIndex(CarnotIndex):
         vectors = []
         for start in range(0, len(self.items), INDEX_BATCH_SIZE):
             batch = self.items[start : start + INDEX_BATCH_SIZE]
-            response = litellm.embedding(model=self.model, input=batch)
+            response = litellm.embedding(model=self.model, input=batch, api_key=self.api_key)
             vectors.extend(item["embedding"] for item in response.data)
 
         # create the faiss index and save it to disk
