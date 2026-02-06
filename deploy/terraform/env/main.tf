@@ -41,7 +41,7 @@ data "aws_ami" "ubuntu" {
 
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*"]
+    values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-20250115"]
   }
 
   owners = ["099720109477"] # Canonical
@@ -62,22 +62,44 @@ resource "aws_instance" "app_server" {
   ]
   root_block_device {
     volume_size = 40 # desired size in GB
-    volume_type = "gp2"
+    volume_type = "gp3"
   }
 
   # mount the EBS volume at /mnt/pg-data and install docker compose
   user_data = <<-EOF
     #!/bin/bash
+    set -e
 
-    # Mount EBS volume and change ownership to UID/GID 999 (default for postgres)
-    sudo mkfs -t ext4 /dev/xvdf
-    sudo mkdir -p /mnt/pg-data
-    sudo mount /dev/xvdf /mnt/pg-data
-    echo "/dev/xvdf /mnt/pg-data ext4 defaults,nofail 0 2" | sudo tee -a /etc/fstab
-    sudo mkdir -p /mnt/pg-data/data
-    sudo chown -R 999:999 /mnt/pg-data
+    DEVICE="/dev/xvdf"
+    MOUNT_POINT="/mnt/pg-data"
 
-    # Install Docker
+    # wait for EBS volume to be attached by Terraform
+    echo "Waiting for $DEVICE to attach..."
+    while [ ! -e $DEVICE ]; do
+      sleep 5
+    done
+
+    ### mount EBS volume and change ownership to UID/GID 999 (default for postgres)
+    # check for existing filesystem before formatting
+    if ! sudo blkid $DEVICE; then
+        echo "No filesystem found on $DEVICE. Formatting..."
+        sudo mkfs -t ext4 $DEVICE
+    else
+        echo "Filesystem already exists on $DEVICE. Skipping format."
+    fi
+
+    # idempotent mount and fstab entry
+    sudo mkdir -p $MOUNT_POINT
+    sudo mount $DEVICE $MOUNT_POINT || echo "$DEVICE already mounted or failed"
+    
+    if ! grep -q "$MOUNT_POINT" /etc/fstab; then
+      echo "$DEVICE $MOUNT_POINT ext4 defaults,nofail 0 2" | sudo tee -a /etc/fstab
+    fi
+
+    sudo mkdir -p $MOUNT_POINT/data
+    sudo chown -R 999:999 $MOUNT_POINT
+
+    # install docker
     sudo apt-get update
     sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
@@ -208,7 +230,7 @@ resource "aws_security_group" "allow_ssh" {
 resource "aws_ebs_volume" "app_pg_data_volume" {
   availability_zone = var.availability_zone
   size              = var.ebs_volume_size
-  type              = "gp2"
+  type              = "gp3"
 
   tags = {
     Name = "carnot-app-pg-data-volume-${local.env_name}"
