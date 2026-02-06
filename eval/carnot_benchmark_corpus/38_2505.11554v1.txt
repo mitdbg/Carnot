@@ -1,0 +1,24 @@
+Title: Multi-Objective Memory Bandwidth Regulation and Cache Partitioning for
+  Multicore Real-Time Systems
+
+Abstract: Memory bandwidth regulation and cache partitioning are widely used techniques
+for achieving predictable timing in real-time computing systems. Combined with
+partitioned scheduling, these methods require careful co-allocation of tasks
+and resources to cores, as task execution times strongly depend on available
+allocated resources. To address this challenge, this paper presents a 0-1
+linear program for task-resource co-allocation, along with a multi-objective
+heuristic designed to minimize resource usage while guaranteeing schedulability
+under a preemptive EDF scheduling policy. Our heuristic employs a multi-layer
+framework, where an outer layer explores resource allocations using
+Pareto-pruned search, and an inner layer optimizes task allocation by solving a
+knapsack problem using dynamic programming. To evaluate the performance of the
+proposed optimization algorithm, we profile real-world benchmarks on an
+embedded AMD UltraScale+ ZCU102 platform, with fine-grained resource
+partitioning enabled by the Jailhouse hypervisor, leveraging cache set
+partitioning and MemGuard for memory bandwidth regulation. Experiments based on
+the benchmarking results show that the proposed 0-1 linear program outperforms
+existing mixed-integer programs by finding more optimal solutions within the
+same time limit. Moreover, the proposed multi-objective multi-layer heuristic
+performs consistently better than the state-of-the-art multi-resource-task
+co-allocation algorithm in terms of schedulability, resource usage, number of
+non-dominated solutions, and computational efficiency.

@@ -1,0 +1,24 @@
+Title: Efficient Serverless Cold Start: Reducing Library Loading Overhead by
+  Profile-guided Optimization
+
+Abstract: Serverless computing abstracts away server management, enabling automatic
+scaling, efficient resource utilization, and cost-effective pricing models.
+However, despite these advantages, it faces the significant challenge of
+cold-start latency, adversely impacting end-to-end performance. Our study shows
+that many serverless functions initialize libraries that are rarely or never
+used under typical workloads, thus introducing unnecessary overhead. Although
+existing static analysis techniques can identify unreachable libraries, they
+fail to address workload-dependent inefficiencies, resulting in limited
+performance improvements. To overcome these limitations, we present SLIMSTART,
+a profile-guided optimization tool designed to identify and mitigate
+inefficient library usage patterns in serverless applications. By leveraging
+statistical sampling and call-path profiling, SLIMSTART collects runtime
+library usage data, generates detailed optimization reports, and applies
+automated code transformations to reduce cold-start overhead. Furthermore,
+SLIMSTART integrates seamlessly into CI/CD pipelines, enabling adaptive
+monitoring and continuous optimizations tailored to evolving workloads. Through
+extensive evaluation across three benchmark suites and four real-world
+serverless applications, SLIMSTART achieves up to a 2.30X speedup in
+initialization latency, a 2.26X improvement in end-to-end latency, and a 1.51X
+reduction in memory usage, demonstrating its effectiveness in addressing
+cold-start inefficiencies and optimizing resource utilization.

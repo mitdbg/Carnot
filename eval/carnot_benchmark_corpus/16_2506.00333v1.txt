@@ -1,0 +1,15 @@
+Title: Test-time Vocabulary Adaptation for Language-driven Object Detection
+
+Abstract: Open-vocabulary object detection models allow users to freely specify a class
+vocabulary in natural language at test time, guiding the detection of desired
+objects. However, vocabularies can be overly broad or even mis-specified,
+hampering the overall performance of the detector. In this work, we propose a
+plug-and-play Vocabulary Adapter (VocAda) to refine the user-defined
+vocabulary, automatically tailoring it to categories that are relevant for a
+given image. VocAda does not require any training, it operates at inference
+time in three steps: i) it uses an image captionner to describe visible
+objects, ii) it parses nouns from those captions, and iii) it selects relevant
+classes from the user-defined vocabulary, discarding irrelevant ones.
+Experiments on COCO and Objects365 with three state-of-the-art detectors show
+that VocAda consistently improves performance, proving its versatility. The
+code is open source.

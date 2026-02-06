@@ -1,0 +1,18 @@
+Title: Lumos: Efficient Performance Modeling and Estimation for Large-scale LLM
+  Training
+
+Abstract: Training LLMs in distributed environments presents significant challenges due
+to the complexity of model execution, deployment systems, and the vast space of
+configurable strategies. Although various optimization techniques exist,
+achieving high efficiency in practice remains difficult. Accurate performance
+models that effectively characterize and predict a model's behavior are
+essential for guiding optimization efforts and system-level studies. We propose
+Lumos, a trace-driven performance modeling and estimation toolkit for
+large-scale LLM training, designed to accurately capture and predict the
+execution behaviors of modern LLMs. We evaluate Lumos on a production ML
+cluster with up to 512 NVIDIA H100 GPUs using various GPT-3 variants,
+demonstrating that it can replay execution time with an average error of just
+3.3%, along with other runtime details, across different models and
+configurations. Additionally, we validate its ability to estimate performance
+for new setups from existing traces, facilitating efficient exploration of
+model and deployment configurations.

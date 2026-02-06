@@ -1,0 +1,241 @@
+folder_path,paper_title,paper_abstract,related_work_a,related_work_b,organization
+tests/baselines_results/carnot_deep_research/0,TaxAgent: How Large Language Model Designs Fiscal Policy,"Economic inequality is a global challenge, intensifying disparities in
+education, healthcare, and social stability. Traditional systems like the U.S.
+federal income tax reduce inequality but lack adaptability. Although models
+like the Saez Optimal Taxation adjust dynamically, they fail to address
+taxpayer heterogeneity and irrational behavior. This study introduces TaxAgent,
+a novel integration of large language models (LLMs) with agent-based modeling
+(ABM) to design adaptive tax policies. In our macroeconomic simulation,
+heterogeneous H-Agents (households) simulate real-world taxpayer behaviors
+while the TaxAgent (government) utilizes LLMs to iteratively optimize tax
+rates, balancing equity and productivity. Benchmarked against Saez Optimal
+Taxation, U.S. federal income taxes, and free markets, TaxAgent achieves
+superior equity-efficiency trade-offs. This research offers a novel taxation
+solution and a scalable, data-driven framework for fiscal policy evaluation.","## Related Works
+
+
+### Taxation Models
+This section explores research around taxation models relevant to addressing economic inequality. A prominent study is by [1], offering insights into optimizing taxation frameworks and adapting to evolving economic needs.
+
+### Agent-Based Modeling
+Agent-based modeling (ABM) in economic settings has provided substantial advancements in policy design. Noteworthy work can be found in [1] where ABM is utilized to model fiscal dynamics under varied economic systems.
+
+### Large Language Models
+Large language models (LLMs) have emerged as significant tools in economic modeling and decision-making. Key studies include:
+- [2], which investigates the use of LLMs in analyzing economic data.
+- [3], exploring the implementation of LLMs in optimizing fiscal policies.
+- [4], highlighting advancements in LLM-driven macroeconomic simulations.
+- [5], demonstrating potential applications of LLMs in predicting economic outcomes.
+
+The integration of LLMs with agent-based modeling marks a pivotal development in adaptive tax policy design, proving to outperform traditional models like the Saez Optimal Taxation in several benchmarks.","\subsection{Traditional Tax Systems}
+Progressive taxation is relatively simple, imposing higher tax rate on higher income. Empirical studies proved its effectiveness in ameliorating economic inequality~\cite{NBERw21340, NBERw21211} but researchers also pointed out that it lacks adaptability to dynamic economic conditions~\cite{Foo2019ProcessAC, Patjoshi2015DesignAD}.
+
+Optimal taxation explores tax systems that maximize social welfare while accounting for economic constraints and behavioral responses\cite{10.1257/jep.25.4.165}. It can be adjusted according to dynamic economic conditions. Modern frameworks were pioneered by Mirrlees\cite{10.2307/2296779} and Diamond and Mirrlees\cite{RePEc:aea:aecrev:v:61:y:1971:i:1:p:8-27}, aiming to maximize aggregate utility. Saez is one of the largest contributors to this basis. Saez\cite{10.1111/1467-937X.00166} derived optimal nonlinear tax rates by modeling earnings elasticity and income distribution. Diamond and Saez\cite{10.1257/jep.25.4.165} extended this framework, focusing on maximizing social welfare while mitigating income inequality, constructing a closed-loop optimal taxation system.
+
+Economists emphasized the importance of the behavioral responses of taxpayers. Piketty, Saez, and Stantcheva \cite{10.1257/pol.6.1.230} explored the elasticity of the top tax rates and their influence on labor supply and tax avoidance, highlighting the importance of behavioral responses in tax policy design. Kroft, Kucko, Lehmann, and Schmieder \cite{10.1257/pol.20180033} examined how unemployment and wage responses impact tax structures, advocating for the Earned Income Tax Credit (EITC) as a tool to support low-income households while maintaining working incentives.
+
+\subsection{Artificial Intelligence(AI) in Economic Policy Research}
+AI offers innovative tools for analyzing and optimizing macroeconomic policies, addressing limitations of traditional models, which rely on equilibrium assumptions. Reinforcement learning and Bayesian Neural Networks enable adaptive simulations and uncertainty quantification. For example, “The AI Economist” framework uses RL to co-adapt agents and social planners\cite{zheng2020aieconomistimprovingequality}. Integration with causal inference techniques further improves policy-impact assessment\cite{NBERc14009}.
+
+ABM captures decentralized decision-making and complex phenomena like systemic risk\cite{AxtellFarmer2022}. ABMs are used to study business cycles, policy interventions, and inflation\cite{DelliGatti2018}. Enhanced computational techniques and high-quality data have improved their empirical validity, enabling applications such as tax policy optimization\cite{zheng2020aieconomistimprovingequality}.
+
+Large Language Models (LLMs) introduce advanced reasoning capabilities to various subjects, including economic research, enabling market behavior simulation and policy evaluation~\cite{shen2025phyxdoesmodelwits,zhao2024competeaiunderstandingcompetitiondynamics, nie2024surveylargelanguagemodels}.
+
+Existing work forms a rule-based framework for optimal taxation and recognizes the impact of taxpayer heterogeneity on optimal taxation design. Nevertheless, current optimal taxation makes rational-man supposition and oversimplified social welfare calculations. In this work, we integrated the advancement in ABMs and LLMs, replaced predetermined rules with LLM-based agents, simulated human-like policy responses, and dynamically adjusted tax rates to generate the optimal social outcome.",0.5
+tests/baselines_results/carnot_deep_research/1,"KVCache Cache in the Wild: Characterizing and Optimizing KVCache Cache
+  at a Large Cloud Provider","Serving large language models (LLMs) is important for cloud providers, and
+caching intermediate results (KV\$) after processing each request substantially
+improves serving throughput and latency. However, there is limited
+understanding of how LLM serving benefits from KV\$ caching, where system
+design decisions like cache eviction policies are highly workload-dependent. In
+this paper, we present the first systematic characterization of the KV\$
+workload patterns from one of the leading LLM service providers. We draw
+observations that were not covered by previous studies focusing on synthetic
+workloads, including: KV\$ reuses are skewed across requests, where reuses
+between single-turn requests are equally important as multi-turn requests; the
+reuse time and probability are diverse considering all requests, but for a
+specific request category, the pattern tends to be predictable; and the overall
+cache size required for an ideal cache hit ratio is moderate. Based on the
+characterization, we further propose a workload-aware cache eviction policy
+that improves the serving performance under real-world traces, especially with
+limited cache capacity.","### Related Works
+
+The deployment and efficient serving of large language models (LLMs) have gained significant attention in recent years. Various caching strategies have been proposed to enhance the performance of LLM systems, emphasizing reducing latency and improving throughput. Recent studies have concentrated on workloads associated with LLMs, as these present unique challenges compared to traditional applications.
+
+In the context of caching strategies, [1] explore the benefits of intermediate result caching (KV$ caching) in serving LLMs. Their findings help bridge gaps left by synthetic workloads studies, asserting that real-world LLM workloads require specific caching policies beyond conventional methods.
+
+Research by [2] and others has highlighted the necessity for adaptable cache eviction policies. In particular, they examine how workload-specific characteristics influence caching behavior and propose tailored eviction strategies to optimize performance under constraints of limited cache capacity.
+
+Workload analysis plays a vital role in understanding LLM serving demands. Studies such as [3] provide empirical insights into workload patterns, emphasizing the variability in reuse time and probability across different types of requests. This complements the systematic characterization of KV$ workloads as discussed in the present paper.
+
+Furthermore, [4] focus on the evolution of feature representations during LLM training within distributed environments. Their work underscores the importance of caching in distributed settings, a scenario increasingly relevant given the rapid proliferation of LLM applications across cloud infrastructure.
+
+The cross-domain applicability of caching techniques, as investigated by [5], reveals opportunities to transfer caching optimizations across different LLM tasks, further enhancing the general efficiency of these systems.
+
+Collectively, these works contribute to a growing body of literature that informs the design of LLM serving systems. They also delineate potential areas for innovation, particularly in refining cache management strategies to cope with the dynamic nature of LLM workloads.","\nospacestitle{Reuse {\kvcache} across requests via {\kvcache} cache. \,}
+Reusing {\kvcache} for accelerating LLM serving
+has been widely studied~\cite{vllm,chunkattention,cachedattention,promptcache,sglang,cacheblend} and used in commercial LLM serving~\cite{openaiapi,genimiapi,claudeapi,mooncake}.
+Currently, production systems only treat cache hits by prefix matches~\cite{chunkattention,sglang,cachedattention,openaiapi,genimiapi,claudeapi,mooncake}, 
+because it preserves the original algorithm of model inference with no accuracy loss.
+A number of studies~\cite{promptcache,cacheblend,hu2024epic} have studied 
+methods for non-prefix {\kvcache} cache. 
+We can revisit our characterization once they have matured 
+and been deployed in production.
+
+\stitle{Other {\kvcache}-related optimizations. \,}
+Emerging works\cite{streamingllm,h2o,infinigen,pyramidkv} propose runtime {\kvcache}
+compression and deletion methods to reduce {\kvcache} size.
+StreamingLLM~\cite{streamingllm} keeps
+only a finite attention window for recent tokens combined with a few initial tokens.
+H2O~\cite{h2o} only involves tokens that contribute most to the attention score for inference.
+InfiniGen~\cite{infinigen} speculatively selects tokens critical for attention scores and drops others.
+KVQuant~\cite{KVQuant} enables 3-bit KV cache quantization with minimal perplexity degradation 
+for large language models, achieving fast million-length context inference.
+These methods require fewer {\kvcache} per-request,
+albeit with accuracy degradation.
+Our study is compatible with these works:
+if an uncompressed/full {\kvcache} is reusable,
+a compressed or deleted version would also be reusable.
+%\TODO{add more about the recent sparse attention works.}
+
+%\stitle{Cache in web-service and serverless platform. }
+\stitle{Optimizing caching policies. \,}
+Optimizing caching has long been studied in the literature,
+in general-purpose caching policies~\cite{lruk,slru,twoq,eelru,lrfu,lirs,arc,mq,car,clockpro,DBLP:journals/tos/EinzigerEFM22,lhd,cacheus,sieve,cherkasova1998improving}
+or specific domains~\cite{yang2020twemcache,berg2020cachelib,icebreaker,fasscache}.
+We continue this line of research,
+and leverage our characterized {\kvcache} reuse properties
+for optimizing {\kvcache} cache policies.
+
+\stitle{Optimizing LLM serving. \,}
+We continue the line of research in optimizing the performance of LLM serving systems~\cite{DBLP:conf/osdi/ZhongLCHZL0024,DBLP:journals/corr/abs-2404-09526,DBLP:conf/sosp/KwonLZ0ZY0ZS23,alpaserve,DBLP:conf/osdi/YuJKKC22,DBLP:conf/isca/PatelCZSGMB24,298501,DBLP:journals/corr/abs-2412-17246},
+with a particular focus on characterizing serving workloads
+for {\kvcache} cache.
+Our work is orthogonal to optimizations other than {\kvcache} cache.
+\iffalse
+% Cache replacement algorithm is essential to computer systems, and has been researched
+% for decades\cite{lruk,slru,lirs,arc,lhd,cacheus,sieve}.
+The design of a cache replacement policy needs to take into account the
+characteristics of the workload~\cite{lruk,slru,lirs,arc,lhd,cacheus,sieve}.
+Therefore, access traces analysis for real-world production systems can help to understand the workload characteristics~\cite{yang2020twemcache,berg2020cachelib,shahrad2020serverless,fasscache,icebreaker}.
+% \cite{DBLP:conf/osdi/YangYR20,DBLP:conf/osdi/BergBMGGLUCBHG20} characterize cache workloads in production web-service systems.
+% They show that skewed Zipf distribution is common for popularity distribution, and requests for some entry are very bursty.
+Studies of web services~\cite{yang2020twemcache,berg2020cachelib}
+have shown that web requests have a Zipf distribution, with bursts of hotspots.
+Studies of serverless platforms~\cite{shahrad2020serverless,fasscache,icebreaker} design keep-alive policies for function caching to accelerate function invocations based on the observation that function calling frequencies vary.
+% \cite{shahrad2020serverless} provides a thorough characterization of Function as a Service (FaaS) workloads
+% in production system, and reveals varieties in function calling frequencies.
+% Based on this observation, multiple works\cite{shahrad2020serverless,fasscache,icebreaker} design keep-alive
+% policies for function caching to accelerate function invocations.
+Our work performs trace analysis for different work scenarios (toB and toC) for LLM inference and optimizes {\kvcache} cache based on workload characteristics.
+We find similarities and differences between the workloads in the LLM inference scenario and the previous cache systems. \SSJ{Some of the similarities and differences can be specifically summarised to highlight our contribution.}
+\fi",0.5
+tests/baselines_results/carnot_deep_research/2,"Speaking Beyond Language: A Large-Scale Multimodal Dataset for Learning
+  Nonverbal Cues from Video-Grounded Dialogues","Nonverbal communication is integral to human interaction, with gestures,
+facial expressions, and body language conveying critical aspects of intent and
+emotion. However, existing large language models (LLMs) fail to effectively
+incorporate these nonverbal elements, limiting their capacity to create fully
+immersive conversational experiences. We introduce MARS, a multimodal language
+model designed to understand and generate nonverbal cues alongside text,
+bridging this gap in conversational AI. Our key innovation is VENUS, a
+large-scale dataset comprising annotated videos with time-aligned text, facial
+expressions, and body language. Leveraging VENUS, we train MARS with a
+next-token prediction objective, combining text with vector-quantized nonverbal
+representations to achieve multimodal understanding and generation within a
+unified framework. Based on various analyses of the VENUS datasets, we validate
+its substantial scale and high effectiveness. Our quantitative and qualitative
+results demonstrate that MARS successfully generates text and nonverbal
+languages, corresponding to conversational input.","## Related Works
+
+The pursuit of integrating nonverbal communication into AI models has seen substantial progress with recent advancements in multimodal approaches. However, significant challenges remain, especially in effectively incorporating elements such as gestures and facial expressions into conversational agents.
+
+### Multimodal Models
+Expanding on the traditional capabilities of large language models, recent studies have begun to explore the importance of nonverbal cues and their role in enhancing communication interfaces. For example, [1] discusses a model that attempts to integrate multimodal data for this purpose. The model uses a sophisticated dataset to align gestures and facial expressions with textual content, marking a significant step towards truly immersive conversational AI.
+
+### Large Language Models
+The foundational role of large language models in advancing AI systems cannot be overstated. While these models provide a baseline for natural language understanding, their extension to multimodal contexts introduces new complexities. Studies such as [2] and [3] introduce techniques for enhancing contextual awareness through language-visual integration. Further, [4] explores innovative methods for combining textual with nonverbal inputs to improve interaction fidelity.
+
+The creation of datasets that support these objectives is critical. Works like [5] and [6] contribute to this by developing and refining multimodal datasets that bridge textual and nonverbal communication. These datasets underpin the development of the MARS model outlined in our abstract, supporting its novel approach to next-token prediction using vector-quantized representations.
+
+In conclusion, while significant strides have been made in understanding and generating multimodal data, our work through MARS and the VENUS dataset further solidifies the potential for future research in achieving immersive AI conversations.","\noindent \textbf{Multimodal Large Language Models.}
+Recent studies have introduced models that combine various modalities with large language models (LLMs), extending their capabilities beyond text to include visual, auditory, and multimodal reasoning. Specifically, to enhance visual comprehension capabilities of LLMs, LLaVA~\cite{liu2024:visual}, Qwen-VL~\cite{bai2023:qwen} and MiniGPT-4~\cite{chen2023:sharegpt4v} have successfully integrated vision encoders into pre-trained LLMs.
+Furthermore, VideoChat~\cite{li2023:videochat} and Video-LLaMA~\cite{zhang2023:video} extend these capabilities to video understanding, while models such as Unified-IO-2~\cite{lu2024:unified} and GPT-4-O~\cite{achiam2023:gpt} expand the scope to include auditory modalities, showing robust multimodal reasoning across various inputs.
+
+\noindent \textbf{Learning Dialogue in Video.}
+The importance of analyzing conversational sentiment using multimodal data (\textit{e.g.}, text, audio, and visual) from videos has driven the development of numerous datasets~\cite{busso2008:iemocap, zadeh2018:multimodal, poria2019:meld}. 
+This has further spurred research into generating and understanding dialogues from videos, leveraging multimodal cues. For instance, Champagne~\cite{han2023:champagne} introduced the YTD-18M dataset for dialogue generation using visual signals and LLMs, while MultiDialog~\cite{park2024:let} combined audio and visual data for generating conversations. Beyond text, efforts like~\cite{shafique2023:nonverbal} and EmotionCLIP~\cite{zhang2023:learning} focus on recognizing nonverbal cues, such as gestures and emotions. Additionally, works like FurChat~\cite{cherakara2023:furchat} and~\cite{lee2023:developing} explore applying nonverbal signals to enhance robotic facial expressions and actions.
+However, existing conversational datasets are often limited in scale or fail to include detailed 3D facial and body language information necessary for modeling nonverbal cues effectively. Our VENUS dataset addresses these gaps by being both large-scale and scalable, offering comprehensive conversational data that integrates not only text but also 3D facial expressions and body languages. This enables a more nuanced understanding of nonverbal cues and supports the generation of richer, context-aware conversations.
+
+\noindent \textbf{Human Motion Synthesis in Conversation.}
+Recent advancements in 3D human reconstruction~\cite{lin2023:one, dwivedi2024:tokenhmr, danvevcek2022emoca} have significantly improved the quality of pseudo-ground truth data, providing a scalable and accessible alternative to traditional sensor-based methods~\cite{yi2023:generating}.
+Leveraging these datasets, recent works~\cite{wu2024:motionllm, lu2023:humantomato} have focused on generating human motions from text.
+Building on this progress, our work utilizes pseudo labels derived from our VENUS, which addresses the lack of large-scale dataset for conversational settings. Unlike previous works like~\cite{ng2023:can, ng2022:learning}, which primarily generate listener facial motions from text, our approach extends to produce text, facial expressions, and body language, aligned with conversational context.",0.5
+tests/baselines_results/carnot_deep_research/3,"Counterfactual Activation Editing for Post-hoc Prosody and
+  Mispronunciation Correction in TTS Models","Recent advances in Text-to-Speech (TTS) have significantly improved speech
+naturalness, increasing the demand for precise prosody control and
+mispronunciation correction. Existing approaches for prosody manipulation often
+depend on specialized modules or additional training, limiting their capacity
+for post-hoc adjustments. Similarly, traditional mispronunciation correction
+relies on grapheme-to-phoneme dictionaries, making it less practical in
+low-resource settings. We introduce Counterfactual Activation Editing, a
+model-agnostic method that manipulates internal representations in a
+pre-trained TTS model to achieve post-hoc control of prosody and pronunciation.
+Experimental results show that our method effectively adjusts prosodic features
+and corrects mispronunciations while preserving synthesis quality. This opens
+the door to inference-time refinement of TTS outputs without retraining,
+bridging the gap between pre-trained TTS models and editable speech synthesis.","## Related Works
+Text-to-Speech (TTS) systems have witnessed substantial improvements in speech naturalness, driven by advancements in neural networks and synthesizers. Prosody control and mispronunciation correction remain pivotal for enhancing speech synthesis quality.
+
+Traditional TTS methods often rely heavily on additional training modules or specialized tools for prosody adjustments. This approach, while effective, presents challenges in adapting to varying prosodic demands in real-time. Similarly, mispronunciation correction conventionally depends on grapheme-to-phoneme conversion, which necessitates extensive language resources. In low-resource settings, this can be restrictive, showing a need for more adaptable solutions.
+
+Counterfactual Activation Editing, as proposed in [1], introduces a model-agnostic approach that empowers pre-trained TTS models to be refined post-inference without retraining. This is achieved by manipulating internal representations directly, providing a nuanced control over prosodic features and pronunciation corrections.
+
+While this approach broadens the horizon for editable speech synthesis, additional exploration into its integration within diverse linguistic contexts and comparison with existing frameworks remains paramount.","\subsection{TTS Prosody Control}
+
+Text can be spoken in various ways due to semantic nuances, speaking styles, or inherent variability. Traditional approaches, such as unit-selection, capture this variability through speech databases \cite{strom2006expressive}.
+In contrast, recent studies model prosodic variation by predicting key prosodic features such as pitch, duration, and energy from their embedding spaces \cite{ren2019fastspeech, ren2020fastspeech, mohan2021ctrl, bandekar2023speaking}, or by using implicit representations learned from a reference encoder to capture the nuanced variations not specified by text alone \cite{wang2018style, skerry2018towards, hsu2018hierarchical}. 
+
+Controlling intermediate representations has also been considered in prior work through the use of embedding bias, calculated by assessing the extent of translation required to achieve specific modifications in acoustic features within multidimensional scaling coordinates \cite{lenglet2022speaking}. However, such modified representations risk deviating from the data manifold, and their application has been primarily confined to controlling duration.
+
+\subsection{TTS Pronunciation Control}
+
+A critical challenge for end-to-end TTS models, which operate without the aid of grapheme-to-phoneme dictionaries or predictive model, is polyphone disambiguation \cite{zhang2020unified}. For TTS models to accurately convert graphemes into phonemes, their linguistic encoder must internalize the varied pronunciation rules, but fully internalizing them is difficult, leading to inevitable pronunciation errors in synthesized speech.
+
+To mitigate mispronunciations, unit selection concatenates recorded speech fragments from a database. However, this often leads to noticeable join artifacts and requires a single-speaker database, limiting the use of non-target speaker data. 
+
+Recently, a model-centric approach called as the Speech Audio Corrector (SAC) \cite{fong2022speech} has been introduced. It leverages speech codes aligned with words, derived from self-supervised learning models to correct mispronunciations at the word level. In contrast, we introduce a model-agnostic approach that manipulates intermediate representations in TTS models.",0.5
+tests/baselines_results/carnot_deep_research/4,Dual Debiasing for Noisy In-Context Learning for Text Generation,"In context learning (ICL) relies heavily on high quality demonstrations drawn
+from large annotated corpora. Existing approaches detect noisy annotations by
+ranking local perplexities, presuming that noisy samples yield higher
+perplexities than their clean counterparts. However, this assumption breaks
+down when the noise ratio is high and many demonstrations are flawed. We
+reexamine the perplexity based paradigm for text generation under noisy
+annotations, highlighting two sources of bias in perplexity: the annotation
+itself and the domain specific knowledge inherent in large language models
+(LLMs). To overcome these biases, we introduce a dual debiasing framework that
+uses synthesized neighbors to explicitly correct perplexity estimates, yielding
+a robust Sample Cleanliness Score. This metric uncovers absolute sample
+cleanliness regardless of the overall corpus noise level. Extensive experiments
+demonstrate our method's superior noise detection capabilities and show that
+its final ICL performance is comparable to that of a fully clean demonstration
+corpus. Moreover, our approach remains robust even when noise ratios are
+extremely high.","## Related Works
+
+### In-Context Learning (ICL)
+Research on in-context learning has shown the importance of using high-quality demonstration samples for effective model performance. In the pioneering work by [1] and subsequent expansions by [2], the relationship between sample quality and learning outcomes was significantly highlighted.
+
+### Perplexity and Bias in Text Annotations
+The measure of perplexity has been instrumental in evaluating and selecting output candidates in text annotation studies. However, the inherent biases associated with local perplexity scores have been discussed extensively by [3] in association with bias correction techniques documented by [4].
+
+### Noise Detection and Debiasing Strategies
+Long-standing strategies for detecting noise in annotated corpora have been explored by [5]. New methodologies that address these challenges inclusive of dual debiasing frameworks are forwarded by [6], enhancing less biased sample evaluations.
+
+### Large Language Models and Noise Robustness
+Recent developments in large language models and efforts to manage intrinsic model noise are backed by studies, as outlined in [7]. These approaches continue to influence current robust noise correction techniques, shaping the pathway forward for opportunities in meticulously preparing demonstration corpora.
+
+This compilation characterizes the evolution, innovative methodologies, and strategic interplay between various ideologies contributing toward a robust dual debiasing framework, markedly attenuating noise in complex learning environments.","\myparagraph{In-context learning (ICL):} Recent research has leveraged pre-trained LLMs for downstream NLP tasks through in-context learning, particularly in text classification~\citep{yoo2022ground} and generation tasks~\citep{o2023contrastive}. Notable advances include the UDR retriever by \citet{li2023unified}, which works effectively across multiple tasks, and the efficient approach by \citet{liucontext} that extracts in-context vectors from LLM embeddings to reduce computational costs. However, most ICL research assumes clean, high-quality demonstrations, leaving open questions about performance with noisy or imperfect examples.
+
+\myparagraph{ICL with noisy annotations:} Initial studies exploring random labels in ICL classification have shown mixed results. While \citet{min2022rethinking} found limited performance impact with random retrievers for certain LLM-dataset combinations, \citet{yoo2022ground} demonstrated significant performance degradation across a broader range of settings.
+More recent work has begun addressing noisy ICL directly. \citet{kang2024context} proposed \textit{Rectification} for classification tasks, though its fine-tuning requirements introduce substantial computational overhead. For generation tasks, \citet{gao2024noise} pioneered the first noise-robust method, but it shows limitations under high-noise conditions.
+
+\myparagraph{Debiasing LLM Output:} Despite their capabilities, LLMs can exhibit biases from their pre-training corpora that impact task performance. To address this, \citet{li2022contrastive} and \citet{zhao2024enhancing} developed Contrastive Decoding, which improves text generation quality by debiasing larger LLMs using outputs from smaller models within the same family. Additionally, \citet{fei2023mitigating} and \citet{zhao2021calibrate} introduced methods to reduce bias in LLMs by addressing both prefixed context bias and finite label bias in classification tasks.",0.5

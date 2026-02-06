@@ -1,0 +1,20 @@
+Title: Efficient 3D Brain Tumor Segmentation with Axial-Coronal-Sagittal
+  Embedding
+
+Abstract: In this paper, we address the crucial task of brain tumor segmentation in
+medical imaging and propose innovative approaches to enhance its performance.
+The current state-of-the-art nnU-Net has shown promising results but suffers
+from extensive training requirements and underutilization of pre-trained
+weights. To overcome these limitations, we integrate Axial-Coronal-Sagittal
+convolutions and pre-trained weights from ImageNet into the nnU-Net framework,
+resulting in reduced training epochs, reduced trainable parameters, and
+improved efficiency. Two strategies for transferring 2D pre-trained weights to
+the 3D domain are presented, ensuring the preservation of learned relationships
+and feature representations critical for effective information propagation.
+Furthermore, we explore a joint classification and segmentation model that
+leverages pre-trained encoders from a brain glioma grade classification proxy
+task, leading to enhanced segmentation performance, especially for challenging
+tumor labels. Experimental results demonstrate that our proposed methods in the
+fast training settings achieve comparable or even outperform the ensemble of
+cross-validation models, a common practice in the brain tumor segmentation
+literature.

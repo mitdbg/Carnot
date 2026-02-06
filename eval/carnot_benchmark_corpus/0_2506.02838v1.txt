@@ -1,0 +1,15 @@
+Title: TaxAgent: How Large Language Model Designs Fiscal Policy
+
+Abstract: Economic inequality is a global challenge, intensifying disparities in
+education, healthcare, and social stability. Traditional systems like the U.S.
+federal income tax reduce inequality but lack adaptability. Although models
+like the Saez Optimal Taxation adjust dynamically, they fail to address
+taxpayer heterogeneity and irrational behavior. This study introduces TaxAgent,
+a novel integration of large language models (LLMs) with agent-based modeling
+(ABM) to design adaptive tax policies. In our macroeconomic simulation,
+heterogeneous H-Agents (households) simulate real-world taxpayer behaviors
+while the TaxAgent (government) utilizes LLMs to iteratively optimize tax
+rates, balancing equity and productivity. Benchmarked against Saez Optimal
+Taxation, U.S. federal income taxes, and free markets, TaxAgent achieves
+superior equity-efficiency trade-offs. This research offers a novel taxation
+solution and a scalable, data-driven framework for fiscal policy evaluation.

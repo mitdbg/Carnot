@@ -1,0 +1,13 @@
+Title: Aligned Contrastive Loss for Long-Tailed Recognition
+
+Abstract: In this paper, we propose an Aligned Contrastive Learning (ACL) algorithm to
+address the long-tailed recognition problem. Our findings indicate that while
+multi-view training boosts the performance, contrastive learning does not
+consistently enhance model generalization as the number of views increases.
+Through theoretical gradient analysis of supervised contrastive learning (SCL),
+we identify gradient conflicts, and imbalanced attraction and repulsion
+gradients between positive and negative pairs as the underlying issues. Our ACL
+algorithm is designed to eliminate these problems and demonstrates strong
+performance across multiple benchmarks. We validate the effectiveness of ACL
+through experiments on long-tailed CIFAR, ImageNet, Places, and iNaturalist
+datasets. Results show that ACL achieves new state-of-the-art performance.

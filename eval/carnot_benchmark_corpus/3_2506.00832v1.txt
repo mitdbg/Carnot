@@ -1,0 +1,16 @@
+Title: Counterfactual Activation Editing for Post-hoc Prosody and
+  Mispronunciation Correction in TTS Models
+
+Abstract: Recent advances in Text-to-Speech (TTS) have significantly improved speech
+naturalness, increasing the demand for precise prosody control and
+mispronunciation correction. Existing approaches for prosody manipulation often
+depend on specialized modules or additional training, limiting their capacity
+for post-hoc adjustments. Similarly, traditional mispronunciation correction
+relies on grapheme-to-phoneme dictionaries, making it less practical in
+low-resource settings. We introduce Counterfactual Activation Editing, a
+model-agnostic method that manipulates internal representations in a
+pre-trained TTS model to achieve post-hoc control of prosody and pronunciation.
+Experimental results show that our method effectively adjusts prosodic features
+and corrects mispronunciations while preserving synthesis quality. This opens
+the door to inference-time refinement of TTS outputs without retraining,
+bridging the gap between pre-trained TTS models and editable speech synthesis.

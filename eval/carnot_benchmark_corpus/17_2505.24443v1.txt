@@ -1,0 +1,23 @@
+Title: Diversify and Conquer: Open-set Disagreement for Robust Semi-supervised
+  Learning with Outliers
+
+Abstract: Conventional semi-supervised learning (SSL) ideally assumes that labeled and
+unlabeled data share an identical class distribution, however in practice, this
+assumption is easily violated, as unlabeled data often includes unknown class
+data, i.e., outliers. The outliers are treated as noise, considerably degrading
+the performance of SSL models. To address this drawback, we propose a novel
+framework, Diversify and Conquer (DAC), to enhance SSL robustness in the
+context of open-set semi-supervised learning. In particular, we note that
+existing open-set SSL methods rely on prediction discrepancies between inliers
+and outliers from a single model trained on labeled data. This approach can be
+easily failed when the labeled data is insufficient, leading to performance
+degradation that is worse than naive SSL that do not account for outliers. In
+contrast, our approach exploits prediction disagreements among multiple models
+that are differently biased towards the unlabeled distribution. By leveraging
+the discrepancies arising from training on unlabeled data, our method enables
+robust outlier detection even when the labeled data is underspecified. Our key
+contribution is constructing a collection of differently biased models through
+a single training process. By encouraging divergent heads to be differently
+biased towards outliers while making consistent predictions for inliers, we
+exploit the disagreement among these heads as a measure to identify unknown
+concepts. Our code is available at https://github.com/heejokong/DivCon.

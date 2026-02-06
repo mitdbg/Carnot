@@ -1,0 +1,26 @@
+Title: Revisiting Self-attention for Cross-domain Sequential Recommendation
+
+Abstract: Sequential recommendation is a popular paradigm in modern recommender
+systems. In particular, one challenging problem in this space is cross-domain
+sequential recommendation (CDSR), which aims to predict future behaviors given
+user interactions across multiple domains. Existing CDSR frameworks are mostly
+built on the self-attention transformer and seek to improve by explicitly
+injecting additional domain-specific components (e.g. domain-aware module
+blocks). While these additional components help, we argue they overlook the
+core self-attention module already present in the transformer, a naturally
+powerful tool to learn correlations among behaviors. In this work, we aim to
+improve the CDSR performance for simple models from a novel perspective of
+enhancing the self-attention. Specifically, we introduce a Pareto-optimal
+self-attention and formulate the cross-domain learning as a multi-objective
+problem, where we optimize the recommendation task while dynamically minimizing
+the cross-domain attention scores. Our approach automates knowledge transfer in
+CDSR (dubbed as AutoCDSR) -- it not only mitigates negative transfer but also
+encourages complementary knowledge exchange among auxiliary domains. Based on
+the idea, we further introduce AutoCDSR+, a more performant variant with slight
+additional cost. Our proposal is easy to implement and works as a plug-and-play
+module that can be incorporated into existing transformer-based recommenders.
+Besides flexibility, it is practical to deploy because it brings little extra
+computational overheads without heavy hyper-parameter tuning. AutoCDSR on
+average improves Recall@10 for SASRec and Bert4Rec by 9.8% and 16.0% and
+NDCG@10 by 12.0% and 16.7%, respectively. Code is available at
+https://github.com/snap-research/AutoCDSR.

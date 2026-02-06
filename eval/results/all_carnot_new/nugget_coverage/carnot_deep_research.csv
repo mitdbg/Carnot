@@ -1,0 +1,6 @@
+folder_path,nugget_coverage
+tests/baselines_results/carnot_deep_research/0,0.17647058823529413
+tests/baselines_results/carnot_deep_research/1,0.2727272727272727
+tests/baselines_results/carnot_deep_research/2,0.0
+tests/baselines_results/carnot_deep_research/3,0.16666666666666666
+tests/baselines_results/carnot_deep_research/4,0.2727272727272727

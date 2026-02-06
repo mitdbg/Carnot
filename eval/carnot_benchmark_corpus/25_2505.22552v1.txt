@@ -1,0 +1,22 @@
+Title: ClaimPKG: Enhancing Claim Verification via Pseudo-Subgraph Generation
+  with Lightweight Specialized LLM
+
+Abstract: Integrating knowledge graphs (KGs) to enhance the reasoning capabilities of
+large language models (LLMs) is an emerging research challenge in claim
+verification. While KGs provide structured, semantically rich representations
+well-suited for reasoning, most existing verification methods rely on
+unstructured text corpora, limiting their ability to effectively leverage KGs.
+Additionally, despite possessing strong reasoning abilities, modern LLMs
+struggle with multi-step modular pipelines and reasoning over KGs without
+adaptation. To address these challenges, we propose ClaimPKG, an end-to-end
+framework that seamlessly integrates LLM reasoning with structured knowledge
+from KGs. Specifically, the main idea of ClaimPKG is to employ a lightweight,
+specialized LLM to represent the input claim as pseudo-subgraphs, guiding a
+dedicated subgraph retrieval module to identify relevant KG subgraphs. These
+retrieved subgraphs are then processed by a general-purpose LLM to produce the
+final verdict and justification. Extensive experiments on the FactKG dataset
+demonstrate that ClaimPKG achieves state-of-the-art performance, outperforming
+strong baselines in this research field by 9%-12% accuracy points across
+multiple categories. Furthermore, ClaimPKG exhibits zero-shot generalizability
+to unstructured datasets such as HoVer and FEVEROUS, effectively combining
+structured knowledge from KGs with LLM reasoning across various LLM backbones.

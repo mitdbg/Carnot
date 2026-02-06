@@ -1,0 +1,21 @@
+Title: Kubernetes in the Cloud vs. Bare Metal: A Comparative Study of Network
+  Costs
+
+Abstract: Modern cloud-native applications increasingly utilise managed cloud services
+and containerisation technologies, such as Kubernetes, to achieve rapid
+time-to-market and scalable deployments. Organisations must consider various
+factors, including cost implications when deciding on a hosting platform for
+containerised applications as the usage grows. An emerging discipline called
+FinOps combines financial management and cloud operations to optimise costs in
+cloud-based applications. While prior research has explored system-level
+optimisation strategies for cost and resource efficiency in containerized
+systems, analysing network costs in Kubernetes clusters remains underexplored.
+This paper investigates the network usage and cost implications of
+containerised applications running on Kubernetes clusters. Using a methodology
+that combines measurement analysis, experimentation, and cost modelling, we aim
+to provide organisations with actionable insights into network cost
+optimisation. Our findings highlight key considerations for analysing network
+expenditures and evaluating the potential cost benefits of deploying
+applications on cloud providers. Overall, this paper contributes to the
+emerging FinOps discipline by addressing the financial and operational aspects
+of managing network costs in cloud-native environments.

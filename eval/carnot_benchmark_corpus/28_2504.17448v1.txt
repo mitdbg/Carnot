@@ -1,0 +1,23 @@
+Title: CHASe: Client Heterogeneity-Aware Data Selection for Effective Federated
+  Active Learning
+
+Abstract: Active learning (AL) reduces human annotation costs for machine learning
+systems by strategically selecting the most informative unlabeled data for
+annotation, but performing it individually may still be insufficient due to
+restricted data diversity and annotation budget. Federated Active Learning
+(FAL) addresses this by facilitating collaborative data selection and model
+training, while preserving the confidentiality of raw data samples. Yet,
+existing FAL methods fail to account for the heterogeneity of data distribution
+across clients and the associated fluctuations in global and local model
+parameters, adversely affecting model accuracy. To overcome these challenges,
+we propose CHASe (Client Heterogeneity-Aware Data Selection), specifically
+designed for FAL. CHASe focuses on identifying those unlabeled samples with
+high epistemic variations (EVs), which notably oscillate around the decision
+boundaries during training. To achieve both effectiveness and efficiency,
+\model{} encompasses techniques for 1) tracking EVs by analyzing inference
+inconsistencies across training epochs, 2) calibrating decision boundaries of
+inaccurate models with a new alignment loss, and 3) enhancing data selection
+efficiency via a data freeze and awaken mechanism with subset sampling.
+Experiments show that CHASe surpasses various established baselines in terms of
+effectiveness and efficiency, validated across diverse datasets, model
+complexities, and heterogeneous federation settings.

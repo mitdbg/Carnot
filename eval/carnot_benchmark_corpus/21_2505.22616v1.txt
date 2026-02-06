@@ -1,0 +1,19 @@
+Title: PS4PRO: Pixel-to-pixel Supervision for Photorealistic Rendering and
+  Optimization
+
+Abstract: Neural rendering methods have gained significant attention for their ability
+to reconstruct 3D scenes from 2D images. The core idea is to take multiple
+views as input and optimize the reconstructed scene by minimizing the
+uncertainty in geometry and appearance across the views. However, the
+reconstruction quality is limited by the number of input views. This limitation
+is further pronounced in complex and dynamic scenes, where certain angles of
+objects are never seen. In this paper, we propose to use video frame
+interpolation as the data augmentation method for neural rendering.
+Furthermore, we design a lightweight yet high-quality video frame interpolation
+model, PS4PRO (Pixel-to-pixel Supervision for Photorealistic Rendering and
+Optimization). PS4PRO is trained on diverse video datasets, implicitly modeling
+camera movement as well as real-world 3D geometry. Our model performs as an
+implicit world prior, enriching the photo supervision for 3D reconstruction. By
+leveraging the proposed method, we effectively augment existing datasets for
+neural rendering methods. Our experimental results indicate that our method
+improves the reconstruction performance on both static and dynamic scenes.

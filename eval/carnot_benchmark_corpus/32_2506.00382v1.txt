@@ -1,0 +1,19 @@
+Title: Spectral Insights into Data-Oblivious Critical Layers in Large Language
+  Models
+
+Abstract: Understanding how feature representations evolve across layers in large
+language models (LLMs) is key to improving their interpretability and
+robustness. While recent studies have identified critical layers linked to
+specific functions or behaviors, these efforts typically rely on data-dependent
+analyses of fine-tuned models, limiting their use to post-hoc settings. In
+contrast, we introduce a data-oblivious approach to identify intrinsic critical
+layers in pre-fine-tuned LLMs by analyzing representation dynamics via Centered
+Kernel Alignment(CKA). We show that layers with significant shifts in
+representation space are also those most affected during fine-tuning--a pattern
+that holds consistently across tasks for a given model. Our spectral analysis
+further reveals that these shifts are driven by changes in the top principal
+components, which encode semantic transitions from rationales to conclusions.
+We further apply these findings to two practical scenarios: efficient domain
+adaptation, where fine-tuning critical layers leads to greater loss reduction
+compared to non-critical layers; and backdoor defense, where freezing them
+reduces attack success rates by up to 40%.

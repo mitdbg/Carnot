@@ -1,0 +1,18 @@
+Title: Dual Debiasing for Noisy In-Context Learning for Text Generation
+
+Abstract: In context learning (ICL) relies heavily on high quality demonstrations drawn
+from large annotated corpora. Existing approaches detect noisy annotations by
+ranking local perplexities, presuming that noisy samples yield higher
+perplexities than their clean counterparts. However, this assumption breaks
+down when the noise ratio is high and many demonstrations are flawed. We
+reexamine the perplexity based paradigm for text generation under noisy
+annotations, highlighting two sources of bias in perplexity: the annotation
+itself and the domain specific knowledge inherent in large language models
+(LLMs). To overcome these biases, we introduce a dual debiasing framework that
+uses synthesized neighbors to explicitly correct perplexity estimates, yielding
+a robust Sample Cleanliness Score. This metric uncovers absolute sample
+cleanliness regardless of the overall corpus noise level. Extensive experiments
+demonstrate our method's superior noise detection capabilities and show that
+its final ICL performance is comparable to that of a fully clean demonstration
+corpus. Moreover, our approach remains robust even when noise ratios are
+extremely high.

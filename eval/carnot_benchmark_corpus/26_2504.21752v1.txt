@@ -1,0 +1,22 @@
+Title: VDDP: Verifiable Distributed Differential Privacy under the
+  Client-Server-Verifier Setup
+
+Abstract: Despite differential privacy (DP) often being considered the de facto
+standard for data privacy, its realization is vulnerable to unfaithful
+execution of its mechanisms by servers, especially in distributed settings.
+Specifically, servers may sample noise from incorrect distributions or generate
+correlated noise while appearing to follow established protocols. This work
+analyzes these malicious behaviors in a general differential privacy framework
+within a distributed client-server-verifier setup. To address these adversarial
+problems, we propose a novel definition called Verifiable Distributed
+Differential Privacy (VDDP) by incorporating additional verification
+mechanisms. We also explore the relationship between zero-knowledge proofs
+(ZKP) and DP, demonstrating that while ZKPs are sufficient for achieving DP
+under verifiability requirements, they are not necessary. Furthermore, we
+develop two novel and efficient mechanisms that satisfy VDDP: (1) the
+Verifiable Distributed Discrete Laplacian Mechanism (VDDLM), which offers up to
+a $4 \times 10^5$x improvement in proof generation efficiency with only
+0.1-0.2x error compared to the previous state-of-the-art verifiable
+differentially private mechanism; (2) an improved solution to Verifiable
+Randomized Response (VRR) under local DP, a special case of VDDP, achieving up
+a reduction of up to 5000x in communication costs and the verifier's overhead.

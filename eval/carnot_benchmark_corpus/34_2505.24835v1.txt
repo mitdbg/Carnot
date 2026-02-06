@@ -1,0 +1,21 @@
+Title: Timing is important: Risk-aware Fund Allocation based on Time-Series
+  Forecasting
+
+Abstract: Fund allocation has been an increasingly important problem in the financial
+domain. In reality, we aim to allocate the funds to buy certain assets within a
+certain future period. Naive solutions such as prediction-only or
+Predict-then-Optimize approaches suffer from goal mismatch. Additionally, the
+introduction of the SOTA time series forecasting model inevitably introduces
+additional uncertainty in the predicted result. To solve both problems
+mentioned above, we introduce a Risk-aware Time-Series Predict-and-Allocate
+(RTS-PnO) framework, which holds no prior assumption on the forecasting models.
+Such a framework contains three features: (i) end-to-end training with
+objective alignment measurement, (ii) adaptive forecasting uncertainty
+calibration, and (iii) agnostic towards forecasting models. The evaluation of
+RTS-PnO is conducted over both online and offline experiments. For offline
+experiments, eight datasets from three categories of financial applications are
+used: Currency, Stock, and Cryptos. RTS-PnO consistently outperforms other
+competitive baselines. The online experiment is conducted on the Cross-Border
+Payment business at FiT, Tencent, and an 8.4\% decrease in regret is witnessed
+when compared with the product-line approach. The code for the offline
+experiment is available at https://github.com/fuyuanlyu/RTS-PnO.

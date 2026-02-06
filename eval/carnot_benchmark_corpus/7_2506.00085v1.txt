@@ -1,0 +1,15 @@
+Title: COSMIC: Generalized Refusal Direction Identification in LLM Activations
+
+Abstract: Large Language Models (LLMs) encode behaviors such as refusal within their
+activation space, yet identifying these behaviors remains a significant
+challenge. Existing methods often rely on predefined refusal templates
+detectable in output tokens or require manual analysis. We introduce
+\textbf{COSMIC} (Cosine Similarity Metrics for Inversion of Concepts), an
+automated framework for direction selection that identifies viable steering
+directions and target layers using cosine similarity - entirely independent of
+model outputs. COSMIC achieves steering performance comparable to prior methods
+without requiring assumptions about a model's refusal behavior, such as the
+presence of specific refusal tokens. It reliably identifies refusal directions
+in adversarial settings and weakly aligned models, and is capable of steering
+such models toward safer behavior with minimal increase in false refusals,
+demonstrating robustness across a wide range of alignment conditions.

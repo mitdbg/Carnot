@@ -1,0 +1,19 @@
+Title: Probabilistic Online Event Downsampling
+
+Abstract: Event cameras capture scene changes asynchronously on a per-pixel basis,
+enabling extremely high temporal resolution. However, this advantage comes at
+the cost of high bandwidth, memory, and computational demands. To address this,
+prior work has explored event downsampling, but most approaches rely on fixed
+heuristics or threshold-based strategies, limiting their adaptability. Instead,
+we propose a probabilistic framework, POLED, that models event importance
+through an event-importance probability density function (ePDF), which can be
+arbitrarily defined and adapted to different applications. Our approach
+operates in a purely online setting, estimating event importance on-the-fly
+from raw event streams, enabling scene-specific adaptation. Additionally, we
+introduce zero-shot event downsampling, where downsampled events must remain
+usable for models trained on the original event stream, without task-specific
+adaptation. We design a contour-preserving ePDF that prioritizes structurally
+important events and evaluate our method across four datasets and tasks--object
+classification, image interpolation, surface normal estimation, and object
+detection--demonstrating that intelligent sampling is crucial for maintaining
+performance under event-budget constraints.

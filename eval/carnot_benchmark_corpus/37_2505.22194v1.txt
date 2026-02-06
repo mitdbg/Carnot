@@ -1,0 +1,22 @@
+Title: Refining Datapath for Microscaling ViTs
+
+Abstract: Vision Transformers (ViTs) leverage the transformer architecture to
+effectively capture global context, demonstrating strong performance in
+computer vision tasks. A major challenge in ViT hardware acceleration is that
+the model family contains complex arithmetic operations that are sensitive to
+model accuracy, such as the Softmax and LayerNorm operations, which cannot be
+mapped onto efficient hardware with low precision. Existing methods only
+exploit parallelism in the matrix multiplication operations of the model on
+hardware and keep these complex operations on the CPU. This results in
+suboptimal performance due to the communication overhead between the CPU and
+accelerator. Can new data formats solve this problem?
+  In this work, we present the first ViT accelerator that maps all operations
+of the ViT models onto FPGAs. We exploit a new arithmetic format named
+Microscaling Integer (MXInt) for datapath designs and evaluate how different
+design choices can be made to trade off accuracy, hardware performance, and
+hardware utilization. Our contributions are twofold. First, we quantize ViTs
+using the MXInt format, achieving both high area efficiency and accuracy.
+Second, we propose MXInt-specific hardware optimization that map these complex
+arithmetic operations into custom hardware. Within 1\% accuracy loss, our
+method achieves at least 93$\times$ speedup compared to Float16 and at least
+1.9$\times$ speedup compared to related work.

@@ -1,0 +1,25 @@
+Title: Birdie: Natural Language-Driven Table Discovery Using Differentiable
+  Search Index
+
+Abstract: Natural language (NL)-driven table discovery identifies relevant tables from
+large table repositories based on NL queries. While current deep-learning-based
+methods using the traditional dense vector search pipeline, i.e.,
+representation-index-search, achieve remarkable accuracy, they face several
+limitations that impede further performance improvements: (i) the errors
+accumulated during the table representation and indexing phases affect the
+subsequent search accuracy; and (ii) insufficient query-table interaction
+hinders effective semantic alignment, impeding accuracy improvements. In this
+paper, we propose a novel framework Birdie, using a differentiable search
+index. It unifies the indexing and search into a single encoder-decoder
+language model, thus getting rid of error accumulations. Birdie first assigns
+each table a prefix-aware identifier and leverages a large language model-based
+query generator to create synthetic queries for each table. It then encodes the
+mapping between synthetic queries/tables and their corresponding table
+identifiers into the parameters of an encoder-decoder language model, enabling
+deep query-table interactions. During search, the trained model directly
+generates table identifiers for a given query. To accommodate the continual
+indexing of dynamic tables, we introduce an index update strategy via parameter
+isolation, which mitigates the issue of catastrophic forgetting. Extensive
+experiments demonstrate that Birdie outperforms state-of-the-art dense methods
+by 16.8% in accuracy, and reduces forgetting by over 90% compared to other
+continual learning approaches.

@@ -1,0 +1,20 @@
+Title: Need for zkSpeed: Accelerating HyperPlonk for Zero-Knowledge Proofs
+
+Abstract: Zero-Knowledge Proofs (ZKPs) are rapidly gaining importance in
+privacy-preserving and verifiable computing. ZKPs enable a proving party to
+prove the truth of a statement to a verifying party without revealing anything
+else. ZKPs have applications in blockchain technologies, verifiable machine
+learning, and electronic voting, but have yet to see widespread adoption due to
+the computational complexity of the proving process. Recent works have
+accelerated the key primitives of state-of-the-art ZKP protocols on GPU and
+ASIC. However, the protocols accelerated thus far face one of two challenges:
+they either require a trusted setup for each application, or they generate
+larger proof sizes with higher verification costs, limiting their applicability
+in scenarios with numerous verifiers or strict verification time constraints.
+This work presents an accelerator, zkSpeed, for HyperPlonk, a state-of-the-art
+ZKP protocol that supports both one-time, universal setup and small proof sizes
+for typical ZKP applications in publicly verifiable, consensus-based systems.
+We accelerate the entire protocol, including two major primitives: SumCheck and
+Multi-scalar Multiplications (MSMs). We develop a full-chip architecture using
+366.46 mm$^2$ and 2 TB/s of bandwidth to accelerate the entire proof generation
+process, achieving geometric mean speedups of 801$\times$ over CPU baselines.
