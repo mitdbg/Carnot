@@ -1,0 +1,6 @@
+folder_path,claim_coverage
+tests/baselines_results/carnot_deep_research/0,0.4
+tests/baselines_results/carnot_deep_research/1,0.2
+tests/baselines_results/carnot_deep_research/2,0.23076923076923078
+tests/baselines_results/carnot_deep_research/3,0.1111111111111111
+tests/baselines_results/carnot_deep_research/4,0.3333333333333333
