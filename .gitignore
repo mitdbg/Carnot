@@ -222,3 +222,14 @@ frontend.log
 secrets/
 how-tos/
 make_password.py
+
+# local envs
+.venv*/
+
+# generated outputs
+*.csv
+*.json
+summaries_dump.txt
+cidr-legal-results/
+parse-answer-errors/
+raptor/
