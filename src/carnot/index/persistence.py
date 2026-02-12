@@ -25,6 +25,13 @@ from carnot.utils.hash_helpers import hash_for_id
 logger = logging.getLogger(__name__)
 
 
+def _embedding_to_json_safe(emb) -> list:
+    """Convert embedding (ndarray or list) to JSON-serializable list."""
+    if hasattr(emb, "tolist"):
+        return emb.tolist()
+    return emb
+
+
 def _get_routing_storage_dir() -> Path:
     """Return the base directory for routing cache storage."""
     base = Path.home() / ".carnot"
@@ -69,13 +76,10 @@ class FileSummaryCache:
         """Save a file summary to the cache."""
         key = self._path_to_key(entry.path)
         filepath = self.storage_dir / key
-        emb = entry.embedding
-        if hasattr(emb, "tolist"):
-            emb = emb.tolist()
         data = {
             "path": entry.path,
             "summary": entry.summary,
-            "embedding": emb,
+            "embedding": _embedding_to_json_safe(entry.embedding),
         }
         with open(filepath, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=0)
@@ -140,7 +144,11 @@ class HierarchicalIndexCache:
     def _serialize(self, index: HierarchicalFileIndex) -> dict:
         """Serialize index to JSON-safe dict, including nested tree structure."""
         file_summaries = [
-            {"path": e.path, "summary": e.summary, "embedding": e.embedding}
+            {
+                "path": e.path,
+                "summary": e.summary,
+                "embedding": _embedding_to_json_safe(e.embedding),
+            }
             for e in index.file_summaries
         ]
         # Serialize root level (recursively for nested InternalNodes)
@@ -149,7 +157,12 @@ class HierarchicalIndexCache:
             if hasattr(node, "path"):
                 # FileSummaryEntry
                 root_serialized.append(
-                    {"type": "file", "path": node.path, "summary": node.summary, "embedding": node.embedding}
+                    {
+                        "type": "file",
+                        "path": node.path,
+                        "summary": node.summary,
+                        "embedding": _embedding_to_json_safe(node.embedding),
+                    }
                 )
             else:
                 root_serialized.append(self._serialize_internal_node(node))
@@ -179,7 +192,7 @@ class HierarchicalIndexCache:
         return {
             "type": "internal",
             "summary": node.summary,
-            "embedding": node.embedding,
+            "embedding": _embedding_to_json_safe(node.embedding),
             "child_paths": node.child_paths,
             "is_leaf_cluster": node.is_leaf_cluster,
             "children": children_serialized,
