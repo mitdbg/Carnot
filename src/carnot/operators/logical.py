@@ -480,18 +480,24 @@ class JoinOp(LogicalOperator):
         return logical_op_params
 
 
-class LimitScan(LogicalOperator):
+class Limit(LogicalOperator):
     def __init__(self, limit: int, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.limit = limit
 
     @staticmethod
     def desc() -> str:
-        # TODO
-        return ""
+        return textwrap.dedent(
+            """
+            Limit Operator:
+                Description: return the first N records from the input set. Useful for limiting the number of records returned or for debugging.
+                Syntax: ds.limit(n: int)
+                Example: ds.limit(n=10)
+            """
+        )
 
     def __str__(self):
-        return f"LimitScan({str(self.input_schema)}, {str(self.output_schema)})"
+        return f"Limit({str(self.input_schema)}, {str(self.output_schema)})"
 
     def get_logical_id_params(self) -> dict:
         logical_id_params = super().get_logical_id_params()

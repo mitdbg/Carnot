@@ -6,6 +6,7 @@ class LogicalDataset:
         self.name = name
         self.parents = parents or []
         self.id_params = id_params or {
+            "limit_id": 0,
             "merge_id": 0,
             "code_id": 0,
             "reason_id": 0,
@@ -27,6 +28,15 @@ class LogicalDataset:
             "params": self.params,
             "parents": [p.serialize() for p in self.parents],
         }
+
+    def limit(self, n: int) -> LogicalDataset:
+        """
+        Apply a limit operation to the dataset, returning only the first n records.
+        """
+        limited_name = f"LimitOperation{self.id_params['limit_id'] + 1}"
+        self.id_params["limit_id"] += 1
+        params = {"operator": "Limit", "description": f"Limited {self.name} to first {n} records", "n": n}
+        return LogicalDataset(limited_name, parents=[self], id_params=self.id_params, output_dataset_id=limited_name, **params)
 
     def merge(self, other: LogicalDataset) -> LogicalDataset:
         """

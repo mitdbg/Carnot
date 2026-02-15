@@ -12,6 +12,7 @@ from carnot.memory.memory import Memory
 # from carnot.plan.logical import LogicalPlan
 # from carnot.plan.physical import PhysicalPlan
 from carnot.operators.code import CodeOperator
+from carnot.operators.limit import LimitOperator
 from carnot.operators.reasoning import ReasoningOperator
 from carnot.operators.sem_agg import SemAggOperator
 from carnot.operators.sem_filter import SemFilterOperator
@@ -81,6 +82,9 @@ class Execution:
         op_name = op_params.get('operator', plan['name'])
         if op_name == "Code":
             operator = CodeOperator(task=op_params['task'], output_dataset_id=plan['output_dataset_id'], model_id="openai/gpt-5-mini", llm_config=self.llm_config)
+
+        elif op_name == "Limit":
+            operator = LimitOperator(n=op_params['n'], output_dataset_id=plan['output_dataset_id'])
 
         elif op_name == "SemanticAgg":
             operator = SemAggOperator(task=op_params['task'], agg_fields=op_params['agg_fields'], output_dataset_id=plan['output_dataset_id'], model_id="openai/gpt-5-mini", llm_config=self.llm_config, max_workers=4)
