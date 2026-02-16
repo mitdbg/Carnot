@@ -285,8 +285,8 @@ class Code(LogicalOperator):
             """
             Code Operator:
                 Description: Use a coding agent to perform computation over structured data based on a natural language task description.
-                Syntax: ds.code(task: str)
-                Example: ds.code(task="Compute the total revenue for each product category in the sales dataset.")
+                Syntax: ds.write_code(task: str)
+                Example: ds.write_code(task="Compute the total revenue for each product category in the sales dataset.")
             """
         )
 
@@ -455,7 +455,7 @@ class JoinOp(LogicalOperator):
             """
             Join Operator:
                 Description: Semantically joins two input sets based on a provided natural language condition.
-                Syntax: ds.sem_join(other_ds: LogicalDataset, condition: str)
+                Syntax: ds.sem_join(other_ds: Dataset, condition: str)
                 Example: ds.sem_join(other_ds=orders_ds, condition="customer_id matches id in the order PDF")
             """
         )

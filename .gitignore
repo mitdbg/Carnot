@@ -239,6 +239,7 @@ evals/quest/data/
 
 # Copilot things
 .github/copilot-instructions.md
+examples/
 
 # Miscellaneous
 .github/workflows/github-trust-policy.json
