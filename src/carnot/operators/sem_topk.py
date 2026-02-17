@@ -1,4 +1,5 @@
 from carnot.data.dataset import Dataset
+from carnot.index import FlatCarnotIndex, HierarchicalCarnotIndex
 from carnot.index.index import ChromaIndex, FaissIndex
 from carnot.utils.hash_helpers import hash_for_id
 
@@ -14,7 +15,13 @@ class SemTopKOperator:
         self.model_id = model_id
         self.api_key = llm_config.get("OPENAI_API_KEY")
         # self.max_workers = max_workers
-        self.index_cls = ChromaIndex if index_type == "chroma" else FaissIndex
+        index_map = {
+            "chroma": ChromaIndex,
+            "faiss": FaissIndex,
+            "hierarchical": HierarchicalCarnotIndex,
+            "flat": FlatCarnotIndex,
+        }  
+        self.index_cls = index_map[index_type]
         # self.prompt_templates = yaml.safe_load(
         #     resources.files("carnot.agents.prompts").joinpath("sem_topk.yaml").read_text()
         # )

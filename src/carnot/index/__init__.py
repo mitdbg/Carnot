@@ -1,8 +1,9 @@
-from carnot.index.hierarchical import HierarchicalFileIndex, HierarchicalIndexConfig
+from carnot.index.hierarchical import FlatFileIndex, HierarchicalFileIndex, HierarchicalIndexConfig
 from carnot.index.index import (
     CarnotIndex,
     ChromaIndex,
     FaissIndex,
+    FlatCarnotIndex,
     HierarchicalCarnotIndex,
     SemanticIndex,
 )
@@ -12,10 +13,12 @@ __all__ = [
     "CarnotIndex",
     "ChromaIndex",
     "FaissIndex",
+    "FlatCarnotIndex",
+    "FlatFileIndex",
     "HierarchicalCarnotIndex",
-    "SemanticIndex",
     "HierarchicalFileIndex",
     "HierarchicalIndexConfig",
     "FileSummaryCache",
     "HierarchicalIndexCache",
+    "SemanticIndex",
 ]

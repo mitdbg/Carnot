@@ -7,7 +7,7 @@ from pathlib import Path
 
 import chromadb
 
-from carnot.index.hierarchical import HierarchicalFileIndex
+from carnot.index.summary_indices import FlatFileIndex, HierarchicalFileIndex
 import faiss
 import litellm
 import numpy as np
@@ -120,6 +120,71 @@ class HierarchicalCarnotIndex(CarnotIndex):
         if self._hierarchical is None:
             self._get_or_create_index()
         paths = self._hierarchical.search(query, k)
+        return [self._path_to_item[p] for p in paths if p in self._path_to_item][:k]
+
+
+class FlatCarnotIndex(CarnotIndex):
+    """CarnotIndex adapter for FlatFileIndex. Single-level, LLM selects top-K."""
+
+    def __init__(
+        self,
+        name: str,
+        items: list,
+        flat_index: "FlatFileIndex | None" = None,
+        config=None,
+        api_key: str | None = None,
+        use_persistence: bool = True,
+        **kwargs
+    ):
+        super().__init__(name=name, items=items)
+        self._flat = flat_index
+        self._config = config
+        self._api_key = api_key
+        self._use_persistence = use_persistence
+        self._path_to_item = {}
+        for item in items:
+            p = item.path if hasattr(item, "path") else (item.get("path") if isinstance(item, dict) else None)
+            if p:
+                self._path_to_item[p] = item
+        if self._flat is None and self._path_to_item:
+            self._get_or_create_index()
+
+    def _add_index_to_catalog(self):
+        pass
+
+    def _get_or_create_index(self) -> FlatFileIndex | None:
+        if self._flat is not None:
+            return self._flat
+        from carnot.data.item import DataItem
+
+        def to_data_item(i):
+            if isinstance(i, DataItem) and i.path:
+                return i
+            if isinstance(i, dict) and i.get("path"):
+                di = DataItem(path=i["path"])
+                di._dict = i
+                return di
+            return None
+
+        data_items = [x for x in (to_data_item(i) for i in self.items) if x is not None]
+        if not data_items:
+            raise ValueError("FlatCarnotIndex: no items with path to build index")
+        index = FlatFileIndex.from_items(
+            name=self.name,
+            items=data_items,
+            config=self._config,
+            api_key=self._api_key,
+            use_persistence=self._use_persistence,
+        )
+        if index is None:
+            raise ValueError("Could not build flat index from items")
+        self._flat = index
+        return self._flat
+
+    def search(self, query: str, k: int) -> list:
+        if self._flat is None:
+            self._get_or_create_index()
+        paths = self._flat.search(query, k)
         return [self._path_to_item[p] for p in paths if p in self._path_to_item][:k]
 
 

@@ -7,7 +7,9 @@ from pathlib import Path
 
 import numpy as np
 
+from carnot.core.data.smv_generator import SMVGenerator
 from carnot.data.item import DataItem
+from carnot.index.persistence import FileSummaryCache
 from carnot.utils.hash_helpers import hash_for_id
 
 logger = logging.getLogger(__name__)
@@ -63,6 +65,138 @@ def _get_routing_storage_base() -> Path:
     if os.getenv("CARNOT_HOME"):
         base = Path(os.getenv("CARNOT_HOME"))
     return base / "routing"
+
+
+# Max file summaries to send to LLM at once (context limit)
+FLAT_INDEX_MAX_LLM_ITEMS = 40
+
+class FlatFileIndex:
+    """
+    Single-level index: all file summaries in one flat list. At query time, sends summaries to LLM to pick the top-K most relevant.
+    When file count exceeds context limit, uses embedding similarity to pre-filter then LLM picks top-K from that set.
+    """
+
+    def __init__(
+        self,
+        name: str,
+        file_summaries: list[FileSummaryEntry],
+        config: HierarchicalIndexConfig | None = None,
+        api_key: str | None = None,
+        max_llm_items: int = FLAT_INDEX_MAX_LLM_ITEMS,
+    ):
+        self.name = name
+        self.file_summaries = file_summaries
+        self.config = config or HierarchicalIndexConfig()
+        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
+        self.max_llm_items = max_llm_items
+        self._embeddings = (
+            np.array([e.embedding for e in file_summaries], dtype="float32") if file_summaries else None
+        )
+
+    @classmethod
+    def from_items(
+        cls,
+        name: str,
+        items: list[DataItem],
+        config: HierarchicalIndexConfig | None = None,
+        api_key: str | None = None,
+        storage_dir: Path | None = None,
+        use_persistence: bool = True,
+        summary_generator=None,
+    ) -> FlatFileIndex | None:
+        """Build index from DataItems. Summarizes files, caches. Returns None if summaries cannot be generated."""
+        if not items:
+            return None
+
+        base = storage_dir or _get_routing_storage_base()
+        summary_cache = FileSummaryCache(base / "summaries") if use_persistence else None
+        summary_generator = summary_generator or SMVGenerator()
+        summaries = HierarchicalFileIndex._get_or_build_summaries(
+            items, summary_generator, summary_cache
+        )
+        if not summaries:
+            logger.warning("No file summaries could be generated for FlatFileIndex")
+            return None
+        return cls(name=name, file_summaries=summaries, config=config, api_key=api_key)
+
+    def _embed_texts(self, texts: list[str]) -> list[list[float]]:
+        import litellm
+
+        response = litellm.embedding(
+            model=self.config.embedding_model,
+            input=texts,
+            api_key=self.api_key,
+        )
+        return [item["embedding"] for item in response.data]
+
+    def _llm_select_indices(self, query: str, entries: list[FileSummaryEntry], top_k: int) -> list[int]:
+        """Send summaries to LLM; return indices of top-k most relevant."""
+        if not entries or top_k <= 0:
+            return []
+        if len(entries) <= top_k:
+            return list(range(len(entries)))
+
+        import re
+
+        import litellm
+
+        max_chars = 1200
+        numbered = "\n".join(
+            f"{i + 1}. {(e.summary[:max_chars] + '...' if len(e.summary) > max_chars else e.summary)}"
+            for i, e in enumerate(entries)
+        )
+        prompt = f"""Given the user query, which of the following file summaries are most relevant? Return ONLY the numbers of the top {min(top_k, len(entries))} most relevant items, in order of relevance, as a comma-separated list (e.g. 3,1,7).
+
+Query: {query}
+
+File summaries:
+{numbered}
+
+Return only the comma-separated numbers, nothing else:"""
+
+        try:
+            response = litellm.completion(
+                model=self.config.llm_routing_model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.1,
+                api_key=self.api_key,
+            )
+            text = response.choices[0].message.content.strip()
+            numbers = re.findall(r"\b(\d+)\b", text)
+            indices = []
+            for n in numbers:
+                idx = int(n) - 1
+                if 0 <= idx < len(entries) and idx not in indices:
+                    indices.append(idx)
+                if len(indices) >= top_k:
+                    break
+            return indices
+        except Exception as e:
+            logger.warning("FlatFileIndex LLM selection failed: %s", e)
+            return []
+
+    def search(self, query: str, k: int = 50) -> list[str]:
+        """Return top k file paths, uses LLM to pick, pre-filters by embedding when summaries exceed context limit."""
+        if not self.file_summaries:
+            return []
+        k = min(k, len(self.file_summaries))
+
+        if len(self.file_summaries) <= self.max_llm_items:
+            candidates = self.file_summaries
+        else:
+            query_emb = np.array(self._embed_texts([query])[0], dtype="float32")
+            sims = -np.dot(self._embeddings, query_emb)
+            order = np.argsort(sims)
+            top_n = min(self.max_llm_items, len(self.file_summaries))
+            indices = order[:top_n].tolist()
+            candidates = [self.file_summaries[i] for i in indices]
+        indices = self._llm_select_indices(query, candidates, k)
+        if not indices:
+            query_emb = np.array(self._embed_texts([query])[0], dtype="float32")
+            emb = np.array([candidates[i].embedding for i in range(len(candidates))], dtype="float32")
+            sims = -np.dot(emb, query_emb)
+            indices = np.argsort(sims)[:k].tolist()
+        return [candidates[i].path for i in indices]
 
 
 class HierarchicalFileIndex:
