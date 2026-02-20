@@ -18,6 +18,14 @@ def llm_config():
 @pytest.fixture
 def test_model_id():
     """
-    Model ID to use for testing.
+    Model ID to use for testing (LLM for text generation).
     """
     return "openai/gpt-5-mini"
+
+
+@pytest.fixture
+def test_embedding_model_id():
+    """
+    Embedding model ID to use for testing (for semantic similarity/topk operations).
+    """
+    return "openai/text-embedding-3-small"

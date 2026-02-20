@@ -26,9 +26,7 @@ __all__ = [
     "ActionStep",
     "PlanningStep",
     "TaskStep",
-    "CompilerTaskStep",
     "PlannerTaskStep",
-    "DataDiscoveryTaskStep",
     "SystemPromptStep",
     "FinalAnswerStep",
     "ToolCall",
@@ -92,9 +90,7 @@ class ActionStep(MemoryStep):
             "model_output": self.model_output,
             "code_action": self.code_action,
             "observations": self.observations,
-            "observations_images": [image.tobytes() for image in self.observations_images]
-            if self.observations_images
-            else None,
+            "observations_images": [image.tobytes() for image in self.observations_images] if self.observations_images else None,
             "action_output": make_json_serializable(self.action_output),
             "token_usage": asdict(self.token_usage) if self.token_usage else None,
             "is_final_answer": self.is_final_answer,
@@ -210,19 +206,10 @@ class ConversationAgentStep(MemoryStep):
     message_type: str | None = None  # e.g., "natural-language-plan", "logical-plan"
 
     def to_messages(self, summary_mode: bool = False) -> list[ChatMessage]:
-        return [ChatMessage(role=MessageRole.ASSISTANT, content=[{"type": "text", "text": self.content}])]
+        plan_type_str = "Logical Plan" if self.message_type == "logical-plan" else "Natural Language Plan"
+        content = f"Latest {plan_type_str} from conversation history:\n{self.content}"
+        return [ChatMessage(role=MessageRole.ASSISTANT, content=[{"type": "text", "text": content}])]
 
-
-@dataclass
-class CompilerTaskStep(MemoryStep):
-    task: str
-    datasets: list[Dataset]
-    nl_plan: str
-
-    def to_messages(self, summary_mode: bool = False) -> list[ChatMessage]:
-        dataset_list = "\n".join([f"- {dataset.name}: {dataset.annotation}" for dataset in self.datasets])
-        content = f"Task: \"{self.task}\"\n\nDatasets:\n{dataset_list}\n\nLogical Plan (in NL):\n{self.nl_plan}"
-        return [ChatMessage(role=MessageRole.USER, content=[{"type": "text", "text": content}])]
 
 @dataclass
 class PlannerTaskStep(MemoryStep):
@@ -231,18 +218,7 @@ class PlannerTaskStep(MemoryStep):
 
     def to_messages(self, summary_mode: bool = False) -> list[ChatMessage]:
         dataset_list = "\n".join([f"- {dataset.name}: {dataset.annotation}" for dataset in self.datasets])
-        content = f"Task: \"{self.task}\"\n\nDatasets:\n{dataset_list}"
-        return [ChatMessage(role=MessageRole.USER, content=[{"type": "text", "text": content}])]
-
-
-@dataclass
-class DataDiscoveryTaskStep(MemoryStep):
-    task: str
-    datasets: list[Dataset]
-
-    def to_messages(self, summary_mode: bool = False) -> list[ChatMessage]:
-        dataset_list = "\n".join([f"- {dataset.name}: {dataset.annotation}" for dataset in self.datasets])
-        content = f"Query: \"{self.task}\"\n\nDatasets:\n{dataset_list}"
+        content = f"\n\nDatasets:\n{dataset_list}\n\nTask: \"{self.task}\"\n"
         return [ChatMessage(role=MessageRole.USER, content=[{"type": "text", "text": content}])]
 
 

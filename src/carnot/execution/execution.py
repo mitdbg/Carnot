@@ -50,7 +50,7 @@ class Execution:
         self.indices = indices or []
         self.llm_config = llm_config or {}
         self.progress_log_file = progress_log_file
-        self.planner_model_id = "openai/gpt-5-mini"
+        self.planner_model_id = "openai/gpt-5-2025-08-07"
         self.api_key_name = "OPENAI_API_KEY"
         if "OPENAI_API_KEY" not in self.llm_config and "ANTHROPIC_API_KEY" in self.llm_config:
             self.planner_model_id = "anthropic/claude-sonnet-4-5-20250929"
@@ -61,36 +61,41 @@ class Execution:
         elif "OPENAI_API_KEY" not in self.llm_config and "GOOGLE_API_KEY" in self.llm_config:
             self.planner_model_id = "google/gemini-2.5-flash"
             self.api_key_name = "GOOGLE_API_KEY"
-        self.planner = Planner(tools=self.tools, model=LiteLLMModel(model_id=self.planner_model_id, api_key=llm_config.get(self.api_key_name)))
+        self.planner = Planner(
+            datasets=self.datasets,
+            tools=self.tools, 
+            model=LiteLLMModel(model_id=self.planner_model_id, api_key=llm_config.get(self.api_key_name))
+        )
 
     def plan(self) -> tuple[str, dict]:
         """
         Generate a logical execution plan for the query.
+        
+        This method uses a two-phase approach:
+        1. Generate a code-based logical plan (the Planner can call its managed 
+           DataDiscoveryAgent to explore datasets during planning)
+        2. Translate the logical plan into a natural language description for the user
+        
+        Returns:
+            A tuple of (natural_language_plan, logical_plan_dict)
         """
-        # retrieve relevant context from memory
-        memories = [] # self.memory.retrieve(self.query)
-
-        # perform preliminary data discovery to inform planning
-        data_discovery_report = self.planner.search_for_relevant_data(
-            self.query, self.datasets, self.indices, self.tools, memories,
+        # Phase 1: Generate the code-based logical plan
+        # The Planner can call its DataDiscoveryAgent as needed during planning
+        logical_plan = self.planner.generate_logical_plan(
+            self.query, 
+            self.datasets, 
             conversation=self.conversation,
         )
 
-        # invoke the planner to create a logical plan in natural language
-        nl_plan = self.planner.generate_logical_plan(
-            self.query, self.datasets, self.indices, self.tools, memories,
-            data_discovery_report=data_discovery_report,
+        # Phase 2: Translate the logical plan to natural language for the user
+        nl_plan = self.planner.paraphrase_logical_plan(
+            self.query, 
+            logical_plan, 
+            self.datasets,
             conversation=self.conversation,
         )
 
-        # convert the natural language plan to a LogicalPlan object
-        plan = self.planner.compile_logical_plan(
-            self.query, self.datasets, nl_plan,
-            data_discovery_report=data_discovery_report,
-            conversation=self.conversation,
-        )
-
-        return nl_plan, plan
+        return nl_plan, logical_plan
 
     def _get_op_from_plan_dict(self, plan: dict) -> tuple[Operator | Dataset, list[str]]:
         """
