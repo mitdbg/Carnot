@@ -2,7 +2,7 @@ from carnot.data.dataset import Dataset
 from carnot.operators.sem_topk import SemTopKOperator
 
 
-def test_sem_topk_operator_basic(test_model_id, llm_config):
+def test_sem_topk_operator_basic(test_embedding_model_id, llm_config):
     # construct dataset of various animals
     animal_data = [
         {"animal": animal}
@@ -19,7 +19,7 @@ def test_sem_topk_operator_basic(test_model_id, llm_config):
     input_datasets = {animal_dataset.name: animal_dataset}
 
     # execute the operator
-    sem_topk_operator = SemTopKOperator(task, k=2, output_dataset_id="output-dataset-id", model_id=test_model_id, llm_config=llm_config, max_workers=4)
+    sem_topk_operator = SemTopKOperator(task, k=2, output_dataset_id="output-dataset-id", model_id=test_embedding_model_id, llm_config=llm_config, max_workers=4)
     output_datasets = sem_topk_operator("Animal Dataset", input_datasets)
 
     # assert the output is as expected
@@ -31,7 +31,7 @@ def test_sem_topk_operator_basic(test_model_id, llm_config):
     assert {"animal": "elephant"} in output_dataset.items
 
 
-def test_sem_topk_operator_movie_reviews(test_model_id, llm_config, movie_reviews_data):
+def test_sem_topk_operator_movie_reviews(test_embedding_model_id, llm_config, movie_reviews_data):
     # load movie reviews data
     _, reviews_df = movie_reviews_data
 
@@ -50,7 +50,7 @@ def test_sem_topk_operator_movie_reviews(test_model_id, llm_config, movie_review
     input_datasets = {"Reviews Dataset": reviews_dataset}
 
     # generate output
-    sem_topk_operator = SemTopKOperator(task, k=5, output_dataset_id="output-dataset-id", model_id=test_model_id, llm_config=llm_config, max_workers=4)
+    sem_topk_operator = SemTopKOperator(task, k=5, output_dataset_id="output-dataset-id", model_id=test_embedding_model_id, llm_config=llm_config, max_workers=4)
     output_datasets = sem_topk_operator("Reviews Dataset", input_datasets)
 
     assert len(output_datasets) == 2

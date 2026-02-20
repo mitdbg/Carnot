@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import TIMESTAMP
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import declarative_base
@@ -70,6 +70,12 @@ class DatasetFile(Base):
 
     dataset_id = Column(Integer, ForeignKey("datasets.id", ondelete="CASCADE"), nullable=False, primary_key=True)
     file_id = Column(Integer, ForeignKey("files.id", ondelete="CASCADE"), nullable=False, primary_key=True)
+    
+    # Add explicit indexes for faster COUNT queries and lookups
+    __table_args__ = (
+        Index('ix_dataset_files_dataset_id', 'dataset_id'),
+        Index('ix_dataset_files_file_id', 'file_id'),
+    )
 
 class Conversation(Base):
     __tablename__ = "conversations"

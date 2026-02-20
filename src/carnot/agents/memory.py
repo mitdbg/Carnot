@@ -26,9 +26,7 @@ __all__ = [
     "ActionStep",
     "PlanningStep",
     "TaskStep",
-    "CompilerTaskStep",
     "PlannerTaskStep",
-    "DataDiscoveryTaskStep",
     "SystemPromptStep",
     "FinalAnswerStep",
     "ToolCall",
@@ -214,35 +212,13 @@ class ConversationAgentStep(MemoryStep):
 
 
 @dataclass
-class CompilerTaskStep(MemoryStep):
-    task: str
-    datasets: list[Dataset]
-    nl_plan: str
-
-    def to_messages(self, summary_mode: bool = False) -> list[ChatMessage]:
-        dataset_list = "\n".join([f"- {dataset.name}: {dataset.annotation}" for dataset in self.datasets])
-        content = f"Task: \"{self.task}\"\n\nDatasets:\n{dataset_list}\n\nLogical Plan (in NL):\n{self.nl_plan}"
-        return [ChatMessage(role=MessageRole.USER, content=[{"type": "text", "text": content}])]
-
-@dataclass
 class PlannerTaskStep(MemoryStep):
     task: str
     datasets: list[Dataset]
 
     def to_messages(self, summary_mode: bool = False) -> list[ChatMessage]:
         dataset_list = "\n".join([f"- {dataset.name}: {dataset.annotation}" for dataset in self.datasets])
-        content = f"Task: \"{self.task}\"\n\nDatasets:\n{dataset_list}"
-        return [ChatMessage(role=MessageRole.USER, content=[{"type": "text", "text": content}])]
-
-
-@dataclass
-class DataDiscoveryTaskStep(MemoryStep):
-    task: str
-    datasets: list[Dataset]
-
-    def to_messages(self, summary_mode: bool = False) -> list[ChatMessage]:
-        dataset_list = "\n".join([f"- {dataset.name}: {dataset.annotation}" for dataset in self.datasets])
-        content = f"Query: \"{self.task}\"\n\nDatasets:\n{dataset_list}"
+        content = f"\n\nDatasets:\n{dataset_list}\n\nTask: \"{self.task}\"\n"
         return [ChatMessage(role=MessageRole.USER, content=[{"type": "text", "text": content}])]
 
 

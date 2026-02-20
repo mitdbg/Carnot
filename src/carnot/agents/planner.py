@@ -16,8 +16,6 @@ from carnot.agents.local_python_executor import (
 from carnot.agents.memory import (
     ActionStep,
     AgentMemory,
-    CompilerTaskStep,
-    DataDiscoveryTaskStep,
     FinalAnswerStep,
     PlannerTaskStep,
     PlanningStep,
@@ -37,27 +35,76 @@ from carnot.conversation.conversation import Conversation
 from carnot.data.dataset import Dataset
 from carnot.operators import LOGICAL_OPERATORS
 
+# Number of steps remaining at which to warn the agent to wrap up
+MAX_STEPS_WARNING_THRESHOLD = 3
+
 
 class Planner(BaseAgent):
     """
-    An agent specialized in generating and compiling logical execution plans.
-    Each phase (data discovery, NL planning, compilation) uses its own isolated memory.
+    An agent specialized in generating logical execution plans.
+    
+    The Planner generates logical plans directly (as code) and can delegate
+    data discovery tasks to a managed DataDiscoveryAgent. The flow is:
+    
+    1. generate_logical_plan(): Creates a logical plan using semantic operators.
+       The Planner can call the DataDiscoveryAgent to understand dataset schemas.
+    2. paraphrase_logical_plan(): Translates the logical plan to natural language
+       for user presentation.
+    
+    Args:
+        datasets: List of Dataset objects available for planning.
+        model: The LLM model to use.
+        tools: Optional list of additional tools.
+        managed_agents: Optional list of additional managed agents.
+        **kwargs: Additional arguments passed to BaseAgent.
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(
+        self,
+        datasets: list[Dataset],
+        *args,
+        managed_agents: list | None = None,
+        **kwargs
+    ):
+        # Store datasets for use in planning
+        self._datasets = datasets
+        
+        # Load prompt templates
         prompt_templates = yaml.safe_load(
             resources.files("carnot.agents.prompts").joinpath("planner_agent.yaml").read_text()
         )
+        
         self.plan_tags = ["<begin_plan>", "<end_plan>"]
-        self.report_tags = ["<begin_report>", "<end_report>"]
-        self.code_block_tags = ["```python", "```"]
+        # Use code block tags where closing tag is NOT contained in opening tag
+        # This allows us to use the closing tag as a stop sequence
+        self.code_block_tags = ["```python", "\n```"]
         self.additional_authorized_imports = ["carnot"]
         self.authorized_imports = sorted(set(BASE_BUILTIN_MODULES) | set(self.additional_authorized_imports))
-        super().__init__(*args, prompt_templates=prompt_templates, **kwargs)
+        
+        # Create the DataDiscoveryAgent as a managed agent
+        # Import here to avoid circular imports
+        from carnot.agents.data_discovery import DataDiscoveryAgent
+        
+        # Get the model from kwargs (required for creating managed agent)
+        model = kwargs.get("model") or (args[1] if len(args) > 1 else None)
+        if model is None:
+            raise ValueError("Planner requires a 'model' argument")
+        
+        self._data_discovery_agent = DataDiscoveryAgent(
+            datasets=datasets,
+            model=model,
+            max_steps=10,
+        )
+        
+        # Combine with any user-provided managed agents
+        all_managed_agents = [self._data_discovery_agent]
+        if managed_agents:
+            all_managed_agents.extend(managed_agents)
+        
+        super().__init__(*args, prompt_templates=prompt_templates, managed_agents=all_managed_agents, **kwargs)
 
-        # phase-specific memories to prevent context bleeding between phases
-        self.data_discovery_memory = None
+        # Phase-specific memories to prevent context bleeding between phases
         self.planning_memory = None
-        self.compilation_memory = None
+        self.paraphrase_memory = None
 
         self.python_executor = self.create_python_executor()
         self.max_steps = 5
@@ -77,8 +124,7 @@ class Planner(BaseAgent):
         return LocalPythonExecutor(self.additional_authorized_imports)
 
     def initialize_system_prompt(self) -> str:
-        # NOTE: we won't end up using this system prompt (stored at self.system_prompt);
-        #       instead, we will template the prompt(s) dynamically within the relevant functions
+        """Initialize the system prompt with template variables including managed agents."""
         system_prompt = populate_template(
             self.prompt_templates["system_prompt"],
             variables={
@@ -86,9 +132,8 @@ class Planner(BaseAgent):
                 "code_closing_tag": self.code_block_tags[1],
                 "plan_opening_tag": self.plan_tags[0],
                 "plan_closing_tag": self.plan_tags[1],
-                "report_opening_tag": self.report_tags[0],
-                "report_closing_tag": self.report_tags[1],
-                "data_discovery_report": "",
+                "logical_operators": {op: op.desc() for op in LOGICAL_OPERATORS},
+                "managed_agents": self.managed_agents,
                 "has_conversation": False,
             },
         )
@@ -103,7 +148,7 @@ class Planner(BaseAgent):
         Execute a planning phase using the provided memory.
         
         Args:
-            phase: Phase name ("planning", "logical-compilation", "data-discovery")
+            phase: Phase name ("planning" or "paraphrase")
             memory: AgentMemory instance specific to this phase. If None, uses self.memory.
         """
         # use provided memory or fall back to self.memory
@@ -122,12 +167,9 @@ class Planner(BaseAgent):
                 if phase == "planning":
                     action_step = ActionStep(step_number=self.step_number, timing=Timing(start_time=time.time()))
                     generator = self._step_generating_logical_plan_stream(action_step)
-                elif phase == "logical-compilation":
+                elif phase == "paraphrase":
                     action_step = ActionStep(step_number=self.step_number, timing=Timing(start_time=time.time()))
-                    generator = self._step_compiling_logical_plan_stream(action_step)
-                elif phase == "data-discovery":
-                    action_step = ActionStep(step_number=self.step_number, timing=Timing(start_time=time.time()))
-                    generator = self._step_data_discovery_stream(action_step)
+                    generator = self._step_paraphrase_stream(action_step)
                 else:
                     raise ValueError(f"Unknown phase: {phase}")
 
@@ -161,6 +203,31 @@ class Planner(BaseAgent):
                     self.memory.steps.append(action_step)
                     yield action_step
                     self.step_number += 1
+                    
+                    # Countdown warning for the last few steps
+                    # After incrementing, step_number is the NEXT step to run
+                    # steps_remaining = max_steps - (next_step - 1) = max_steps - step_number + 1
+                    steps_remaining = self.max_steps - self.step_number + 1
+                    
+                    # Debug logging
+                    self.logger.log(
+                        f"[Planner] Step {self.step_number - 1} completed, {steps_remaining} steps remaining (max={self.max_steps})",
+                        level=LogLevel.INFO,
+                    )
+                    
+                    if 1 <= steps_remaining <= MAX_STEPS_WARNING_THRESHOLD:
+                        step_word = "step" if steps_remaining == 1 else "steps"
+                        warning_msg = (
+                            f"\n\n⚠️ Warning: You have {steps_remaining} {step_word} remaining. "
+                            f"Return your final answer with final_answer() soon."
+                        )
+                        # Modify the action step's observations directly
+                        action_step.observations = (action_step.observations or "") + warning_msg
+                        # Log that we're adding the warning
+                        self.logger.log(
+                            "[Planner] Added max_steps warning to observations",
+                            level=LogLevel.INFO,
+                        )
 
             if not returned_final_answer:
                 final_answer = "The agent did not return a final answer within the maximum number of steps."
@@ -175,17 +242,44 @@ class Planner(BaseAgent):
         memory_step: ActionStep,
         stop_sequences: list[str] | None = None
     ) -> str:
-        """Generate model output and store in memory step."""
+        """
+        Generate model output and store in memory step.
+        
+        Uses stop sequences to prevent the model from continuing after a code block.
+        For models that don't support stop sequences (e.g., gpt-5 series), we truncate
+        the output after the first complete code block.
+        """
         memory_messages = self.write_memory_to_messages()
         memory_step.model_input_messages = memory_messages.copy()
+
+        # Build stop sequences - include the code block closing tag
+        # since it's not contained in the opening tag
+        default_stop_sequences = ["Observation:", "Calling tools:"]
+        if self.code_block_tags[1] not in self.code_block_tags[0]:
+            default_stop_sequences.append(self.code_block_tags[1])
 
         try:
             chat_message = self.model.generate(
                 memory_messages,
-                stop_sequences=stop_sequences or []
+                stop_sequences=stop_sequences or default_stop_sequences
             )
             memory_step.model_output_message = chat_message
             output_text = chat_message.content
+            
+            # Truncate after first code block for models that don't support stop sequences
+            output_text = self._truncate_after_first_code_block(output_text)
+            
+            # Append the closing tag if it was used as a stop sequence
+            # This helps subsequent LLM calls learn to close code blocks properly
+            if (
+                output_text
+                and self.code_block_tags[1] not in self.code_block_tags[0]
+                and not output_text.strip().endswith(self.code_block_tags[1].strip())
+            ):
+                output_text += self.code_block_tags[1]
+            
+            # Update memory with possibly truncated output
+            memory_step.model_output_message.content = output_text
             
             self.logger.log_markdown(
                 content=output_text,
@@ -198,14 +292,44 @@ class Planner(BaseAgent):
             return output_text
         except Exception as e:
             raise AgentGenerationError(
-                f"Error in generating model output:\n{e}", 
+                f"Error in generating model output:\n{e}",
                 self.logger
             ) from e
 
+    def _truncate_after_first_code_block(self, output_text: str) -> str:
+        """
+        Truncate output after the first complete code block.
+        
+        This is necessary for models that don't support stop sequences (e.g., gpt-5 series),
+        which may generate multiple code blocks in a single response.
+        
+        Returns the text up to and including the first complete code block.
+        """
+        if not output_text:
+            return output_text
+        
+        open_tag = self.code_block_tags[0]
+        close_tag = self.code_block_tags[1].strip()  # Remove leading newline for matching
+        
+        # Find the first code block opening
+        open_idx = output_text.find(open_tag)
+        if open_idx == -1:
+            return output_text  # No code block found
+        
+        # Find the closing tag after the opening
+        search_start = open_idx + len(open_tag)
+        close_idx = output_text.find(close_tag, search_start)
+        if close_idx == -1:
+            return output_text  # No closing tag found, return as-is
+        
+        # Truncate after the closing tag
+        truncated = output_text[:close_idx + len(close_tag)]
+        return truncated
+
     def _try_parse_final_answer(
-        self, 
-        output_text: str, 
-        tags: list[str], 
+        self,
+        output_text: str,
+        tags: list[str],
         memory_step: ActionStep
     ) -> tuple[bool, str | None]:
         """
@@ -222,8 +346,8 @@ class Planner(BaseAgent):
             return False, None
 
     def _parse_and_prepare_code(
-        self, 
-        output_text: str, 
+        self,
+        output_text: str,
         memory_step: ActionStep,
         error_context: str = "code blobs"
     ) -> tuple[str, ToolCall]:
@@ -246,6 +370,9 @@ class Planner(BaseAgent):
             error_msg = f"Error in parsing output:\n{e}\nMake sure to provide {error_context}."
             raise AgentParsingError(error_msg, self.logger) from e
 
+        # check for anti-pattern: data_discovery and final_answer in same code block
+        self._check_for_anti_patterns(code_action)
+
         tool_call = ToolCall(
             name="python_interpreter",
             arguments=code_action,
@@ -255,9 +382,38 @@ class Planner(BaseAgent):
 
         return code_action, tool_call
 
+    def _check_for_anti_patterns(self, code_action: str) -> None:
+        """
+        Check for anti-patterns in generated code and raise errors with guidance.
+        
+        Args:
+            code_action: The parsed code to check
+            
+        Raises:
+            AgentParsingError: If an anti-pattern is detected
+        """
+        import re
+        
+        # Check if code contains both data_discovery and final_answer calls
+        has_data_discovery = bool(re.search(r'\bdata_discovery\s*\(', code_action))
+        has_final_answer = bool(re.search(r'\bfinal_answer\s*\(', code_action))
+        
+        if has_data_discovery and has_final_answer:
+            error_msg = (
+                "Anti-pattern detected: You cannot call both 'data_discovery' and 'final_answer' "
+                "in the same code block.\n\n"
+                "This is because data discovery should be completed BEFORE building the final plan. "
+                "You need to:\n"
+                "1. First call data_discovery() to explore the datasets\n"
+                "2. Observe the results from data discovery\n"
+                "3. Then in a SEPARATE step, build and return your logical plan with final_answer()\n\n"
+                "Please split these into separate steps."
+            )
+            raise AgentParsingError(error_msg, self.logger)
+
     def _execute_code_and_collect_output(
-        self, 
-        code_action: str, 
+        self,
+        code_action: str,
         memory_step: ActionStep
     ) -> tuple:
         """
@@ -268,8 +424,8 @@ class Planner(BaseAgent):
             observation string, and console outputs for logging
         """
         self.logger.log_code(
-            title="Executing parsed code:", 
-            content=code_action, 
+            title="Executing parsed code:",
+            content=code_action,
             level=LogLevel.INFO
         )
 
@@ -352,7 +508,7 @@ class Planner(BaseAgent):
         memory_step.action_output = code_output.output
 
         return ActionOutput(
-            output=code_output.output, 
+            output=code_output.output,
             is_final_answer=use_final_answer
         )
 
@@ -378,15 +534,16 @@ class Planner(BaseAgent):
         output_text = self._generate_model_output(memory_step)
 
         # Add closing tag if needed (compilation phase)
-        if add_closing_tag and output_text and not output_text.strip().endswith(self.code_block_tags[1]):
+        # Note: _generate_model_output may have already added it, but we check before adding
+        if add_closing_tag and output_text and not output_text.strip().endswith(self.code_block_tags[1].strip()):
             output_text += self.code_block_tags[1]
             memory_step.model_output_message.content = output_text
 
         # Try to parse as final answer (if applicable)
         if not parse_code_only and final_answer_tags:
             success, final_answer = self._try_parse_final_answer(
-                output_text, 
-                final_answer_tags, 
+                output_text,
+                final_answer_tags,
                 memory_step
             )
             if success:
@@ -396,7 +553,7 @@ class Planner(BaseAgent):
         # Parse as code
         error_context = "correct code blobs" if parse_code_only else "either code blobs or a final answer"
         code_action, tool_call = self._parse_and_prepare_code(
-            output_text, 
+            output_text,
             memory_step,
             error_context
         )
@@ -404,7 +561,7 @@ class Planner(BaseAgent):
 
         # Execute code
         code_output, observation, execution_outputs_console = self._execute_code_and_collect_output(
-            code_action, 
+            code_action,
             memory_step
         )
 
@@ -421,16 +578,7 @@ class Planner(BaseAgent):
         yield action_output
 
     def _step_generating_logical_plan_stream(self, memory_step: ActionStep) -> Generator[ActionOutput]:
-        """Handle natural language planning with code execution support."""
-        yield from self._step_with_code_and_final_answer(
-            memory_step=memory_step,
-            final_answer_tags=self.plan_tags,
-            parse_code_only=False,
-            add_closing_tag=False
-        )
-
-    def _step_compiling_logical_plan_stream(self, memory_step: ActionStep) -> Generator[ActionOutput]:
-        """Handle logical plan compilation - code only."""
+        """Handle logical plan generation with code execution and managed agent calls."""
         yield from self._step_with_code_and_final_answer(
             memory_step=memory_step,
             final_answer_tags=None,
@@ -438,11 +586,11 @@ class Planner(BaseAgent):
             add_closing_tag=True
         )
 
-    def _step_data_discovery_stream(self, memory_step: ActionStep) -> Generator[ActionOutput]:
-        """Handle data discovery with code execution support."""
+    def _step_paraphrase_stream(self, memory_step: ActionStep) -> Generator[ActionOutput]:
+        """Handle paraphrasing a logical plan to natural language."""
         yield from self._step_with_code_and_final_answer(
             memory_step=memory_step,
-            final_answer_tags=self.report_tags,
+            final_answer_tags=self.plan_tags,
             parse_code_only=False,
             add_closing_tag=False
         )
@@ -522,7 +670,7 @@ class Planner(BaseAgent):
             **self.state
         }
         self.python_executor.send_variables(variables=state)
-        self.python_executor.send_tools({**self.tools})
+        self.python_executor.send_tools({**self.tools, **self.managed_agents})
 
         return phase_memory
 
@@ -530,29 +678,47 @@ class Planner(BaseAgent):
         self, 
         query: str, 
         datasets: list[Dataset], 
-        indices: list, 
-        tools: list, 
-        memories: list, 
-        data_discovery_report: str | None = None,
         conversation: Conversation | None = None
-    ) -> str:
-        """Generate a logical execution plan in natural language."""
+    ) -> dict:
+        """
+        Generate a logical execution plan as code.
+        
+        This method uses the Planner's managed DataDiscoveryAgent to explore 
+        datasets and generate a code-based logical plan. The discovery agent 
+        can be called during planning to find relevant datasets, inspect schemas, 
+        check indices, and sample data.
+        
+        Args:
+            query: The user's query to plan for.
+            datasets: List of available datasets.
+            conversation: Optional conversation context for multi-turn interactions.
+            
+        Returns:
+            A dict containing the logical plan structure.
+        """
+        # Update datasets if provided (also updates managed agent)
+        if datasets:
+            self._datasets = datasets
+            if hasattr(self, 'data_discovery_agent'):
+                self.data_discovery_agent._datasets = datasets
+        
         # setup execution with phase-specific memory
         planning_memory = self._setup_phase_execution(
             phase_type="planning",
             prompt_template_key="system_prompt",
             template_vars={
+                "logical_operators": {op: op.desc() for op in LOGICAL_OPERATORS},
                 "code_opening_tag": self.code_block_tags[0],
                 "code_closing_tag": self.code_block_tags[1],
                 "plan_opening_tag": self.plan_tags[0],
                 "plan_closing_tag": self.plan_tags[1],
-                "data_discovery_report": str(data_discovery_report),
                 "has_conversation": conversation is not None,
+                "managed_agents": self.managed_agents,
             },
             task_step_class=PlannerTaskStep,
             task_kwargs={"task": query, "datasets": datasets},
             conversation=conversation,
-            plan_type_for_history="natural-language-plan"
+            plan_type_for_history="logical-plan"
         )
 
         # run and return with isolated memory
@@ -560,67 +726,48 @@ class Planner(BaseAgent):
         assert isinstance(steps[-1], FinalAnswerStep)
         return steps[-1].output
 
-    def compile_logical_plan(
+    def paraphrase_logical_plan(
         self, 
         query: str, 
-        datasets: list[Dataset], 
-        nl_plan: str, 
-        data_discovery_report: str | None = None,
+        logical_plan: dict, 
+        datasets: list[Dataset],
         conversation: Conversation | None = None,
-    ) -> dict:
-        """Compile a natural language plan into a LogicalPlan object."""
-        # setup execution with phase-specific memory
-        compilation_memory = self._setup_phase_execution(
-            phase_type="compilation",
-            prompt_template_key="logical_compiler_prompt",
-            template_vars={
-                "logical_operators": {op: op.desc() for op in LOGICAL_OPERATORS},
-                "code_opening_tag": self.code_block_tags[0],
-                "code_closing_tag": self.code_block_tags[1],
-                "data_discovery_report": str(data_discovery_report),
-                "has_conversation": conversation is not None,
-            },
-            task_step_class=CompilerTaskStep,
-            task_kwargs={"task": query, "datasets": datasets, "nl_plan": nl_plan},
-            conversation=conversation,
-            plan_type_for_history="logical-plan",
-            log_content_key="nl_plan"
-        )
-
-        # run and return with isolated memory
-        steps = list(self._run_stream(phase="logical-compilation", memory=compilation_memory))
-        assert isinstance(steps[-1], FinalAnswerStep)
-        return steps[-1].output
-
-    def search_for_relevant_data(
-        self, 
-        query: str, 
-        datasets: list[Dataset], 
-        indices: list, 
-        tools: list, 
-        memories: list, 
-        conversation: Conversation | None = None
     ) -> str:
-        """Perform preliminary data discovery to identify relevant data for the query."""
+        """
+        Translate a logical plan into a natural language description.
+        
+        This method takes a code-based logical plan and produces a human-readable
+        natural language paraphrase that can be shown to users.
+        
+        Args:
+            query: The original user query.
+            logical_plan: The logical plan dict to paraphrase.
+            datasets: List of datasets referenced in the plan.
+            conversation: Optional conversation context.
+            
+        Returns:
+            A natural language description of the logical plan.
+        """
         # setup execution with phase-specific memory
-        data_discovery_memory = self._setup_phase_execution(
-            phase_type="data-discovery",
-            prompt_template_key="data_discovery_prompt",
+        paraphrase_memory = self._setup_phase_execution(
+            phase_type="paraphrase",
+            prompt_template_key="paraphrase_prompt",
             template_vars={
                 "code_opening_tag": self.code_block_tags[0],
                 "code_closing_tag": self.code_block_tags[1],
-                "report_opening_tag": self.report_tags[0],
-                "report_closing_tag": self.report_tags[1],
+                "plan_opening_tag": self.plan_tags[0],
+                "plan_closing_tag": self.plan_tags[1],
+                "logical_plan": str(logical_plan),
                 "has_conversation": conversation is not None,
             },
-            task_step_class=DataDiscoveryTaskStep,
+            task_step_class=PlannerTaskStep,
             task_kwargs={"task": query, "datasets": datasets},
             conversation=conversation,
-            plan_type_for_history=None,
-            log_title="Data Discovery"
+            plan_type_for_history="natural-language-plan",
+            log_title="Plan Paraphrase"
         )
 
         # run and return with isolated memory
-        steps = list(self._run_stream(phase="data-discovery", memory=data_discovery_memory))
+        steps = list(self._run_stream(phase="paraphrase", memory=paraphrase_memory))
         assert isinstance(steps[-1], FinalAnswerStep)
         return steps[-1].output
