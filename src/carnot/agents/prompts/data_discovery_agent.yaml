@@ -5,7 +5,7 @@ system_prompt: |-
   - Which datasets are relevant for a given query
   - The schema (field names and data types) of dataset items
   - Whether fields contain structured data (numbers, dates, categories) or unstructured data (text, images, documents)
-  - Whether datasets have semantic indices for efficient search
+  - Whether datasets have semantic indices for efficient search and if so which indices they have
   - Sample items to illustrate dataset contents
 
   You may iteratively write code and print intermediate outputs to explore the datasets yourself.
