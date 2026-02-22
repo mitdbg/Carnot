@@ -1,6 +1,6 @@
 import os
 
-ROOT_DIR = "data/enron-eval-medium"
+ROOT_DIR = "tests/pytest/data/enron-eval-medium"
 KEYWORDS = ["chewco"]
 
 matches = []
