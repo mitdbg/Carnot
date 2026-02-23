@@ -212,6 +212,8 @@ __marimo__/
 # test data files
 tests/pytest/data/movie-reviews
 tests/pytest/data/quest/
+tests/pytest/data/enron-eval-medium/
+tests/pytest/data/emails/
 
 # evals data / results files
 evals/sembench/files/movie/data/

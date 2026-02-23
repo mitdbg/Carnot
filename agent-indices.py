@@ -13,7 +13,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # 1. Load text files (Enron or any .txt)
-data_dir = Path("data/enron-eval-medium")  # or your text file directory
+data_dir = Path("data/emails")  # or your text file directory
 items = [DataItem(path=str(f.absolute())) for f in sorted(data_dir.glob("*.txt"))]
 
 logger.info("Items loaded: %d", len(items))

@@ -33,7 +33,7 @@ start_time = time.time()
 
 print("\n1. Creating TextFileContext with routing enabled...")
 ds = carnot.TextFileContext(
-    "data/enron-eval-medium",
+    "data/emails",
     "enron-routing", 
     "250 emails from Enron employees",
     use_routing=True

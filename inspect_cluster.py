@@ -25,7 +25,7 @@ def collect_leaf_clusters(root_level, max_depth=2, current_depth=0):
 
 
 def main():
-    data_dir = Path(__file__).resolve().parent / "data" / "enron-eval-medium"
+    data_dir = Path(__file__).resolve().parent / "data" / "emails"
     if not data_dir.exists():
         print("Data dir not found:", data_dir)
         sys.exit(1)

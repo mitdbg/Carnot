@@ -29,8 +29,8 @@ def research_papers_data():
 @pytest.fixture
 def enron_emails_data():
     emails = []
-    for email in os.listdir("tests/pytest/data/enron-eval-medium"):
-        with open(f"tests/pytest/data/enron-eval-medium/{email}") as f:
+    for email in os.listdir("tests/pytest/data/emails"):
+        with open(f"tests/pytest/data/emails/{email}") as f:
             contents = f.read()
             emails.append({"contents": contents})
     return emails
@@ -43,7 +43,7 @@ def enron_data_items():
 
     from carnot.data.item import DataItem
 
-    enron_dir = Path(__file__).resolve().parent.parent / "data" / "enron-eval-medium"
+    enron_dir = Path(__file__).resolve().parent.parent / "data" / "emails"
     if not enron_dir.exists():
         pytest.skip(f"Enron data dir not found: {enron_dir}")
     return [DataItem(path=str(p.absolute())) for p in sorted(enron_dir.glob("*.txt"))]

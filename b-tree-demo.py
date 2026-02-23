@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Test hierarchical index and routing on enron-eval-medium."""
+"""Test hierarchical index and routing on emails."""
 import logging
 import os
 import sys
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 def main():
-    data_dir = Path(__file__).resolve().parent / "data" / "enron-eval-medium"
+    data_dir = Path(__file__).resolve().parent / "data" / "emails"
     if not data_dir.exists():
         logger.error("Data dir not found: %s", data_dir)
         sys.exit(1)
