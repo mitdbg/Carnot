@@ -1,6 +1,3 @@
-"""
-E2E tests for index-aware planning: agent discovers dataset has index and uses sem_topk.
-"""
 from carnot.execution.execution import Execution
 
 
@@ -36,40 +33,26 @@ def _plan_contains_sem_topk(logical_plan) -> bool:
 
 
 def test_e2e_agent_uses_sem_topk_for_indexed_dataset(enron_dataset_with_hierarchical_index, llm_config):
-    """
-    E2E: Agent discovers index via data_discovery and uses sem_topk in plan.
-
-    Flow:
-    1. Dataset has pre-built Flat index
-    2. Planner calls data_discovery, learns dataset has index
-    3. Planner generates plan with sem_topk
-    4. Execution runs and returns Raptor-related emails
-    """
     query = "Find emails about the Raptor investment or LJM partnerships"
     execution = Execution(
         query=query,
         datasets=[enron_dataset_with_hierarchical_index],
         llm_config=llm_config,
     )
-
     # Plan phase - agent should call data_discovery, see index, use sem_topk
     nl_plan, logical_plan = execution.plan()
 
-    # Verify planner didn't hit max_steps
     assert_planner_did_not_hit_max_steps(execution.planner, logical_plan)
 
-    # Assert plan contains SemanticTopK
     assert _plan_contains_sem_topk(logical_plan), (
         f"Expected plan to use sem_topk for indexed dataset. Plan: {logical_plan}"
     )
 
-    # Execute and verify results
     execution._plan = logical_plan
     items, answer_str = execution.run()
 
     assert len(items) > 0, f"Expected results from sem_topk. Answer: {answer_str}"
 
-    # At least one result should reference Raptor-related content (path contains known filenames)
     result_paths = [
         getattr(i, "path", i.get("path", "") if isinstance(i, dict) else "")
         for i in items
