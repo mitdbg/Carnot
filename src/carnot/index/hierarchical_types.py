@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-# Default context limit for router model (tokens) - conservative for gpt-4o-mini
+# Default context limit for router model (tokens) - conservative for gpt-5-mini
 DEFAULT_ROUTER_CONTEXT_LIMIT = 32_000
 # Target: top-level summaries should use at most this fraction of context
 CONTEXT_USAGE_FRACTION = 0.5
