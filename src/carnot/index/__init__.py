@@ -9,7 +9,15 @@ from carnot.index.index import (
 from carnot.index.persistence import FileSummaryCache, HierarchicalIndexCache
 from carnot.index.summary_indices import FlatFileIndex, HierarchicalFileIndex, HierarchicalIndexConfig
 
+INDEX_TYPES = [
+    FlatCarnotIndex,
+    HierarchicalCarnotIndex,
+    FaissIndex,
+    ChromaIndex,
+]
+
 __all__ = [
+    "INDEX_TYPES",
     "CarnotIndex",
     "ChromaIndex",
     "FaissIndex",

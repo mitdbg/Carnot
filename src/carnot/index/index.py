@@ -6,11 +6,11 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 
 import chromadb
-
-from carnot.index.summary_indices import FlatFileIndex, HierarchicalFileIndex
 import faiss
 import litellm
 import numpy as np
+
+from carnot.index.summary_indices import FlatFileIndex, HierarchicalFileIndex
 
 INDEX_BATCH_SIZE = 1000
 
@@ -63,11 +63,17 @@ class CarnotIndex(ABC):
 class HierarchicalCarnotIndex(CarnotIndex):
     """CarnotIndex adapter for HierarchicalFileIndex. Maps paths to DataItems."""
 
+    description: str = (
+        "Tree-structured index with internal nodes summarizing clusters of files or child nodes. "
+        "Search uses top-down traversal by query-embedding similarity. "
+        "Best for larger datasets; reduces context use by routing through the hierarchy."
+    )
+
     def __init__(
         self,
         name: str,
         items: list,
-        hierarchical_index: "HierarchicalFileIndex | None" = None,
+        hierarchical_index: HierarchicalFileIndex | None = None,
         config=None,
         api_key: str | None = None,
         use_persistence: bool = True,
@@ -142,6 +148,13 @@ class HierarchicalCarnotIndex(CarnotIndex):
 class FlatCarnotIndex(CarnotIndex):
     """CarnotIndex adapter for FlatFileIndex. Single-level, LLM selects top-K."""
 
+    description: str = (
+        "Single-level index where all file summaries are in one list. "
+        "At query time, the LLM receives summaries (or an embedding-pre-filtered subset) "
+        "and selects the top-K most relevant. "
+        "Best for smaller datasets where summaries fit in context."
+    )
+
     def __init__(
         self,
         name: str,
@@ -213,6 +226,12 @@ class FlatCarnotIndex(CarnotIndex):
 
 
 class ChromaIndex(CarnotIndex):
+    description: str = (
+        "Index that uses ChromaDB to find the top-K most relevant items. "
+        "Uses a ChromaDB vector similarity search index. "
+        "Best if you need to find the top-K most relevant items very quickly but has lower accuracy."
+    )
+
     def __init__(self, name: str, items: list, model: str = "openai/text-embedding-3-small", api_key: str = None):
         # construct the index
         super().__init__(name, items)
@@ -287,6 +306,12 @@ class ChromaIndex(CarnotIndex):
 
 
 class FaissIndex(CarnotIndex):
+    description: str = (
+        "Index that uses Faiss to find the top-K most relevant items. "
+        "Uses a Faiss vector similarity search index. "
+        "Best if you need to find the top-K most relevant items very quickly but has lower accuracy."
+    )
+
     def __init__(self, name: str, items: list, model: str = "openai/text-embedding-3-small", api_key: str = None):
         # construct the index
         super().__init__(name, items)

@@ -33,6 +33,7 @@ from carnot.agents.utils import (
 )
 from carnot.conversation.conversation import Conversation
 from carnot.data.dataset import Dataset
+from carnot.index import INDEX_TYPES
 from carnot.operators import LOGICAL_OPERATORS
 
 # Number of steps remaining at which to warn the agent to wrap up
@@ -81,6 +82,7 @@ class Planner(BaseAgent):
             logical_operators={
                 op: _indent_for_yaml(op.desc()) for op in LOGICAL_OPERATORS
             },
+            index_types={cls.__name__: cls.description for cls in INDEX_TYPES},
         )
         prompt_templates = yaml.safe_load(rendered_yaml)
         
@@ -146,6 +148,7 @@ class Planner(BaseAgent):
                 "logical_operators": {op: op.desc() for op in LOGICAL_OPERATORS},
                 "managed_agents": self.managed_agents,
                 "has_conversation": False,
+                "index_types": {cls.__name__: cls.description for cls in INDEX_TYPES},
             },
         )
         return system_prompt
