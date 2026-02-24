@@ -252,6 +252,10 @@ frontend.log
 secrets/
 how-tos/
 make_password.py
+test_output.txt
+inspect_cluster.py
+agent-indices.py
+b-tree-demo.py
 
 # local envs
 .venv*/
