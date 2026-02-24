@@ -6,7 +6,6 @@ from pathlib import Path
 
 import numpy as np
 
-from carnot.core.data.smv_generator import SMVGenerator
 from carnot.data.item import DataItem
 from carnot.index.hierarchical_types import (
     FileSummaryEntry,
@@ -14,6 +13,7 @@ from carnot.index.hierarchical_types import (
     InternalNode,
 )
 from carnot.index.persistence import FileSummaryCache
+from carnot.index.smv_generator import SMVGenerator
 from carnot.utils.hash_helpers import hash_for_id
 
 logger = logging.getLogger(__name__)
@@ -213,8 +213,8 @@ class HierarchicalFileIndex:
         if not items:
             return None
 
-        from carnot.core.data.smv_generator import SMVGenerator
         from carnot.index.persistence import FileSummaryCache, HierarchicalIndexCache
+        from carnot.index.smv_generator import SMVGenerator
 
         api_key = api_key or os.getenv("OPENAI_API_KEY")
         config = config or HierarchicalIndexConfig()

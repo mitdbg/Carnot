@@ -1,11 +1,13 @@
 import os
 import time
 import uuid
-from typing import List, Any
-import tiktoken
-import chromadb.utils.embedding_functions as embedding_functions
+from typing import Any, List
 
-from carnot.core.data.smv import Chunk, ChunkIndex, FileSummary, TaggedFiles, MetadataRegistry
+import chromadb.utils.embedding_functions as embedding_functions
+import tiktoken
+
+from carnot.index.smv import Chunk, ChunkIndex, FileSummary, MetadataRegistry, TaggedFiles
+
 
 class SMVGenerator:
     def __init__(self):
@@ -103,8 +105,9 @@ class SMVGenerator:
 
     def generate_file_summary(self, file_id: str, text_content: str, file_path: str = None) -> FileSummary:
         """Generates the FileSummary SMV using an LLM."""
-        import litellm
         import os
+
+        import litellm
         
         # Truncate very long files to fit in context
         # Keep first portion of file for summary generation
