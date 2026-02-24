@@ -6,8 +6,13 @@ import pytest
 
 @pytest.fixture
 def movie_reviews_data():
-    movies_df = pd.read_csv("tests/pytest/data/movie-reviews/4/rotten_tomatoes_movies.csv")
-    reviews_df = pd.read_csv("tests/pytest/data/movie-reviews/4/rotten_tomatoes_movie_reviews.csv")
+    base_dir = (
+        "tests/pytest/data/movie-reviews/4"
+        if os.path.exists("tests/pytest/data/movie-reviews/4")
+        else "tests/pytest/data/movie-reviews/"
+    )
+    movies_df = pd.read_csv(f"{base_dir}/rotten_tomatoes_movies.csv")
+    reviews_df = pd.read_csv(f"{base_dir}/rotten_tomatoes_movie_reviews.csv")
 
     movie_ids = ["inception", "volver", "mean_girls"]
     filtered_movies_df = movies_df[movies_df["id"].isin(movie_ids)]
