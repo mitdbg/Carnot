@@ -289,7 +289,7 @@ class Dataset:
             **params
         )
 
-    def sem_topk(self, search_str: str, k: int = 5, index_name: str | None = None) -> Dataset:
+    def sem_topk(self, index_name: str, search_str: str, k: int = 5) -> Dataset:
         """
         Apply a semantic top-k operation with the given search string and k value.
         Use index_name to specify which index to use when the dataset has multiple indices
@@ -299,12 +299,12 @@ class Dataset:
         self.id_params["sem_topk_id"] += 1
         params = {
             "operator": "SemanticTopK",
+            "index_name": index_name,
             "description": f"Top-{k} items from {self.name} for search string: {search_str}",
             "search_str": search_str,
             "k": k,
         }
-        if index_name is not None:
-            params["index_name"] = index_name
+
         return Dataset(
             name=top_k_name,
             annotation=f"Top-{k} from ({self.annotation})",

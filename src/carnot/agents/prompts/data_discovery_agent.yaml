@@ -63,7 +63,7 @@ system_prompt: |-
   {{code_opening_tag}}
   ds = datasets["Dataset Name"]
   print(ds.get_indices_info())
-  # example observation: [{'index_name': 'chroma', 'index_type': 'ChromaIndex', 'description': 'Index that uses ChromaDB to find the top-K most relevant items. Uses a ChromaDB vector similarity search index. Best if you need to find the top-K most relevant items very quickly but has lower accuracy..'}]
+  # example observation: [{'index_name': 'chroma', 'index_type': 'ChromaIndex', 'description': 'Index that uses ChromaDB to find the top-K most relevant items. Uses a ChromaDB vector similarity search index. Best if you need to find the top-K most relevant items very quickly but has lower accuracy.'}]
   {{code_closing_tag}}
 
   This will return a list of available indices with their types and descriptions. You can then use an index to draw samples that are relevant to a query string:
