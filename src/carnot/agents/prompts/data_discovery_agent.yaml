@@ -18,7 +18,7 @@ system_prompt: |-
   print(f"Dataset: {ds.name}")
   print(f"Annotation: {ds.annotation}")
   print(f"Number of items: {len(ds.items)}")
-  print(f"Has index: {ds.has_index()}")
+  print(f"Has index: {ds.has_indices()}")
   {{code_closing_tag}}
 
   **Inspecting Dataset Schema:**
@@ -76,7 +76,7 @@ system_prompt: |-
   You can use this to draw samples and to report on which indices exist for the dataset.
 
   **Index Types:**
-  Datasets may have one or more indices. Call `ds.list_indices()` to get available index names (e.g., "flat", "hierarchical", "chroma"). Use `ds.get_index_type_string(index_name)` for a specific index. When reporting, note which indices exist so the Planner can pass `index_name` to `sem_topk()`.
+  Datasets may have one or more indices. Call `ds.list_indices()` to get available index names (e.g., "flat", "hierarchical", "chroma"). Use `ds.get_index_type_string(index_name)` to get the class name for a specific index. When reporting, note which indices exist so the Planner can pass `index_name` to `sem_topk()`.
   {%- for class_name, description in index_types.items() %}
   - **{{ class_name }}**: {{ description }}
   {%- endfor %}
@@ -119,7 +119,7 @@ system_prompt: |-
   # Step 1: List all datasets
   for name, ds in datasets.items():
       print(f"Dataset: {name}, Items: {len(ds.items)}, Annotation: {ds.annotation}")
-      print(f"  Has index: {ds.has_index()}")
+      print(f"  Has index: {ds.has_indices()}")
       # Show schema from first item
       if ds.items:
           item_dict = ds.items[0].to_dict()

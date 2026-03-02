@@ -41,23 +41,38 @@ MAX_STEPS_WARNING_THRESHOLD = 3
 
 
 class Planner(BaseAgent):
-    """
-    An agent specialized in generating logical execution plans.
-    
-    The Planner generates logical plans directly (as code) and can delegate
-    data discovery tasks to a managed DataDiscoveryAgent. The flow is:
-    
-    1. generate_logical_plan(): Creates a logical plan using semantic operators.
-       The Planner can call the DataDiscoveryAgent to understand dataset schemas.
-    2. paraphrase_logical_plan(): Translates the logical plan to natural language
-       for user presentation.
-    
+    """An agent that generates logical execution plans from natural language queries.
+
+    The Planner generates logical plans (as code) and can delegate data
+    discovery tasks to a managed ``DataDiscoveryAgent``.  The flow is:
+
+    1. ``generate_logical_plan()`` — creates a code-based logical plan
+       using semantic operators.  May call the ``DataDiscoveryAgent``
+       to understand dataset schemas before planning.
+    2. ``paraphrase_logical_plan()`` — translates the code-based plan
+       into a natural-language summary for user presentation.
+
+    Each phase operates with its own isolated ``AgentMemory`` to prevent
+    context bleeding between planning and paraphrasing.
+
+    Representation invariant:
+        - ``_datasets`` is a non-empty list of ``Dataset`` objects.
+        - ``_data_discovery_agent`` is a ``DataDiscoveryAgent`` managed
+          by this planner.
+        - ``plan_tags`` is ``["<begin_plan>", "<end_plan>"]``.
+        - ``code_block_tags`` is ``["```python", "\\n```"]``.
+
+    Abstraction function:
+        An instance of this class is an agent that, given a natural-language query
+        and a set of datasets, produces (1) a code-based logical plan and (2) a
+        natural-language paraphrase of that plan.
+
     Args:
-        datasets: List of Dataset objects available for planning.
+        datasets: List of ``Dataset`` objects available for planning.
         model: The LLM model to use.
         tools: Optional list of additional tools.
         managed_agents: Optional list of additional managed agents.
-        **kwargs: Additional arguments passed to BaseAgent.
+        **kwargs: Additional arguments passed to ``BaseAgent``.
     """
     def __init__(
         self,
@@ -146,12 +161,20 @@ class Planner(BaseAgent):
         phase: str = "planning",
         memory: AgentMemory | None = None,
     ) -> Generator[ActionStep | PlanningStep | FinalAnswerStep | ChatMessageStreamDelta]:
-        """
-        Execute a planning phase using the provided memory.
-        
-        Args:
-            phase: Phase name ("planning" or "paraphrase")
-            memory: AgentMemory instance specific to this phase. If None, uses self.memory.
+        """Execute a planning phase, yielding intermediate steps.
+
+        Requires:
+            - *phase* is ``"planning"`` or ``"paraphrase"``.
+            - *memory* (if supplied) is a properly initialised
+              ``AgentMemory`` with system prompt and task step.
+
+        Returns:
+            A generator of step objects, always ending with a
+            ``FinalAnswerStep``.
+
+        Raises:
+            AgentGenerationError: If the LLM fails to produce valid output.
+            ValueError: If *phase* is not recognised.
         """
         # use provided memory or fall back to self.memory
         if memory is None:
@@ -609,23 +632,22 @@ class Planner(BaseAgent):
         log_title: str | None = None,
         log_content_key: str = "task"
     ) -> AgentMemory:
-        """
-        Setup system prompt, memory, and Python executor for phase execution.
-        Creates and returns a fresh AgentMemory instance specific to this phase.
-        
-        Args:
-            phase_type: Phase identifier ('data-discovery', 'planning', 'compilation')
-            prompt_template_key: Key in self.prompt_templates
-            template_vars: Variables for template population
-            task_step_class: Memory step class (e.g., PlannerTaskStep)
-            task_kwargs: Kwargs for task step initialization
-            conversation: Optional conversation history
-            plan_type_for_history: Type of plan to retrieve from conversation (e.g., 'natural-language-plan')
-            log_title: Optional title for task logging
-            log_content_key: Key in task_kwargs to use for log content
-            
+        """Initialise system prompt, memory, and executor for a phase.
+
+        Creates a fresh ``AgentMemory`` instance, populates it with the
+        system prompt and optional conversation history, and configures
+        the Python executor with datasets and tools.
+
+        Requires:
+            - *prompt_template_key* exists in ``self.prompt_templates``.
+            - *task_step_class* is a ``MemoryStep`` subclass whose
+              ``__init__`` accepts ``**task_kwargs``.
+
         Returns:
-            AgentMemory instance specific to this phase
+            A new ``AgentMemory`` instance ready for ``_run_stream``.
+
+        Raises:
+            KeyError: If *prompt_template_key* is missing.
         """
         # create system prompt
         system_prompt = populate_template(
@@ -683,22 +705,22 @@ class Planner(BaseAgent):
         conversation: Conversation | None = None,
         cost_budget: float | None = None,
     ) -> dict:
-        """
-        Generate a logical execution plan as code.
-        
-        This method uses the Planner's managed DataDiscoveryAgent to explore 
-        datasets and generate a code-based logical plan. The discovery agent 
-        can be called during planning to find relevant datasets, inspect schemas, 
-        check indices, and sample data.
-        
-        Args:
-            query: The user's query to plan for.
-            datasets: List of available datasets.
-            conversation: Optional conversation context for multi-turn interactions.
-            cost_budget: Optional maximum dollar amount the user is willing to spend.
-            
+        """Generate a logical execution plan as code.
+
+        Uses the managed ``DataDiscoveryAgent`` to explore datasets and then
+        produces a code-based logical plan composed of semantic operators.
+
+        Requires:
+            - *query* is a non-empty string.
+            - *datasets* is a non-empty list of ``Dataset`` objects.
+
         Returns:
-            A dict containing the logical plan structure.
+            A dict (or structured object) representing the logical plan.
+
+        Raises:
+            AgentGenerationError: If the LLM fails to produce valid output.
+            AssertionError: If the run stream does not terminate with a
+            ``FinalAnswerStep``.
         """
         # TODO: Use cost_budget to inform query optimization decisions
         # For now, we accept the parameter but do not use it
@@ -742,21 +764,20 @@ class Planner(BaseAgent):
         conversation: Conversation | None = None,
         cost_budget: float | None = None,
     ) -> str:
-        """
-        Translate a logical plan into a natural language description.
-        
-        This method takes a code-based logical plan and produces a human-readable
-        natural language paraphrase that can be shown to users.
-        
-        Args:
-            query: The original user query.
-            logical_plan: The logical plan dict to paraphrase.
-            datasets: List of datasets referenced in the plan.
-            conversation: Optional conversation context.
-            cost_budget: Optional maximum dollar amount the user is willing to spend.
-            
+        """Translate a logical plan into a natural-language description.
+
+        Requires:
+            - *logical_plan* is a non-empty dict produced by
+              ``generate_logical_plan``.
+            - *datasets* lists the datasets referenced in the plan.
+
         Returns:
-            A natural language description of the logical plan.
+            A human-readable string summarising the plan.
+
+        Raises:
+            AgentGenerationError: If the LLM fails to produce valid output.
+            AssertionError: If the run stream does not terminate with a
+            ``FinalAnswerStep``.
         """
         # TODO: Use cost_budget to inform paraphrase content (e.g., estimated costs)
         # For now, we accept the parameter but do not use it

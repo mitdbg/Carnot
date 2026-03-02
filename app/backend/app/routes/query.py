@@ -37,11 +37,36 @@ from app.services.file_service import LocalFileService, S3FileService
 from app.services.llm import get_user_llm_config
 from carnot.data.dataset import Dataset as CarnotDataset
 from carnot.data.item import DataItem
+from carnot.storage.backend import LocalStorageBackend, S3StorageBackend
+from carnot.storage.tiered import TieredStorageManager
 
 router = APIRouter()
 # logger = logging.getLogger(__name__)
 logger = logging.getLogger('uvicorn.error')
 file_service = LocalFileService() if IS_LOCAL_ENV else S3FileService()
+
+
+def _build_storage() -> TieredStorageManager:
+    """Create a TieredStorageManager appropriate for the current environment.
+
+    Requires:
+        - ``IS_LOCAL_ENV`` is set correctly.
+        - For S3: the ``S3_BUCKET`` / ``S3_PREFIX`` env vars are present.
+
+    Returns:
+        A ready-to-use :class:`TieredStorageManager` wrapping either a
+        :class:`LocalStorageBackend` or :class:`S3StorageBackend`.
+
+    Raises:
+        None.
+    """
+    if IS_LOCAL_ENV:
+        backend = LocalStorageBackend(base_dir=BASE_DIR)
+    else:
+        bucket = os.getenv("S3_BUCKET", "")
+        prefix = os.getenv("S3_PREFIX", "")
+        backend = S3StorageBackend(bucket=bucket, prefix=prefix)
+    return TieredStorageManager(backend=backend)
 
 # heartbeat and session timeout settings; the heartbeat ensures that the connection
 # to the frontend is kept alive during long-running queries
@@ -224,6 +249,7 @@ class QueryExecutionStreamer:
                 llm_config=self.user_config,
                 progress_log_file=progress_log,
                 cost_budget=self.cost_budget,
+                storage=_build_storage(),
             )
 
             await self.queue.put(f"data: {json.dumps({'type': 'status', 'message': 'Running Carnot query processor...'})}\n\n")
@@ -440,7 +466,7 @@ async def save_message(
         )
         conversation = result.scalar_one_or_none()
         if conversation:
-            conversation.updated_at = datetime.now(timezone.utc)
+            conversation.updated_at = datetime.now(timezone.utc)  # noqa: UP017
 
         await db.commit()
 
@@ -574,6 +600,7 @@ async def plan_query(
             indices=[],
             llm_config=user_config,
             cost_budget=request.cost_budget,
+            storage=_build_storage(),
         )
 
         nl_plan, plan = await run_in_threadpool(exec_instance.plan)
