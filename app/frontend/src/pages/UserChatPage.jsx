@@ -1,11 +1,12 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Send, Database, CheckSquare, Square, AlertCircle, Loader2, XCircle, MessageSquare, Trash2, ChevronLeft, ChevronRight, Search, Play, Plus, X } from 'lucide-react'
 import { useApiToken } from '../hooks/useApiToken'
-import axios from 'axios'
 import ProgressDisplay from '../components/ProgressDisplay'
+import CostBudgetPicker from '../components/CostBudgetPicker'
 import { conversationsApi, datasetsApi } from '../services/api'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api"
+const DEFAULT_COST_BUDGET = 5.00; // Default cost budget in dollars if user doesn't specify
 
 function PlanVisualizer({ plan }) {
   // Recursively flattens the tree into chronological steps
@@ -124,8 +125,23 @@ function UserChatPage() {
   const [datasetSearchQuery, setDatasetSearchQuery] = useState('')
   const [currentPlan, setCurrentPlan] = useState(null);
   const [lastQuery, setLastQuery] = useState('');
+  const [costBudget, setCostBudget] = useState(DEFAULT_COST_BUDGET);
   const messagesEndRef = useRef(null)
   const abortControllerRef = useRef(null)
+  const textareaRef = useRef(null)
+
+  // Auto-resize the textarea as the user types, up to ~6 lines (~1–1.5 paragraphs).
+  // Beyond that it scrolls internally.
+  const autoResizeTextarea = useCallback(() => {
+    const el = textareaRef.current
+    if (!el) return
+    el.style.height = 'auto'                  // shrink first so scrollHeight is accurate
+    el.style.height = `${el.scrollHeight}px`  // expand to fit content
+  }, [])
+
+  useEffect(() => {
+    autoResizeTextarea()
+  }, [inputQuery, autoResizeTextarea])
 
   // Generate session ID on component mount
   useEffect(() => {
@@ -170,7 +186,10 @@ function UserChatPage() {
       setCurrentConversationId(conversation.id)
       
       // Convert database messages to frontend format
-      const formattedMessages = conversation.messages.map(msg => ({
+      // filter out logical-plan messages which are stored in the conversation history but not displayed to users
+      const formattedMessages = conversation.messages
+      .filter(msg => msg.type !== 'logical-plan')
+      .map(msg => ({
         type: msg.role,
         content: msg.content,
         csv_file: msg.csv_file,
@@ -291,42 +310,145 @@ function UserChatPage() {
     setInputQuery('');
     setIsLoading(true);
     setIsExecuting(false);
+
+    // Track whether we currently have a planning-status message at the
+    // tail of the messages list so we can *replace* it instead of stacking.
+    let hasActiveStatus = false;
+
     try {
       const token = await getValidToken();
       if (!token) return;
+
+      // Create abort controller for this request
+      abortControllerRef.current = new AbortController();
+
       const datasetIds = Array.from(selectedDatasets).map(id => parseInt(id));
-      const response = await axios.post(`${API_BASE_URL}/query/plan`, {
-        query: queryToPlan,
-        dataset_ids: datasetIds,
-        session_id: currentSessionId,
-        plan: currentPlan
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
+      const response = await fetch(`${API_BASE_URL}/query/plan`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          query: queryToPlan,
+          dataset_ids: datasetIds,
+          session_id: currentSessionId,
+          plan: currentPlan,
+          cost_budget: costBudget
+        }),
+        signal: abortControllerRef.current.signal
       });
 
-      setMessages(prev => [...prev, {
-        type: 'assistant',
-        content: response.data.natural_language_plan,
-        isPlanConfirmation: true, // Flag to show "Execute" buttons
-        attachedPlan: response.data.plan
-      }]);
-      setCurrentPlan(response.data.plan); // TODO: maybe redundant now that we use attachedPlan? (still used by visualizer)
+      // Handle non-streaming errors (e.g., 400 No API Keys)
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (_) {
+          throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
+        }
+        throw errorData.detail || new Error(errorData.message || 'An unknown server error occurred.');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      let buffer = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              // Update session_id if received from server
+              if (data.session_id && data.session_id !== sessionId) {
+                setSessionId(data.session_id);
+              }
+
+              if (data.type === 'planning_status') {
+                if (hasActiveStatus) {
+                  // Replace the last status message with the new one
+                  setMessages(prev => [
+                    ...prev.slice(0, -1),
+                    { type: 'status', content: data.message }
+                  ]);
+                } else {
+                  setMessages(prev => [...prev, {
+                    type: 'status',
+                    content: data.message
+                  }]);
+                  hasActiveStatus = true;
+                }
+              } else if (data.type === 'plan_complete') {
+                // Remove the trailing status pill before appending the plan
+                if (hasActiveStatus) {
+                  setMessages(prev => [
+                    ...prev.slice(0, -1),
+                    {
+                      type: 'agent',
+                      content: data.natural_language_plan,
+                      isPlanConfirmation: true,
+                      attachedPlan: data.plan
+                    }
+                  ]);
+                } else {
+                  setMessages(prev => [...prev, {
+                    type: 'agent',
+                    content: data.natural_language_plan,
+                    isPlanConfirmation: true,
+                    attachedPlan: data.plan
+                  }]);
+                }
+                hasActiveStatus = false;
+                setCurrentPlan(data.plan);
+              } else if (data.type === 'error') {
+                // Remove trailing status pill if present
+                if (hasActiveStatus) {
+                  setMessages(prev => [
+                    ...prev.slice(0, -1),
+                    { type: 'error', content: data.message }
+                  ]);
+                } else {
+                  setMessages(prev => [...prev, {
+                    type: 'error',
+                    content: data.message
+                  }]);
+                }
+                hasActiveStatus = false;
+              }
+            } catch (e) {
+              console.error('Error parsing SSE data:', e);
+            }
+          }
+        }
+      }
     } catch (error) {
-      const errorData = error.response?.data?.detail;
-      if (errorData?.type === 'API_KEY_MISSING') {
+      // Remove trailing status pill on error
+      if (hasActiveStatus) {
+        setMessages(prev => prev.slice(0, -1));
+      }
+      if (error && error.type === 'API_KEY_MISSING') {
         setMessages(prev => [...prev, {
           type: 'error',
-          content: `${errorData.message} Please go to the Settings page to configure your keys.`
-        }])
-      } else if (error.name !== 'CanceledError') {
-        console.error('Error planning query:', error)
+          content: `${error.message} Please go to the Settings page to configure your keys.`
+        }]);
+      } else if (error.name !== 'AbortError') {
+        console.error('Error planning query:', error);
         setMessages(prev => [...prev, {
           type: 'error',
-          content: errorData?.message || 'Failed to generate plan. Please try again.'
-        }])
+          content: error?.message || 'Failed to generate plan. Please try again.'
+        }]);
       }
     } finally {
       setIsLoading(false);
+      abortControllerRef.current = null;
     }
   };
 
@@ -356,6 +478,10 @@ function UserChatPage() {
       setSessionId(currentSessionId); 
     }
 
+    // Track whether we currently have an execution-status message at the
+    // tail of the messages list so we can *replace* it instead of stacking.
+    let hasActiveStatus = false;
+
     try {
       // fetch access token
       const token = await getValidToken();
@@ -374,7 +500,8 @@ function UserChatPage() {
           query: lastQuery,
           dataset_ids: datasetIds,
           session_id: currentSessionId,
-          plan: plan
+          plan: plan,
+          cost_budget: costBudget
         }),
         signal: abortControllerRef.current.signal
       })
@@ -417,26 +544,58 @@ function UserChatPage() {
                 setSessionId(data.session_id)
               }
               
-              if (data.type === 'status') {
-                setMessages(prev => [...prev, {
-                  type: 'status',
-                  content: data.message
-                }])
+              if (data.type === 'execution_status') {
+                if (hasActiveStatus) {
+                  // Replace the last status message with the new one
+                  setMessages(prev => [
+                    ...prev.slice(0, -1),
+                    { type: 'status', content: data.message }
+                  ])
+                } else {
+                  setMessages(prev => [...prev, {
+                    type: 'status',
+                    content: data.message
+                  }])
+                  hasActiveStatus = true;
+                }
               } else if (data.type === 'result') {
-                setMessages(prev => [...prev, {
-                  type: 'result',
-                  content: data.message,
-                  csv_file: data.csv_file,
-                  row_count: data.row_count
-                }])
+                // Remove trailing status pill before showing result
+                if (hasActiveStatus) {
+                  setMessages(prev => [
+                    ...prev.slice(0, -1),
+                    {
+                      type: 'result',
+                      content: data.message,
+                      csv_file: data.csv_file,
+                      row_count: data.row_count
+                    }
+                  ])
+                } else {
+                  setMessages(prev => [...prev, {
+                    type: 'result',
+                    content: data.message,
+                    csv_file: data.csv_file,
+                    row_count: data.row_count
+                  }])
+                }
+                hasActiveStatus = false;
                 // Reload conversations after query completes
                 loadConversations()
                 setCurrentPlan(null);
               } else if (data.type === 'error') {
-                setMessages(prev => [...prev, {
-                  type: 'error',
-                  content: data.message
-                }])
+                // Remove trailing status pill if present
+                if (hasActiveStatus) {
+                  setMessages(prev => [
+                    ...prev.slice(0, -1),
+                    { type: 'error', content: data.message }
+                  ])
+                } else {
+                  setMessages(prev => [...prev, {
+                    type: 'error',
+                    content: data.message
+                  }])
+                }
+                hasActiveStatus = false;
               }
             } catch (e) {
               console.error('Error parsing SSE data:', e)
@@ -445,6 +604,10 @@ function UserChatPage() {
         }
       }
     } catch (error) {
+      // Remove trailing status pill on error
+      if (hasActiveStatus) {
+        setMessages(prev => prev.slice(0, -1));
+      }
       if (error && error.type === 'API_KEY_MISSING') {
         console.warn('API Key missing:', error.message)
         setMessages(prev => [...prev, {
@@ -478,7 +641,7 @@ function UserChatPage() {
           </div>
         )
       
-      case 'assistant':
+      case 'agent':
         return (
           <div key={index} className="flex flex-col items-start mb-4">
             <div className="bg-white border border-gray-200 p-4 rounded-lg max-w-[85%] shadow-sm">
@@ -682,34 +845,46 @@ function UserChatPage() {
         {/* 3. Sticky Chat Input: Pins to the bottom of the parent flex-col */}
         <div className="w-full border-t border-gray-100 bg-white px-6 py-4">
           <div className="max-w-4xl mx-auto">
-            <form 
-              onSubmit={handleRequestPlan} 
-              className="relative flex items-end gap-2 bg-gray-50 border border-gray-300 rounded-2xl p-2 focus-within:ring-2 focus-within:ring-primary-500 transition-all shadow-sm"
-            >
-              <textarea
-                rows="1"
-                value={inputQuery}
-                onChange={(e) => setInputQuery(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleRequestPlan(); } }}
-                placeholder="Ask a question..."
-                className="flex-1 bg-transparent border-none focus:ring-0 resize-none py-3 px-4 text-gray-800"
+            <div className="flex items-end gap-2">
+              {/* Main chat form */}
+              <form 
+                onSubmit={handleRequestPlan} 
+                className="relative flex flex-1 items-end gap-2 bg-gray-50 border border-gray-300 rounded-2xl p-2 focus-within:ring-2 focus-within:ring-primary-500 transition-all shadow-sm"
+              >
+                <textarea
+                  ref={textareaRef}
+                  rows="1"
+                  value={inputQuery}
+                  onChange={(e) => setInputQuery(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleRequestPlan(); } }}
+                  placeholder="Ask a question..."
+                  className="flex-1 bg-transparent border-none focus:ring-0 resize-none py-3 px-4 text-gray-800 overflow-y-auto"
+                  style={{ maxHeight: '9rem' }}
+                  disabled={isLoading}
+                />
+                <div className="flex gap-1 pb-1 pr-1">
+                  {isLoading && (
+                    <button type="button" onClick={handleCancel} className="p-2 text-red-500 hover:bg-red-50 rounded-lg">
+                      <XCircle className="w-6 h-6" />
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    className="bg-primary-600 hover:bg-primary-700 text-white p-2 rounded-xl disabled:bg-gray-300 transition-colors"
+                    disabled={isLoading || !inputQuery.trim()}
+                  >
+                    {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Send className="w-6 h-6" />}
+                  </button>
+                </div>
+              </form>
+
+              {/* Cost budget picker — lives outside the chat form */}
+              <CostBudgetPicker
+                value={costBudget}
+                onChange={setCostBudget}
                 disabled={isLoading}
               />
-              <div className="flex gap-1 pb-1 pr-1">
-                {isLoading && (
-                  <button type="button" onClick={handleCancel} className="p-2 text-red-500 hover:bg-red-50 rounded-lg">
-                    <XCircle className="w-6 h-6" />
-                  </button>
-                )}
-                <button
-                  type="submit"
-                  className="bg-primary-600 hover:bg-primary-700 text-white p-2 rounded-xl disabled:bg-gray-300 transition-colors"
-                  disabled={isLoading || !inputQuery.trim()}
-                >
-                  {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Send className="w-6 h-6" />}
-                </button>
-              </div>
-            </form>
+            </div>
             <p className="text-[10px] text-gray-400 text-center mt-3 uppercase tracking-widest">
               Carnot Research Engine • {sessionId ? `Session: ${sessionId.slice(0,8)}` : 'Ready'}
             </p>
