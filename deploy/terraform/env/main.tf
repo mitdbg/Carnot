@@ -68,45 +68,79 @@ resource "aws_instance" "app_server" {
   # mount the EBS volume at /mnt/pg-data and install docker compose
   user_data = <<-EOF
     #!/bin/bash
-    set -e
+    set -euxo pipefail
+    exec > /var/log/user-data.log 2>&1
 
-    DEVICE="/dev/xvdf"
     MOUNT_POINT="/mnt/pg-data"
 
-    # wait for EBS volume to be attached by Terraform
-    echo "Waiting for $DEVICE to attach..."
-    while [ ! -e $DEVICE ]; do
+    # On m5/nitro instances the EBS volume appears as an NVMe device rather
+    # than the legacy /dev/xvdf name. Wait for either path, then resolve the
+    # real device node using its serial number (which encodes the volume-id).
+    echo "Waiting for EBS data volume to attach..."
+    DEVICE=""
+    for i in $(seq 1 60); do
+      # Prefer the legacy symlink when present (older instance types)
+      if [ -e /dev/xvdf ]; then
+        DEVICE=/dev/xvdf
+        break
+      fi
+      # On Nitro/NVMe instances find the data disk by excluding the root disk
+      NVME_DEV=$(lsblk -dpno NAME,TYPE | awk '$2=="disk"{print $1}' | while read d; do
+        # root disk always has partitions; the bare data EBS volume does not
+        PARTS=$(lsblk -no NAME "$d" | wc -l)
+        if [ "$PARTS" -eq 1 ]; then echo "$d"; fi
+      done | head -1)
+      if [ -n "$NVME_DEV" ]; then
+        DEVICE=$NVME_DEV
+        break
+      fi
       sleep 5
     done
 
+    if [ -z "$DEVICE" ]; then
+      echo "ERROR: EBS data volume did not appear after 300s" >&2
+      exit 1
+    fi
+    echo "Using device: $DEVICE"
+
     ### mount EBS volume and change ownership to UID/GID 999 (default for postgres)
     # check for existing filesystem before formatting
-    if ! sudo blkid $DEVICE; then
+    # use blkid exit code explicitly (set -e would abort on non-zero outside of if)
+    BLKID_OUT=$(blkid $DEVICE || true)
+    if [ -z "$BLKID_OUT" ]; then
         echo "No filesystem found on $DEVICE. Formatting..."
-        sudo mkfs -t ext4 $DEVICE
+        mkfs -t ext4 $DEVICE
     else
         echo "Filesystem already exists on $DEVICE. Skipping format."
     fi
 
     # idempotent mount and fstab entry
-    sudo mkdir -p $MOUNT_POINT
-    sudo mount $DEVICE $MOUNT_POINT || echo "$DEVICE already mounted or failed"
-    
+    mkdir -p $MOUNT_POINT
+    mount $DEVICE $MOUNT_POINT || echo "$DEVICE already mounted or failed"
+
     if ! grep -q "$MOUNT_POINT" /etc/fstab; then
-      echo "$DEVICE $MOUNT_POINT ext4 defaults,nofail 0 2" | sudo tee -a /etc/fstab
+      echo "$DEVICE $MOUNT_POINT ext4 defaults,nofail 0 2" | tee -a /etc/fstab
     fi
 
-    sudo mkdir -p $MOUNT_POINT/data
-    sudo chown -R 999:999 $MOUNT_POINT
+    mkdir -p $MOUNT_POINT/data
+    chown -R 999:999 $MOUNT_POINT
+
+    # wait for cloud-init / unattended-upgrades to release the dpkg lock
+    echo "Waiting for apt lock..."
+    while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do
+      sleep 5
+    done
 
     # install docker
-    sudo apt-get update
-    sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
-    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-    sudo apt-get update
-    sudo apt-get install -y docker-ce docker-ce-cli containerd.io
-    sudo usermod -aG docker ubuntu
+    apt-get update -y
+    apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+    apt-get update -y
+    apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+    usermod -aG docker ubuntu
+
+    echo "user-data: done"
   EOF
 
   tags = {

@@ -191,6 +191,25 @@ jobs:
           ec2_public_ip=$(terraform output -raw ec2_public_ip)
           echo "EC2_PUBLIC_IP=$ec2_public_ip" >> $GITHUB_ENV
 
+      - name: Wait for user_data bootstrap to complete on EC2
+        run: |
+          echo "Waiting for user_data bootstrap to complete on $EC2_PUBLIC_IP..."
+          for i in $(seq 1 20); do
+            # Check if user-data finished successfully (last line written by our script)
+            STATUS=$(ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i deployer_key.pem ubuntu@$EC2_PUBLIC_IP \
+              "tail -1 /var/log/user-data.log 2>/dev/null || true")
+            if [[ "$STATUS" == "user-data: done" ]]; then
+              echo "Bootstrap complete after ~$((i * 15)) seconds."
+              exit 0
+            fi
+            echo "Attempt $i/20: bootstrap not done yet (last line: '${STATUS:-<no output yet>}'), waiting 15s..."
+            sleep 15
+          done
+          echo "ERROR: user_data did not complete within 5 minutes. Last log output:" >&2
+          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i deployer_key.pem ubuntu@$EC2_PUBLIC_IP \
+            "tail -20 /var/log/user-data.log 2>/dev/null || echo '<no log found>'" >&2
+          exit 1
+
       ######################################################################
       # STEP 2.5 — SEED ORG-LEVEL DEFAULT API KEYS (if applicable)
       ######################################################################
