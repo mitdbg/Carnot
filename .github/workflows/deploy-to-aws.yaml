@@ -191,6 +191,16 @@ jobs:
           ec2_public_ip=$(terraform output -raw ec2_public_ip)
           echo "EC2_PUBLIC_IP=$ec2_public_ip" >> $GITHUB_ENV
 
+      - name: Verify Docker is installed on EC2
+        run: |
+          echo "Checking for Docker on $EC2_PUBLIC_IP..."
+          if ! ssh -o StrictHostKeyChecking=no -o ConnectTimeout=10 -i deployer_key.pem ubuntu@$EC2_PUBLIC_IP "docker info > /dev/null 2>&1"; then
+            echo "ERROR: Docker is not available on $EC2_PUBLIC_IP."
+            echo "The user_data bootstrap script may have failed. Check /var/log/user-data.log on the instance."
+            exit 1
+          fi
+          echo "Docker is available."
+
       ######################################################################
       # STEP 2.5 — SEED ORG-LEVEL DEFAULT API KEYS (if applicable)
       ######################################################################
