@@ -81,7 +81,7 @@ class TestSemJoinMocked:
             output_dataset_id="out",
             max_workers=1,
         )
-        result = op("left", "right", {"left": left_ds, "right": right_ds})
+        result, _stats = op("left", "right", {"left": left_ds, "right": right_ds})
 
         assert "out" in result
         out_items = result["out"].items
@@ -102,7 +102,7 @@ class TestSemJoinMocked:
             output_dataset_id="out",
             max_workers=1,
         )
-        result = op("left", "right", {"left": left_ds, "right": right_ds})
+        result, _stats = op("left", "right", {"left": left_ds, "right": right_ds})
 
         assert len(result["out"].items) == len(_LEFT) * len(_RIGHT)
 
@@ -119,7 +119,7 @@ class TestSemJoinMocked:
             output_dataset_id="out",
             max_workers=1,
         )
-        result = op("left", "right", {"left": left_ds, "right": right_ds})
+        result, _stats = op("left", "right", {"left": left_ds, "right": right_ds})
 
         assert len(result["out"].items) == 0
 
@@ -136,7 +136,7 @@ class TestSemJoinMocked:
             output_dataset_id="out",
             max_workers=1,
         )
-        result = op("left", "right", {"left": left_ds, "right": right_ds})
+        result, _stats = op("left", "right", {"left": left_ds, "right": right_ds})
 
         item = result["out"].items[0]
         assert "left_name" in item
@@ -157,7 +157,7 @@ class TestSemJoinMocked:
             output_dataset_id="out",
             max_workers=1,
         )
-        result = op("left", "right", {"left": left_ds, "right": right_ds})
+        result, _stats = op("left", "right", {"left": left_ds, "right": right_ds})
 
         item = result["out"].items[0]
         assert "animal" in item
@@ -176,7 +176,7 @@ class TestSemJoinMocked:
             output_dataset_id="out",
             max_workers=1,
         )
-        result = op("left", "right", {"left": left_ds, "right": right_ds})
+        result, _stats = op("left", "right", {"left": left_ds, "right": right_ds})
 
         assert "left" in result
         assert "right" in result

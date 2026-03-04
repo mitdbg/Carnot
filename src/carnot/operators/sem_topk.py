@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import time
+
+from carnot.core.models import LLMCallStats, OperatorStats
 from carnot.data.dataset import Dataset
 from carnot.index import FlatCarnotIndex, HierarchicalCarnotIndex
 from carnot.index.index import ChromaIndex, FaissIndex
@@ -61,7 +64,7 @@ class SemTopKOperator:
         }
         self.index_cls = index_map[index_name]
 
-    def __call__(self, dataset_id: str, input_datasets: dict[str, Dataset]) -> dict[str, Dataset]:
+    def __call__(self, dataset_id: str, input_datasets: dict[str, Dataset]) -> tuple[dict[str, Dataset], OperatorStats]:
         """Retrieve the top-k items from the input dataset via index search.
 
         If the dataset does not already have an index of the configured
@@ -77,13 +80,17 @@ class SemTopKOperator:
             - *dataset_id* is a key in *input_datasets*.
 
         Returns:
-            A new ``dict[str, Dataset]`` that is a copy of
-            *input_datasets* with an additional entry keyed by
-            ``self.output_dataset_id`` containing up to *k* items.
+            A tuple ``(output_datasets, stats)`` where *output_datasets*
+            is a new ``dict[str, Dataset]`` with an additional entry
+            keyed by ``self.output_dataset_id`` containing up to *k*
+            items, and *stats* is an :class:`OperatorStats` with
+            embedding call statistics collected from the index.
 
         Raises:
             KeyError: If *dataset_id* is not in *input_datasets*.
         """
+        op_start = time.perf_counter()
+
         input_dataset = input_datasets[dataset_id]
 
         if self.index_name not in input_dataset.list_indices():
@@ -115,10 +122,25 @@ class SemTopKOperator:
 
         results = input_dataset.indices[self.index_name].search(self.task, k=self.k)
 
+        # Collect embedding stats from the index if available
+        embed_stats: list[LLMCallStats] = []
+        index_obj = input_dataset.indices[self.index_name]
+        if hasattr(index_obj, "_llm_call_stats"):
+            embed_stats = list(index_obj._llm_call_stats)
+
         output_dataset = Dataset(name=self.output_dataset_id, annotation=f"Sem Top-K operator output for task: {self.task}", items=results)
         output_datasets = {**input_datasets, output_dataset.name: output_dataset}
 
-        return output_datasets
+        op_stats = OperatorStats(
+            operator_name="SemTopK",
+            operator_id=self.output_dataset_id,
+            wall_clock_secs=time.perf_counter() - op_start,
+            llm_calls=embed_stats,
+            items_in=len(input_dataset.items),
+            items_out=len(results),
+        )
+
+        return output_datasets, op_stats
 
     def _load_from_catalog(self, dataset: Dataset) -> bool:
         """Attempt to load a pre-built index from the catalog.

@@ -39,7 +39,7 @@ def test_e2e_agent_uses_sem_topk_for_indexed_dataset(enron_dataset_with_hierarch
     )
 
     execution._plan = logical_plan
-    items, answer_str = execution.run()
+    items, answer_str, _stats = execution.run()
 
     assert len(items) > 0, f"Expected results from sem_topk. Answer: {answer_str}"
 

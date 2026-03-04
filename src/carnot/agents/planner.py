@@ -663,6 +663,8 @@ class Planner(BaseAgent):
             self.data_discovery_memory = phase_memory
         elif phase_type == "planning":
             self.planning_memory = phase_memory
+        elif phase_type == "paraphrase":
+            self.paraphrase_memory = phase_memory
         elif phase_type == "compilation":
             self.compilation_memory = phase_memory
 

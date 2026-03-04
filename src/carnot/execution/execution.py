@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from collections.abc import Generator
 
 from smolagents.tools import Tool
@@ -8,6 +9,7 @@ from smolagents.tools import Tool
 from carnot.agents.models import LiteLLMModel
 from carnot.agents.planner import Planner
 from carnot.conversation.conversation import Conversation
+from carnot.core.models import ExecutionStats, LLMCallStats, OperatorStats, PhaseStats
 from carnot.data.dataset import Dataset
 from carnot.execution.progress import ExecutionProgress, PlanningProgress
 from carnot.index.index import CarnotIndex
@@ -106,10 +108,17 @@ class Execution:
         1. Generate a code-based logical plan (the Planner can call its managed 
            DataDiscoveryAgent to explore datasets during planning)
         2. Translate the logical plan into a natural language description for the user
+
+        After both phases complete, LLM call statistics are collected
+        from the Planner's and DataDiscoveryAgent's memories and stored
+        in ``self._planning_stats`` for later assembly into
+        :class:`ExecutionStats`.
         
         Returns:
             A tuple of (natural_language_plan, logical_plan_dict)
         """
+        plan_start = time.perf_counter()
+
         # Phase 1: Generate the code-based logical plan
         # The Planner can call its DataDiscoveryAgent as needed during planning
         logical_plan = self.planner.generate_logical_plan(
@@ -128,6 +137,11 @@ class Execution:
             cost_budget=self.cost_budget,
         )
 
+        plan_wall_clock = time.perf_counter() - plan_start
+
+        # Collect stats from planner memories
+        self._planning_stats = self._build_planning_stats(plan_wall_clock)
+
         return nl_plan, logical_plan
 
     def plan_stream(self) -> Generator[PlanningProgress, None, tuple[str, dict]]:
@@ -137,6 +151,9 @@ class Execution:
         the same two-phase approach (logical plan generation → paraphrase)
         but yields :class:`PlanningProgress` events between steps so
         that callers can keep the user informed of progress.
+
+        After both phases complete, LLM call statistics are collected
+        and stored in ``self._planning_stats``.
 
         The **return value** (accessed via ``StopIteration.value`` or by
         collecting the generator with a helper) is the same
@@ -167,6 +184,8 @@ class Execution:
             AgentGenerationError: If the LLM fails to produce valid
             output during either phase.
         """
+        plan_start = time.perf_counter()
+
         # ----------------------------------------------------------
         # Phase 1: Generate the code-based logical plan
         # ----------------------------------------------------------
@@ -205,12 +224,97 @@ class Execution:
                 # Terminal value — the NL plan string
                 nl_plan = event
 
+        plan_wall_clock = time.perf_counter() - plan_start
+        self._planning_stats = self._build_planning_stats(plan_wall_clock)
+
         yield PlanningProgress(
             phase="paraphrase",
             message="Plan summary complete.",
+            cumulative_cost_usd=self._planning_stats.total_cost_usd,
         )
 
         return nl_plan, logical_plan
+
+    # -- stats helpers -----------------------------------------------------------
+
+    @staticmethod
+    def _collect_llm_calls_from_memory(memory) -> list[LLMCallStats]:
+        """Extract ``LLMCallStats`` from every step in an ``AgentMemory``.
+
+        Iterates over all steps in *memory* and collects
+        ``llm_call_stats`` from each ``ActionStep`` whose
+        ``model_output_message`` carries an ``LLMCallStats`` object.
+
+        Requires:
+            - *memory* is an ``AgentMemory`` instance (or ``None``).
+
+        Returns:
+            A (possibly empty) list of ``LLMCallStats`` objects.
+
+        Raises:
+            None.
+        """
+        if memory is None:
+            return []
+        calls: list[LLMCallStats] = []
+        for step in memory.steps:
+            msg = getattr(step, "model_output_message", None)
+            if msg is not None and getattr(msg, "llm_call_stats", None) is not None:
+                calls.append(msg.llm_call_stats)
+        return calls
+
+    def _build_planning_stats(self, wall_clock_secs: float) -> PhaseStats:
+        """Assemble ``PhaseStats`` for the planning phase.
+
+        Collects ``LLMCallStats`` from the Planner's planning memory,
+        paraphrase memory, and the DataDiscoveryAgent's memory.
+
+        Requires:
+            - ``self.planner`` has been used for planning (memories
+              may still be ``None`` if planning was skipped).
+            - *wall_clock_secs* >= 0.
+
+        Returns:
+            A ``PhaseStats`` with ``phase="planning"`` and per-agent
+            ``OperatorStats``.
+
+        Raises:
+            None.
+        """
+        # Data discovery agent calls
+        dd_memory = getattr(self.planner._data_discovery_agent, "memory", None)
+        dd_calls = self._collect_llm_calls_from_memory(dd_memory)
+
+        # Planner's own calls (planning + paraphrase)
+        planning_calls = self._collect_llm_calls_from_memory(
+            getattr(self.planner, "planning_memory", None)
+        )
+        paraphrase_calls = self._collect_llm_calls_from_memory(
+            getattr(self.planner, "paraphrase_memory", None)
+        )
+
+        operator_stats: list[OperatorStats] = []
+        if dd_calls:
+            operator_stats.append(
+                OperatorStats(
+                    operator_name="DataDiscovery",
+                    operator_id="data_discovery",
+                    llm_calls=dd_calls,
+                )
+            )
+        operator_stats.append(
+            OperatorStats(
+                operator_name="Planner",
+                operator_id="planner",
+                llm_calls=planning_calls + paraphrase_calls,
+            )
+        )
+
+        return PhaseStats(
+            phase="planning",
+            wall_clock_secs=wall_clock_secs,
+            operator_stats=operator_stats,
+        )
 
     def _get_op_from_plan_dict(self, plan: dict) -> tuple[Operator | Dataset, list[str]]:
         """Return the physical operator (or Dataset) for a single plan node.
@@ -346,26 +450,40 @@ class Execution:
         ops.append(self._get_op_from_plan_dict(plan))
         return ops
 
-    def run(self) -> tuple[list[dict], str]: # physical_plan: PhysicalPlan -> str
+    def run(self) -> tuple[list[dict], str, ExecutionStats]: # physical_plan: PhysicalPlan -> str
+        """Execute the physical plan and return the result with stats.
+
+        Runs every operator in topological order, collects
+        ``OperatorStats`` from each, and assembles an
+        ``ExecutionStats`` that combines planning and execution
+        phase statistics.
+
+        Returns:
+            A 3-tuple ``(items, answer_str, stats)`` where *items* is
+            the list of result dicts, *answer_str* is the final
+            answer text, and *stats* is the full ``ExecutionStats``.
         """
-        Execute the physical plan and return the result.
-        """
+        exec_start = time.perf_counter()
         # TODO: scope input_datasets based on children / parents in plan
         input_datasets = {}
+        all_operator_stats: list[OperatorStats] = []
         operators = self._get_ops_in_topological_order(self._plan)
         for operator, parent_ids in operators:
             if isinstance(operator, Dataset):
                 # materialize items through the storage layer (or fallback)
                 input_datasets[operator.name] = operator.materialize(self.storage)
             elif isinstance(operator, CodeOperator):
-                input_datasets = operator(input_datasets)
+                input_datasets, op_stats = operator(input_datasets)
+                all_operator_stats.append(op_stats)
             elif isinstance(operator, SemJoinOperator):
                 left_dataset_id = parent_ids[0]
                 right_dataset_id = parent_ids[1]
-                input_datasets = operator(left_dataset_id, right_dataset_id, input_datasets)
+                input_datasets, op_stats = operator(left_dataset_id, right_dataset_id, input_datasets)
+                all_operator_stats.append(op_stats)
             else:
                 dataset_id = parent_ids[0]
-                input_datasets = operator(dataset_id, input_datasets)
+                input_datasets, op_stats = operator(dataset_id, input_datasets)
+                all_operator_stats.append(op_stats)
 
         # Use a reasoning operator to return a final output dataset which has all of the items, code_state, and/or answer text
         # from the input datasets which is relevant to the user for interpreting the final answer
@@ -373,10 +491,25 @@ class Execution:
         # - text can be displayed to the user
         # - for now, assume code state is debug only (exposed in the future)
         final_answer_operator = ReasoningOperator(task=self.query, output_dataset_id="final_dataset", model_id="openai/gpt-5-mini", llm_config=self.llm_config)
-        output_datasets = final_answer_operator(input_datasets)
+        output_datasets, reasoning_stats = final_answer_operator(input_datasets)
+        all_operator_stats.append(reasoning_stats)
         final_dataset = output_datasets["final_dataset"]
 
-        return final_dataset.items, final_dataset.code_state.get("final_answer_str", "")
+        exec_wall_clock = time.perf_counter() - exec_start
+
+        execution_phase = PhaseStats(
+            phase="execution",
+            wall_clock_secs=exec_wall_clock,
+            operator_stats=all_operator_stats,
+        )
+
+        stats = ExecutionStats(
+            query=self.query,
+            planning=getattr(self, "_planning_stats", PhaseStats(phase="planning")),
+            execution=execution_phase,
+        )
+
+        return final_dataset.items, final_dataset.code_state.get("final_answer_str", ""), stats
 
     # -- operator display helpers ------------------------------------------------
 
@@ -416,7 +549,7 @@ class Execution:
 
     # -- streaming run -----------------------------------------------------------
 
-    def run_stream(self) -> Generator[ExecutionProgress, None, tuple[list[dict], str]]:
+    def run_stream(self) -> Generator[ExecutionProgress, None, tuple[list[dict], str, ExecutionStats]]:
         """Execute the physical plan, yielding progress events.
 
         This is the streaming counterpart of :meth:`run`.  It performs
@@ -424,8 +557,12 @@ class Execution:
         :class:`ExecutionProgress` events between operators so that
         callers can keep the user informed of progress.
 
+        After each operator completes, the ``"Completed step"`` progress
+        event includes the ``OperatorStats`` for that operator.
+
         The **return value** (accessed via ``StopIteration.value``) is
-        the same ``(items, answer_str)`` tuple that :meth:`run` returns.
+        the same ``(items, answer_str, stats)`` 3-tuple that :meth:`run`
+        returns.
 
         Typical usage from an async context::
 
@@ -436,7 +573,7 @@ class Execution:
                     progress = next(gen)
                     # forward ``progress`` to SSE / websocket
             except StopIteration as exc:
-                result = exc.value  # (items, answer_str)
+                result = exc.value  # (items, answer_str, stats)
 
         Requires:
             - ``self._plan`` is a valid plan dict.
@@ -444,12 +581,15 @@ class Execution:
 
         Returns:
             A generator that yields :class:`ExecutionProgress` objects.
-            The generator's return value is ``(items, answer_str)``.
+            The generator's return value is
+            ``(items, answer_str, stats)``.
 
         Raises:
             ValueError: If the plan contains unrecognized operators.
         """
+        exec_start = time.perf_counter()
         input_datasets: dict[str, Dataset] = {}
+        all_operator_stats: list[OperatorStats] = []
         operators = self._get_ops_in_topological_order(self._plan)
         total = len(operators)
 
@@ -468,23 +608,28 @@ class Execution:
                 operator_name=display,
             )
 
+            op_stats: OperatorStats | None = None
             if isinstance(operator, Dataset):
                 input_datasets[operator.name] = operator.materialize(self.storage)
             elif isinstance(operator, CodeOperator):
-                input_datasets = operator(input_datasets)
+                input_datasets, op_stats = operator(input_datasets)
+                all_operator_stats.append(op_stats)
             elif isinstance(operator, SemJoinOperator):
                 left_dataset_id = parent_ids[0]
                 right_dataset_id = parent_ids[1]
-                input_datasets = operator(left_dataset_id, right_dataset_id, input_datasets)
+                input_datasets, op_stats = operator(left_dataset_id, right_dataset_id, input_datasets)
+                all_operator_stats.append(op_stats)
             else:
                 dataset_id = parent_ids[0]
-                input_datasets = operator(dataset_id, input_datasets)
+                input_datasets, op_stats = operator(dataset_id, input_datasets)
+                all_operator_stats.append(op_stats)
 
             yield ExecutionProgress(
                 message=f"Completed step {idx + 1}/{total}: {display}.",
                 operator_index=idx,
                 total_operators=total,
                 operator_name=display,
+                operator_stats=op_stats,
             )
 
         # Final reasoning step
@@ -501,7 +646,8 @@ class Execution:
             model_id="openai/gpt-5-mini",
             llm_config=self.llm_config,
         )
-        output_datasets = final_answer_operator(input_datasets)
+        output_datasets, reasoning_stats = final_answer_operator(input_datasets)
+        all_operator_stats.append(reasoning_stats)
         final_dataset = output_datasets["final_dataset"]
 
         yield ExecutionProgress(
@@ -509,6 +655,21 @@ class Execution:
             operator_index=total + 1,
             total_operators=total + 1,
             operator_name="Reasoning",
+            operator_stats=reasoning_stats,
         )
 
-        return final_dataset.items, final_dataset.code_state.get("final_answer_str", "")
+        exec_wall_clock = time.perf_counter() - exec_start
+
+        execution_phase = PhaseStats(
+            phase="execution",
+            wall_clock_secs=exec_wall_clock,
+            operator_stats=all_operator_stats,
+        )
+
+        stats = ExecutionStats(
+            query=self.query,
+            planning=getattr(self, "_planning_stats", PhaseStats(phase="planning")),
+            execution=execution_phase,
+        )
+
+        return final_dataset.items, final_dataset.code_state.get("final_answer_str", ""), stats

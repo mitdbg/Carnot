@@ -78,7 +78,7 @@ class TestSemFlatMapMocked:
             llm_config=mock_llm_config,
             max_workers=1,
         )
-        result = op("docs", {"docs": ds})
+        result, _stats = op("docs", {"docs": ds})
 
         assert "out" in result
         out_items = result["out"].items
@@ -103,7 +103,7 @@ class TestSemFlatMapMocked:
             llm_config=mock_llm_config,
             max_workers=1,
         )
-        result = op("docs", {"docs": ds})
+        result, _stats = op("docs", {"docs": ds})
 
         # 2 input items × 3 fruits each = 6
         assert len(result["out"].items) == 6
@@ -122,7 +122,7 @@ class TestSemFlatMapMocked:
             llm_config=mock_llm_config,
             max_workers=1,
         )
-        result = op("d", {"d": ds})
+        result, _stats = op("d", {"d": ds})
 
         assert len(result["out"].items) == 1
         assert result["out"].items[0]["key"] == "value"
@@ -141,7 +141,7 @@ class TestSemFlatMapMocked:
             llm_config=mock_llm_config,
             max_workers=1,
         )
-        result = op("d", {"d": ds})
+        result, _stats = op("d", {"d": ds})
 
         assert len(result["out"].items) == 0
 
@@ -162,7 +162,7 @@ class TestSemFlatMapMocked:
             llm_config=mock_llm_config,
             max_workers=1,
         )
-        result = op("d", {"d": ds})
+        result, _stats = op("d", {"d": ds})
 
         item = result["out"].items[0]
         assert item["present"] == "yes"
@@ -185,7 +185,7 @@ class TestSemFlatMapMocked:
             llm_config=mock_llm_config,
             max_workers=1,
         )
-        result = op("docs", {"docs": ds})
+        result, _stats = op("docs", {"docs": ds})
 
         assert "docs" in result
         assert "out" in result
@@ -204,7 +204,7 @@ class TestSemFlatMapMocked:
             llm_config=mock_llm_config,
             max_workers=1,
         )
-        result = op("empty", {"empty": ds})
+        result, _stats = op("empty", {"empty": ds})
 
         assert len(result["out"].items) == 0
         assert len(mock_litellm.completion_calls) == 0

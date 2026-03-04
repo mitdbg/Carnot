@@ -28,6 +28,7 @@ from app.database import (
     Dataset,
     DatasetFile,
     Message,
+    QueryStats,
     get_db,
 )
 from app.database import (
@@ -295,6 +296,7 @@ class QueryExecutionStreamer:
                     gen = exec_instance.run_stream()
                     items = None
                     answer = None
+                    stats = None
                     try:
                         while True:
                             event = next(gen)
@@ -303,8 +305,8 @@ class QueryExecutionStreamer:
                     except StopIteration as exc:
                         result = exc.value
                         if result is not None:
-                            items, answer = result
-                    return items, answer
+                            items, answer, stats = result
+                    return items, answer, stats
                 finally:
                     sys.stdout = original_stdout
                     sys.stderr = original_stderr
@@ -330,9 +332,16 @@ class QueryExecutionStreamer:
             while not future.done():
                 try:
                     progress_dict = exec_progress_queue.get(timeout=0.25)
-                    await self.queue.put(
-                        f"data: {json.dumps({'type': 'execution_status', 'message': progress_dict.get('message', ''), 'operator_name': progress_dict.get('operator_name', ''), 'operator_index': progress_dict.get('operator_index'), 'total_operators': progress_dict.get('total_operators')})}\n\n"
-                    )
+                    event_payload = {
+                        'type': 'execution_status',
+                        'message': progress_dict.get('message', ''),
+                        'operator_name': progress_dict.get('operator_name', ''),
+                        'operator_index': progress_dict.get('operator_index'),
+                        'total_operators': progress_dict.get('total_operators'),
+                    }
+                    if progress_dict.get('operator_stats') is not None:
+                        event_payload['operator_stats'] = progress_dict['operator_stats']
+                    await self.queue.put(f"data: {json.dumps(event_payload)}\n\n")
                 except _queue_mod.Empty:
                     await asyncio.sleep(0.1)
 
@@ -340,13 +349,20 @@ class QueryExecutionStreamer:
             while not exec_progress_queue.empty():
                 try:
                     progress_dict = exec_progress_queue.get_nowait()
-                    await self.queue.put(
-                        f"data: {json.dumps({'type': 'execution_status', 'message': progress_dict.get('message', ''), 'operator_name': progress_dict.get('operator_name', ''), 'operator_index': progress_dict.get('operator_index'), 'total_operators': progress_dict.get('total_operators')})}\n\n"
-                    )
+                    event_payload = {
+                        'type': 'execution_status',
+                        'message': progress_dict.get('message', ''),
+                        'operator_name': progress_dict.get('operator_name', ''),
+                        'operator_index': progress_dict.get('operator_index'),
+                        'total_operators': progress_dict.get('total_operators'),
+                    }
+                    if progress_dict.get('operator_stats') is not None:
+                        event_payload['operator_stats'] = progress_dict['operator_stats']
+                    await self.queue.put(f"data: {json.dumps(event_payload)}\n\n")
                 except _queue_mod.Empty:
                     break
 
-            items, answer = future.result()
+            items, answer, execution_stats = future.result()
             executor.shutdown(wait=False)
 
             await self.queue.put(f"data: {json.dumps({'type': 'execution_status', 'message': 'Processing results...'})}\n\n")
@@ -358,6 +374,7 @@ class QueryExecutionStreamer:
             csv_path = results_dir / csv_filename
             fs = fsspec.filesystem(FILESYSTEM)
 
+            result_message_id = None
             try:
                 # First, save to our timestamp-based file
                 df = pd.DataFrame(items)
@@ -366,7 +383,7 @@ class QueryExecutionStreamer:
 
                 if df.empty and (not answer or answer.strip() == ""):
                     message_text = "No results found for your query."
-                    await save_message(conversation_id, "agent", message_text, "result")
+                    result_message_id = await save_message(conversation_id, "agent", message_text, "result")
                     await self.queue.put(f"data: {json.dumps({'type': 'result', 'message': message_text, 'session_id': session_id})}\n\n")
                 elif df.empty:
                     message_text = (
@@ -374,7 +391,7 @@ class QueryExecutionStreamer:
                         f"Answer Text: {answer}\n\n"
                         "No tabular results found."
                     )
-                    await save_message(conversation_id, "agent", message_text, "result")
+                    result_message_id = await save_message(conversation_id, "agent", message_text, "result")
                     await self.queue.put(f"data: {json.dumps({'type': 'result', 'message': message_text, 'session_id': session_id})}\n\n")
                 elif not answer or answer.strip() == "":
                     body = str(df.head())
@@ -382,7 +399,7 @@ class QueryExecutionStreamer:
                         "Query completed successfully!\n\n"
                         f"Found {len(df)} result(s):\n\n{body}\n..."
                     )
-                    await save_message(conversation_id, "agent", message_text, "result", csv_filename, len(df))
+                    result_message_id = await save_message(conversation_id, "agent", message_text, "result", csv_filename, len(df))
                     await self.queue.put(f"data: {json.dumps({'type': 'result', 'message': message_text, 'csv_file': csv_filename, 'row_count': len(df), 'session_id': session_id})}\n\n")
                 else:
                     body = str(df.head())
@@ -391,14 +408,37 @@ class QueryExecutionStreamer:
                         f"Answer Text: {answer}\n\n"
                         f"Found {len(df)} result(s):\n\n{body}\n..."
                     )
-                    await save_message(conversation_id, "agent", message_text, "result", csv_filename, len(df))
+                    result_message_id = await save_message(conversation_id, "agent", message_text, "result", csv_filename, len(df))
                     await self.queue.put(f"data: {json.dumps({'type': 'result', 'message': message_text, 'csv_file': csv_filename, 'row_count': len(df), 'session_id': session_id})}\n\n")
 
             except Exception as exc:
                 logger.exception("Error processing query results")
                 error_msg = f"Error processing results: {exc}"
-                await save_message(conversation_id, "agent", error_msg, "error")
+                result_message_id = await save_message(conversation_id, "agent", error_msg, "error")
                 await self.queue.put(f"data: {json.dumps({'type': 'error', 'message': error_msg})}\n\n")
+
+            # Emit execution stats before the final done event
+            if execution_stats is not None:
+                try:
+                    stats_payload = execution_stats.to_summary_dict()
+                    await self.queue.put(
+                        f"data: {json.dumps({'type': 'execution_stats', **stats_payload})}\n\n"
+                    )
+                except Exception:
+                    logger.exception("Failed to serialize execution stats")
+
+                # Persist execution stats to DB as a new row
+                try:
+                    await save_step_stats(
+                        conversation_id=conversation_id,
+                        session_id=session_id,
+                        step_type="execute",
+                        stats_dict=stats_payload,
+                        query=self.query,
+                        message_id=result_message_id,
+                    )
+                except Exception:
+                    logger.exception("Failed to save execution stats to DB")
 
             await self.queue.put(f"data: {json.dumps({'type': 'done', 'message': 'Query execution complete'})}\n\n")
 
@@ -559,7 +599,9 @@ class PlanningStreamer:
                     result = exc.value
                     if result is not None:
                         nl_plan, logical_plan = result
-                return nl_plan, logical_plan
+                # Retrieve planning stats set by plan_stream()
+                planning_stats = getattr(exec_instance, "_planning_stats", None)
+                return nl_plan, logical_plan, planning_stats
 
             executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
             future = executor.submit(_run_plan_stream_with_progress)
@@ -569,7 +611,7 @@ class PlanningStreamer:
                 try:
                     progress_dict = progress_sync_queue.get(timeout=0.25)
                     await self.queue.put(
-                        f"data: {json.dumps({'type': 'planning_status', 'message': progress_dict.get('message', ''), 'phase': progress_dict.get('phase', ''), 'step': progress_dict.get('step'), 'total_steps': progress_dict.get('total_steps')})}\n\n"
+                        f"data: {json.dumps({'type': 'planning_status', 'message': progress_dict.get('message', ''), 'phase': progress_dict.get('phase', ''), 'step': progress_dict.get('step'), 'total_steps': progress_dict.get('total_steps'), 'cumulative_cost_usd': progress_dict.get('cumulative_cost_usd')})}\n\n"
                     )
                 except _queue_mod.Empty:
                     await asyncio.sleep(0.1)
@@ -579,17 +621,18 @@ class PlanningStreamer:
                 try:
                     progress_dict = progress_sync_queue.get_nowait()
                     await self.queue.put(
-                        f"data: {json.dumps({'type': 'planning_status', 'message': progress_dict.get('message', ''), 'phase': progress_dict.get('phase', ''), 'step': progress_dict.get('step'), 'total_steps': progress_dict.get('total_steps')})}\n\n"
+                        f"data: {json.dumps({'type': 'planning_status', 'message': progress_dict.get('message', ''), 'phase': progress_dict.get('phase', ''), 'step': progress_dict.get('step'), 'total_steps': progress_dict.get('total_steps'), 'cumulative_cost_usd': progress_dict.get('cumulative_cost_usd')})}\n\n"
                     )
                 except _queue_mod.Empty:
                     break
 
-            nl_plan, logical_plan = future.result()
+            nl_plan, logical_plan, planning_stats = future.result()
             executor.shutdown(wait=False)
 
-            # --- save results to DB -------------------------------------------
+            # --- save plan messages to DB first (need message_id for stats) ----
+            nl_plan_message_id = None
             if nl_plan:
-                await save_message(
+                nl_plan_message_id = await save_message(
                     conversation_id, "agent", nl_plan,
                     message_type="natural-language-plan",
                 )
@@ -600,10 +643,42 @@ class PlanningStreamer:
                     message_type="logical-plan",
                 )
 
+            # --- persist planning stats to DB ---------------------------------
+            planning_stats_dict = None
+            if planning_stats is not None:
+                try:
+                    from carnot.core.models import ExecutionStats, PhaseStats
+                    # Build a partial ExecutionStats with only the planning phase
+                    partial_stats = ExecutionStats(
+                        query=self.query,
+                        planning=planning_stats,
+                        execution=PhaseStats(phase="execution"),
+                    )
+                    planning_stats_dict = partial_stats.to_summary_dict()
+                    await save_step_stats(
+                        conversation_id=conversation_id,
+                        session_id=self.session_id,
+                        step_type="plan",
+                        stats_dict=planning_stats_dict,
+                        query=self.query,
+                        message_id=nl_plan_message_id,
+                    )
+                except Exception:
+                    logger.exception("Failed to save planning stats to DB")
+
             logger.info(
                 f"Generated plan for session {self.session_id}:\n{nl_plan}\n"
                 f"{json.dumps(logical_plan, indent=2) if logical_plan else '(none)'}"
             )
+
+            # --- send planning_stats SSE event ---------------------------------
+            if planning_stats_dict is not None:
+                try:
+                    await self.queue.put(
+                        f"data: {json.dumps({'type': 'planning_stats', **planning_stats_dict})}\n\n"
+                    )
+                except Exception:
+                    logger.exception("Failed to emit planning_stats SSE event")
 
             # --- send final plan_complete event --------------------------------
             await self.queue.put(
@@ -697,7 +772,8 @@ async def save_message(
     csv_file: str | None = None,
     row_count: int | None = None,
     cost_budget: float | None = None,
-) -> None:
+) -> int:
+    """Persist a message and return its ``Message.id``."""
     async with AsyncSessionLocal() as db:
         message = Message(
             conversation_id=conversation_id,
@@ -718,6 +794,77 @@ async def save_message(
             conversation.updated_at = datetime.now(timezone.utc)  # noqa: UP017
 
         await db.commit()
+        await db.refresh(message)
+        return message.id
+
+
+async def save_step_stats(
+    conversation_id: int,
+    session_id: str,
+    step_type: str,
+    stats_dict: dict,
+    query: str | None = None,
+    message_id: int | None = None,
+) -> int:
+    """Insert a ``QueryStats`` row for a completed plan or execute step.
+
+    ``query_iteration`` groups all plan revisions and the subsequent
+    execution into a single logical cycle.  The iteration number only
+    advances **after** an execute step closes the current cycle:
+
+    - Plan 1 → iteration 1  (first plan, no prior execute)
+    - Plan 2 → iteration 1  (revision, still same cycle)
+    - Execute → iteration 1  (closes this cycle)
+    - Plan 3 → iteration 2  (new cycle begins)
+    - Execute → iteration 2  (closes second cycle)
+
+    Requires:
+        - ``conversation_id`` references a valid conversation.
+        - ``step_type`` is ``"plan"`` or ``"execute"``.
+        - ``stats_dict`` is the output of ``ExecutionStats.to_summary_dict()``.
+          For plan steps, the ``"planning"`` sub-dict is used for metrics.
+          For execute steps, the ``"execution"`` sub-dict is used.
+
+    Returns:
+        The ``QueryStats.id`` of the newly created row.
+
+    Raises:
+        None.  Database errors propagate to the caller.
+    """
+    # Extract the relevant phase metrics based on step type
+    phase = stats_dict.get("planning", {}) if step_type == "plan" else stats_dict.get("execution", {})
+
+    async with AsyncSessionLocal() as db:
+        from sqlalchemy import func as sa_func
+
+        # The current iteration = (number of completed execute steps) + 1.
+        # All plan steps before the next execute share this iteration,
+        # and the execute step that closes the cycle also uses it.
+        exec_count_result = await db.execute(
+            select(sa_func.count(QueryStats.id))
+            .where(QueryStats.conversation_id == conversation_id)
+            .where(QueryStats.step_type == "execute")
+        )
+        current_iteration = exec_count_result.scalar() + 1
+
+        row = QueryStats(
+            conversation_id=conversation_id,
+            session_id=session_id,
+            query=query,
+            query_iteration=current_iteration,
+            step_type=step_type,
+            message_id=message_id,
+            cost_usd=phase.get("total_cost_usd"),
+            wall_clock_secs=phase.get("wall_clock_secs"),
+            input_tokens=phase.get("total_input_tokens"),
+            output_tokens=phase.get("total_output_tokens"),
+            stats_json=stats_dict,
+        )
+        db.add(row)
+        await db.commit()
+        await db.refresh(row)
+        return row.id
+        return row.id
 
 
 async def load_conversation_from_db(

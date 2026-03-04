@@ -93,7 +93,7 @@ class TestSemGroupByMocked:
             llm_config=mock_llm_config,
             max_workers=1,
         )
-        result = op("animals", {"animals": ds})
+        result, _stats = op("animals", {"animals": ds})
 
         assert "out" in result
         out_items = result["out"].items
@@ -121,7 +121,7 @@ class TestSemGroupByMocked:
             llm_config=mock_llm_config,
             max_workers=1,
         )
-        result = op("animals", {"animals": ds})
+        result, _stats = op("animals", {"animals": ds})
 
         out_items = result["out"].items
         sums = {item["animal_group"]: item["weight"] for item in out_items}
@@ -147,7 +147,7 @@ class TestSemGroupByMocked:
             llm_config=mock_llm_config,
             max_workers=1,
         )
-        result = op("animals", {"animals": ds})
+        result, _stats = op("animals", {"animals": ds})
 
         out_items = result["out"].items
         mammal = next(i for i in out_items if i["animal_group"] == "mammal")
@@ -173,7 +173,7 @@ class TestSemGroupByMocked:
             llm_config=mock_llm_config,
             max_workers=1,
         )
-        result = op("animals", {"animals": ds})
+        result, _stats = op("animals", {"animals": ds})
 
         out_items = result["out"].items
         mammal = next(i for i in out_items if i["animal_group"] == "mammal")
@@ -198,7 +198,7 @@ class TestSemGroupByMocked:
             llm_config=mock_llm_config,
             max_workers=1,
         )
-        result = op("animals", {"animals": ds})
+        result, _stats = op("animals", {"animals": ds})
 
         out_items = result["out"].items
         assert len(out_items) == 4
@@ -223,7 +223,7 @@ class TestSemGroupByMocked:
             llm_config=mock_llm_config,
             max_workers=1,
         )
-        result = op("animals", {"animals": ds})
+        result, _stats = op("animals", {"animals": ds})
 
         assert "animals" in result
         assert "out" in result

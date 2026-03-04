@@ -23,7 +23,7 @@ def test_sem_topk_operator_basic(test_embedding_model_id, llm_config):
 
     # execute the operator
     sem_topk_operator = SemTopKOperator(task, k=2, output_dataset_id="output-dataset-id", model_id=test_embedding_model_id, llm_config=llm_config, max_workers=4)
-    output_datasets = sem_topk_operator("Animal Dataset", input_datasets)
+    output_datasets, _stats = sem_topk_operator("Animal Dataset", input_datasets)
 
     # assert the output is as expected
     assert len(output_datasets) == 2
@@ -55,7 +55,7 @@ def test_sem_topk_operator_movie_reviews(test_embedding_model_id, llm_config, mo
 
     # generate output
     sem_topk_operator = SemTopKOperator(task, k=5, output_dataset_id="output-dataset-id", model_id=test_embedding_model_id, llm_config=llm_config, max_workers=4)
-    output_datasets = sem_topk_operator("Reviews Dataset", input_datasets)
+    output_datasets, _stats = sem_topk_operator("Reviews Dataset", input_datasets)
 
     assert len(output_datasets) == 2
     assert "output-dataset-id" in output_datasets
@@ -88,7 +88,7 @@ def test_sem_topk_operator_with_index(test_embedding_model_id, llm_config, enron
         max_workers=4,
         index_name="flat",
     )
-    output_datasets = sem_topk_operator("Emails Dataset", input_datasets)
+    output_datasets, _stats = sem_topk_operator("Emails Dataset", input_datasets)
     assert len(output_datasets) == 2
     assert "output-dataset-id" in output_datasets
     output_dataset = output_datasets["output-dataset-id"]

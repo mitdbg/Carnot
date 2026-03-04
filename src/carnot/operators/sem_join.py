@@ -20,6 +20,7 @@ from carnot.agents.utils import (
     AgentParsingError,
     parse_boolean_output,
 )
+from carnot.core.models import LLMCallStats, OperatorStats
 from carnot.data.dataset import Dataset
 
 
@@ -70,7 +71,7 @@ class SemJoinOperator:
             messages.extend(memory_step.to_messages(summary_mode=summary_mode))
         return messages
 
-    def _sem_join(self, left_item: dict, right_item: dict, system_prompt: str) -> dict | None:
+    def _sem_join(self, left_item: dict, right_item: dict, system_prompt: str) -> tuple[dict | None, list[LLMCallStats]]:
         """Evaluate whether a single ``(left, right)`` pair should be joined.
 
         Requires:
@@ -78,8 +79,12 @@ class SemJoinOperator:
             - *system_prompt* is a pre-populated prompt string.
 
         Returns:
-            A merged dict if the LLM judges the pair as matching, otherwise
-            ``None``.  Shared keys receive ``left_`` / ``right_`` prefixes.
+            A tuple ``(merged_dict, llm_call_stats_list)`` where
+            *merged_dict* is a merged dict if the LLM judges the pair as
+            matching (shared keys receive ``left_`` / ``right_``
+            prefixes), otherwise ``None``, and *llm_call_stats_list* is
+            a list of :class:`LLMCallStats` from each LLM call made
+            (including retries).
 
         Raises:
             AgentGenerationError: If the LLM call itself fails.
@@ -89,6 +94,7 @@ class SemJoinOperator:
         memory.steps.append(SemJoinOperatorStep(task=self.task, left_item=left_item, right_item=right_item))
 
         is_joined, step_number = None, 0
+        call_stats: list[LLMCallStats] = []
         while is_joined is None and step_number < self.max_steps:
             memory_step = ActionStep(step_number=1, timing=Timing(start_time=time.time()))
             try:
@@ -104,6 +110,8 @@ class SemJoinOperator:
                     memory_step.model_output_message = chat_message
                     memory_step.token_usage = chat_message.token_usage
                     memory_step.model_output = chat_message.content
+                    if chat_message.llm_call_stats is not None:
+                        call_stats.append(chat_message.llm_call_stats)
                 except Exception as e:
                     raise AgentGenerationError(f"Error in generating model output:\n{e}", self.logger) from e
 
@@ -123,7 +131,7 @@ class SemJoinOperator:
                 step_number += 1
 
         if not is_joined:
-            return None
+            return None, call_stats
         
         output_dict = {}
         shared_keys = set(left_item.keys()).intersection(set(right_item.keys()))
@@ -138,9 +146,9 @@ class SemJoinOperator:
             else:
                 output_dict[key] = value
 
-        return output_dict
+        return output_dict, call_stats
 
-    def __call__(self, left_dataset_id: str, right_dataset_id: str, input_datasets: dict[str, Dataset]) -> dict[str, Dataset]:
+    def __call__(self, left_dataset_id: str, right_dataset_id: str, input_datasets: dict[str, Dataset]) -> tuple[dict[str, Dataset], OperatorStats]:
         """Execute the semantic join over the cross-product of two datasets.
 
         Requires:
@@ -148,13 +156,17 @@ class SemJoinOperator:
               *input_datasets*.
 
         Returns:
-            A new ``dict[str, Dataset]`` that is a copy of *input_datasets*
-            with an additional entry keyed by ``self.output_dataset_id``
-            containing the joined rows.
+            A tuple ``(output_datasets, stats)`` where *output_datasets*
+            is a new ``dict[str, Dataset]`` with an additional entry keyed
+            by ``self.output_dataset_id`` containing the joined rows, and
+            *stats* is an :class:`OperatorStats` summarising all LLM calls
+            made.
 
         Raises:
             KeyError: If either dataset id is not in *input_datasets*.
         """
+        op_start = time.perf_counter()
+
         # retrieve left and right items from the input datasets
         left_items = input_datasets[left_dataset_id].items
         right_items = input_datasets[right_dataset_id].items
@@ -178,11 +190,26 @@ class SemJoinOperator:
 
         # block until futures complete
         done_futures, _ = wait(futures)
-        results = [fut.result() for fut in done_futures]
-        results = list(filter(None, results))
+        all_call_stats: list[LLMCallStats] = []
+        results = []
+        for fut in done_futures:
+            result_item, item_stats = fut.result()
+            all_call_stats.extend(item_stats)
+            if result_item is not None:
+                results.append(result_item)
 
         # create new dataset and return it with the input datasets
         output_dataset = Dataset(name=self.output_dataset_id, annotation=f"Sem join operator output for task: {self.task}", items=results)
         output_datasets = {**input_datasets, output_dataset.name: output_dataset}
 
-        return output_datasets
+        items_in = len(left_items) * len(right_items)
+        op_stats = OperatorStats(
+            operator_name="SemJoin",
+            operator_id=self.output_dataset_id,
+            wall_clock_secs=time.perf_counter() - op_start,
+            llm_calls=all_call_stats,
+            items_in=items_in,
+            items_out=len(results),
+        )
+
+        return output_datasets, op_stats

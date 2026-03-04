@@ -2,7 +2,7 @@ import os
 from datetime import datetime, timezone
 
 from sqlalchemy import Boolean, Column, Float, ForeignKey, Index, Integer, String, Text
-from sqlalchemy.dialects.postgresql import TIMESTAMP
+from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql import func
@@ -110,6 +110,55 @@ class Message(Base):
     row_count = Column(Integer, nullable=True)  # For result messages
     cost_budget = Column(Float, nullable=True)  # Maximum dollar amount user was willing to spend for this query
     created_at = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc))  # noqa: UP017
+
+class QueryStats(Base):
+    """Tracks cost, latency, and token usage for a single step (plan or execute).
+
+    Each API call (``POST /plan`` or ``POST /execute``) inserts **one row**.
+    Within a conversation the ``query_iteration`` groups a plan step and its
+    corresponding execution step together, so:
+
+    - ``SELECT * WHERE conversation_id = ? AND query_iteration = ?``
+      gives all steps of a single plan→execute cycle.
+    - ``SELECT * WHERE conversation_id = ?``
+      gives every step across the whole conversation (sum for total cost).
+
+    Representation invariant:
+        - ``conversation_id`` references a valid conversation.
+        - ``query_iteration`` >= 1 and is monotonically increasing within
+          a ``(conversation_id)`` group.
+        - ``step_type`` is one of ``'plan'`` or ``'execute'``.
+        - ``cost_usd`` is non-null (a row is only created after a step
+          finishes).
+
+    Abstraction function:
+        Represents the cost/latency/token breakdown for a single step
+        (plan **or** execute) within a conversation.
+        ``query_iteration`` groups related plan and execute steps, and
+        ``step_type`` distinguishes them.
+    """
+
+    __tablename__ = "query_stats"
+
+    id = Column(Integer, primary_key=True, index=True)
+    conversation_id = Column(Integer, ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False)
+    session_id = Column(String, nullable=False, index=True)
+    query = Column(Text, nullable=True)
+    query_iteration = Column(Integer, nullable=False, default=1)
+    step_type = Column(String, nullable=False)  # 'plan' or 'execute'
+    message_id = Column(Integer, ForeignKey("messages.id", ondelete="SET NULL"), nullable=True)
+
+    # Per-step metrics
+    cost_usd = Column(Float, nullable=True)
+    wall_clock_secs = Column(Float, nullable=True)
+    input_tokens = Column(Integer, nullable=True)
+    output_tokens = Column(Integer, nullable=True)
+
+    # Full stats JSON blob for detailed drilldown
+    stats_json = Column(JSONB, nullable=True)
+
+    created_at = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc))  # noqa: UP017
+    updated_at = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))  # noqa: UP017
 
 # dependency to get database session
 async def get_db():
