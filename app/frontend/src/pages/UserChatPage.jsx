@@ -3,6 +3,7 @@ import { Send, Database, CheckSquare, Square, AlertCircle, Loader2, XCircle, Mes
 import { useApiToken } from '../hooks/useApiToken'
 import ProgressDisplay from '../components/ProgressDisplay'
 import CostBudgetPicker from '../components/CostBudgetPicker'
+import QueryCostDisplay from '../components/QueryCostDisplay'
 import { conversationsApi, datasetsApi } from '../services/api'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api"
@@ -126,6 +127,7 @@ function UserChatPage() {
   const [currentPlan, setCurrentPlan] = useState(null);
   const [lastQuery, setLastQuery] = useState('');
   const [costBudget, setCostBudget] = useState(DEFAULT_COST_BUDGET);
+  const [queryCostUsd, setQueryCostUsd] = useState(null);
   const messagesEndRef = useRef(null)
   const abortControllerRef = useRef(null)
   const textareaRef = useRef(null)
@@ -196,6 +198,7 @@ function UserChatPage() {
         row_count: msg.row_count
       }))
       setMessages(formattedMessages)
+      setQueryCostUsd(null)  // Reset cost display when loading historical conversation
       
       if (conversation.dataset_ids) {
         const datasetIds = conversation.dataset_ids.split(',').map(id => parseInt(id))
@@ -237,6 +240,7 @@ function UserChatPage() {
     setMessages([])
     setCurrentConversationId(null)
     setSelectedDatasets(new Set())
+    setQueryCostUsd(null)
   }
 
   const loadDatasets = async () => {
@@ -310,6 +314,7 @@ function UserChatPage() {
     setInputQuery('');
     setIsLoading(true);
     setIsExecuting(false);
+    setQueryCostUsd(null);  // Reset cost display for new query
 
     // Track whether we currently have a planning-status message at the
     // tail of the messages list so we can *replace* it instead of stacking.
@@ -373,6 +378,10 @@ function UserChatPage() {
               }
 
               if (data.type === 'planning_status') {
+                // Update running cost if the backend sent it
+                if (data.cumulative_cost_usd != null) {
+                  setQueryCostUsd(data.cumulative_cost_usd);
+                }
                 if (hasActiveStatus) {
                   // Replace the last status message with the new one
                   setMessages(prev => [
@@ -385,6 +394,11 @@ function UserChatPage() {
                     content: data.message
                   }]);
                   hasActiveStatus = true;
+                }
+              } else if (data.type === 'planning_stats') {
+                // Final planning cost snapshot
+                if (data.total_cost_usd != null) {
+                  setQueryCostUsd(data.total_cost_usd);
                 }
               } else if (data.type === 'plan_complete') {
                 // Remove the trailing status pill before appending the plan
@@ -596,6 +610,12 @@ function UserChatPage() {
                   }])
                 }
                 hasActiveStatus = false;
+              } else if (data.type === 'execution_stats') {
+                // Update cost display with the final total from execution
+                if (data.total_cost_usd != null) {
+                  setQueryCostUsd(data.total_cost_usd);
+                }
+                console.debug('Execution stats received:', data)
               }
             } catch (e) {
               console.error('Error parsing SSE data:', e)
@@ -883,6 +903,12 @@ function UserChatPage() {
                 value={costBudget}
                 onChange={setCostBudget}
                 disabled={isLoading}
+              />
+
+              {/* Running query cost display */}
+              <QueryCostDisplay
+                cost={queryCostUsd}
+                budget={costBudget}
               />
             </div>
             <p className="text-[10px] text-gray-400 text-center mt-3 uppercase tracking-widest">

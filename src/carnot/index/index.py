@@ -3,18 +3,45 @@ from __future__ import annotations
 import json
 import logging
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
 
 import chromadb
 import faiss
-import litellm
 import numpy as np
 
 from carnot.index.sem_indices import FlatFileIndex, HierarchicalFileIndex
 from carnot.storage.config import StorageConfig
 
+if TYPE_CHECKING:
+    from carnot.agents.models import LiteLLMModel
+
 logger = logging.getLogger(__name__)
 
 INDEX_BATCH_SIZE = 1000
+
+
+def _resolve_model(model, api_key) -> LiteLLMModel:
+    """Resolve *model* to a :class:`LiteLLMModel` instance.
+
+    Accepts a ``LiteLLMModel``, a model-id string (for backward-compat
+    with callers that pass e.g. ``model="openai/text-embedding-3-small"``),
+    or ``None`` (creates a default).
+
+    Requires:
+        - *model* is a :class:`LiteLLMModel`, a ``str``, or ``None``.
+
+    Returns:
+        A :class:`LiteLLMModel` instance.
+
+    Raises:
+        None.
+    """
+    from carnot.agents.models import LiteLLMModel as _LiteLLMModel
+
+    if isinstance(model, _LiteLLMModel):
+        return model
+    model_id = model if isinstance(model, str) else "openai/text-embedding-3-small"
+    return _LiteLLMModel(model_id=model_id, api_key=api_key)
 
 
 class CarnotIndex(ABC):
@@ -139,6 +166,7 @@ class HierarchicalCarnotIndex(CarnotIndex):
         self,
         name: str,
         items: list[dict] | None = None,
+        model: LiteLLMModel | str | None = None,
         config=None,
         api_key: str | None = None,
         index = None,
@@ -147,6 +175,7 @@ class HierarchicalCarnotIndex(CarnotIndex):
         super().__init__(name=name, items=items, index=index)
         self._config = config
         self._api_key = api_key
+        self._llm_model = _resolve_model(model, api_key)
         self._uri_to_idx: dict[str, int] = _build_uri_to_idx(self.items)
         if self._index is None and self._uri_to_idx:
             self._get_or_create_index()
@@ -176,6 +205,7 @@ class HierarchicalCarnotIndex(CarnotIndex):
         index = HierarchicalFileIndex.from_items(
             name=self.name,
             items=self.items,
+            model=self._llm_model,
             config=self._config,
             api_key=self._api_key,
         )
@@ -241,6 +271,7 @@ class FlatCarnotIndex(CarnotIndex):
         self,
         name: str,
         items: list[dict] | None = None,
+        model: LiteLLMModel | str | None = None,
         config=None,
         api_key: str | None = None,
         index = None,
@@ -249,6 +280,7 @@ class FlatCarnotIndex(CarnotIndex):
         super().__init__(name=name, items=items, index=index)
         self._config = config
         self._api_key = api_key
+        self._llm_model = _resolve_model(model, api_key)
         self._uri_to_idx: dict[str, int] = _build_uri_to_idx(self.items)
         if self._index is None and self._uri_to_idx:
             self._get_or_create_index()
@@ -278,6 +310,7 @@ class FlatCarnotIndex(CarnotIndex):
         index = FlatFileIndex.from_items(
             name=self.name,
             items=self.items,
+            model=self._llm_model,
             config=self._config,
             api_key=self._api_key,
         )
@@ -339,14 +372,16 @@ class ChromaIndex(CarnotIndex):
         self,
         name: str,
         items: list[dict] | None = None,
-        model: str = "openai/text-embedding-3-small",
+        model: LiteLLMModel | str | None = "openai/text-embedding-3-small",
         api_key: str = None,
         index = None,
     ):
         super().__init__(name=name, items=items, index=index)
         self.ids = [f"{idx}" for idx in range(len(self.items))]
-        self.model = model
+        self.model = model if isinstance(model, str) else (model.model_id if model else "openai/text-embedding-3-small")
         self.api_key = api_key
+        self._llm_model = _resolve_model(model, api_key)
+        self._llm_call_stats: list = []
         if self._index is None:
             self._index = self._get_or_create_index()
 
@@ -385,8 +420,8 @@ class ChromaIndex(CarnotIndex):
 
         for start in range(0, len(item_strs), INDEX_BATCH_SIZE):
             batch = item_strs[start : start + INDEX_BATCH_SIZE]
-            response = litellm.embedding(model=self.model, input=batch, api_key=self.api_key)
-            embeddings = [item["embedding"] for item in response.data]
+            embeddings, embed_stats = self._llm_model.embed(texts=batch, model=self.model)
+            self._llm_call_stats.append(embed_stats)
 
             collection.add(
                 documents=item_strs[start : start + INDEX_BATCH_SIZE],
@@ -412,8 +447,9 @@ class ChromaIndex(CarnotIndex):
         Raises:
             None.
         """
-        response = litellm.embedding(model=self.model, input=[query], api_key=self.api_key)
-        query_embedding = response.data[0]["embedding"]
+        query_embedding, embed_stats = self._llm_model.embed(texts=[query], model=self.model)
+        self._llm_call_stats.append(embed_stats)
+        query_embedding = query_embedding[0]
 
         results = self._index.query(query_embeddings=[query_embedding], n_results=k)
         return [self.items[int(idx)] for idx in results["ids"][0]]
@@ -445,14 +481,16 @@ class FaissIndex(CarnotIndex):
         self,
         name: str,
         items: list[dict] | None = None,
-        model: str = "openai/text-embedding-3-small",
+        model: LiteLLMModel | str | None = "openai/text-embedding-3-small",
         api_key: str = None,
         index = None,
     ):
         super().__init__(name=name, items=items, index=index)
         self.ids = [f"{idx}" for idx in range(len(self.items))]
-        self.model = model
+        self.model = model if isinstance(model, str) else (model.model_id if model else "openai/text-embedding-3-small")
         self.api_key = api_key
+        self._llm_model = _resolve_model(model, api_key)
+        self._llm_call_stats: list = []
         if self._index is None:
             self._index = self._get_or_create_index()
 
@@ -483,8 +521,9 @@ class FaissIndex(CarnotIndex):
         vectors = []
         for start in range(0, len(self.items), INDEX_BATCH_SIZE):
             batch = self.items[start : start + INDEX_BATCH_SIZE]
-            response = litellm.embedding(model=self.model, input=batch, api_key=self.api_key)
-            vectors.extend(item["embedding"] for item in response.data)
+            batch_embeddings, embed_stats = self._llm_model.embed(texts=batch, model=self.model)
+            self._llm_call_stats.append(embed_stats)
+            vectors.extend(batch_embeddings)
 
         matrix = np.asarray(vectors, dtype="float32")
         index = faiss.IndexFlatL2(matrix.shape[1])
@@ -510,8 +549,9 @@ class FaissIndex(CarnotIndex):
         Raises:
             None.
         """
-        response = litellm.embedding(model=self.model, input=[query], api_key=self.api_key)
-        query_embedding = response.data[0]["embedding"]
+        query_embedding, embed_stats = self._llm_model.embed(texts=[query], model=self.model)
+        self._llm_call_stats.append(embed_stats)
+        query_embedding = query_embedding[0]
 
         query_vector = np.asarray([query_embedding], dtype="float32")
         _, indices = self._index.search(query_vector, k)

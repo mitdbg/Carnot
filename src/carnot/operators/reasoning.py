@@ -26,6 +26,7 @@ from carnot.agents.utils import (
     parse_code_blobs,
     truncate_content,
 )
+from carnot.core.models import LLMCallStats, OperatorStats
 from carnot.data.dataset import Dataset
 from carnot.operators.code import CodeActionOutput, CodeOperator, FinalAnswerStep
 
@@ -200,21 +201,25 @@ class ReasoningOperator(CodeOperator):
             is_final_answer=code_output.is_final_answer,
         )
 
-    def __call__(self, input_datasets: dict[str, Dataset]) -> dict[str, Dataset]:
+    def __call__(self, input_datasets: dict[str, Dataset]) -> tuple[dict[str, Dataset], OperatorStats]:
         """Execute the reasoning loop and return the resulting datasets.
 
         Requires:
             - *input_datasets* is a non-empty ``dict[str, Dataset]``.
 
         Returns:
-            A new ``dict[str, Dataset]`` with an additional entry keyed by
-            ``self.output_dataset_id`` whose ``items`` are the
-            ``final_items`` from the code state.
+            A tuple ``(output_datasets, stats)`` where *output_datasets*
+            is a new ``dict[str, Dataset]`` with an additional entry keyed
+            by ``self.output_dataset_id`` whose ``items`` are the
+            ``final_items`` from the code state, and *stats* is an
+            :class:`OperatorStats` summarising all LLM calls made.
 
         Raises:
             AgentGenerationError: If the LLM fails on the first step.
             KeyError: If ``final_items`` is absent from the code state.
         """
+        op_start = time.perf_counter()
+
         self.python_executor.send_variables(variables={"input_datasets": input_datasets})
         self.python_executor.send_tools({**self.tools})
 
@@ -222,6 +227,17 @@ class ReasoningOperator(CodeOperator):
         steps = list(self._run_stream(input_datasets))
         assert isinstance(steps[-1], FinalAnswerStep)
         output_state = steps[-1].output # TODO: enforce that this is a proper state dictionary
+
+        # Collect LLM call stats from all action steps
+        all_call_stats: list[LLMCallStats] = []
+        for step in steps:
+            if (
+                isinstance(step, ActionStep)
+                and step.model_output_message is not None
+                and hasattr(step.model_output_message, "llm_call_stats")
+                and step.model_output_message.llm_call_stats is not None
+            ):
+                all_call_stats.append(step.model_output_message.llm_call_stats)
 
         # create new dataset and return it with the input datasets
         output_dataset = Dataset(
@@ -232,4 +248,13 @@ class ReasoningOperator(CodeOperator):
         )
         output_datasets = {**input_datasets, output_dataset.name: output_dataset}
 
-        return output_datasets
+        op_stats = OperatorStats(
+            operator_name="Reasoning",
+            operator_id=self.output_dataset_id,
+            wall_clock_secs=time.perf_counter() - op_start,
+            llm_calls=all_call_stats,
+            items_in=sum(len(ds.items) for ds in input_datasets.values()),
+            items_out=len(output_dataset.items) if output_dataset.items else 0,
+        )
+
+        return output_datasets, op_stats

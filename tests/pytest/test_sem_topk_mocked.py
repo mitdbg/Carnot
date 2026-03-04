@@ -72,7 +72,7 @@ class TestSemTopKMocked:
             op.index_cls = _FakeIndex
 
         ds = Dataset(name="animals", annotation="test", items=list(_ANIMALS))
-        result = op("animals", {"animals": ds})
+        result, _stats = op("animals", {"animals": ds})
 
         assert "out" in result
         assert len(result["out"].items) == 2
@@ -93,7 +93,7 @@ class TestSemTopKMocked:
         ds = Dataset(name="animals", annotation="test", items=list(_ANIMALS))
         assert "test_idx" not in ds.list_indices()
 
-        result = op("animals", {"animals": ds})
+        result, _stats = op("animals", {"animals": ds})
 
         # The index should now be registered on the dataset
         assert "test_idx" in ds.list_indices()
@@ -118,7 +118,7 @@ class TestSemTopKMocked:
             op.catalog = None
             op.index_cls = _FakeIndex
 
-        result = op("animals", {"animals": ds})
+        result, _stats = op("animals", {"animals": ds})
 
         # Should have used the existing index
         existing_index.search.assert_called_once_with("find mammals", k=1)
@@ -139,7 +139,7 @@ class TestSemTopKMocked:
             op.index_cls = _FakeIndex
 
         ds = Dataset(name="animals", annotation="test", items=list(_ANIMALS))
-        result = op("animals", {"animals": ds})
+        result, _stats = op("animals", {"animals": ds})
 
         assert "animals" in result
         assert "out" in result
@@ -159,7 +159,7 @@ class TestSemTopKMocked:
             op.index_cls = _FakeIndex
 
         ds = Dataset(name="animals", annotation="test", items=list(_ANIMALS))
-        result = op("animals", {"animals": ds})
+        result, _stats = op("animals", {"animals": ds})
 
         # _FakeIndex returns min(k, len(items))
         assert len(result["out"].items) == len(_ANIMALS)
@@ -247,7 +247,7 @@ class TestSemTopKMocked:
         ds = Dataset(name="animals", annotation="test", items=list(_ANIMALS))
         ds.dataset_id = 7
 
-        result = op("animals", {"animals": ds})
+        result, _stats = op("animals", {"animals": ds})
 
         # Catalog was queried
         catalog.get_index_by_name.assert_called_once_with(7, "flat")

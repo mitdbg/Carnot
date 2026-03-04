@@ -12,6 +12,8 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any
 
+from carnot.core.models import OperatorStats
+
 
 @dataclass
 class PlanningProgress:
@@ -42,6 +44,9 @@ class PlanningProgress:
 
     detail: dict[str, Any] = field(default_factory=dict)
     """Optional machine-readable metadata (e.g. dataset names discovered)."""
+
+    cumulative_cost_usd: float | None = None
+    """Running total cost so far in the planning phase, if available."""
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to a plain dict suitable for JSON encoding.
@@ -88,15 +93,22 @@ class ExecutionProgress:
     detail: dict[str, Any] = field(default_factory=dict)
     """Optional machine-readable metadata (e.g. item counts)."""
 
+    operator_stats: OperatorStats | None = None
+    """Stats for the operator that just completed, if available."""
+
     def to_dict(self) -> dict[str, Any]:
         """Serialize to a plain dict suitable for JSON encoding.
 
         Returns:
             A dict with all fields; ``None`` values are omitted for
-            cleaner JSON output.
+            cleaner JSON output.  ``operator_stats`` is serialized via
+            its Pydantic ``.model_dump()`` method.
 
         Raises:
             None.
         """
         d = asdict(self)
+        # Replace the dataclass-serialized operator_stats with Pydantic dict
+        if self.operator_stats is not None:
+            d["operator_stats"] = self.operator_stats.model_dump()
         return {k: v for k, v in d.items() if v is not None}

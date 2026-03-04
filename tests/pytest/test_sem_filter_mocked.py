@@ -69,7 +69,7 @@ class TestSemFilterMocked:
             llm_config=mock_llm_config,
             max_workers=1,
         )
-        result = op("animals", {"animals": ds})
+        result, _stats = op("animals", {"animals": ds})
 
         assert "out" in result
         out_items = result["out"].items
@@ -89,7 +89,7 @@ class TestSemFilterMocked:
             llm_config=mock_llm_config,
             max_workers=1,
         )
-        result = op("animals", {"animals": ds})
+        result, _stats = op("animals", {"animals": ds})
 
         assert len(result["out"].items) == len(_ANIMALS)
 
@@ -105,7 +105,7 @@ class TestSemFilterMocked:
             llm_config=mock_llm_config,
             max_workers=1,
         )
-        result = op("animals", {"animals": ds})
+        result, _stats = op("animals", {"animals": ds})
 
         assert len(result["out"].items) == 0
 
@@ -121,7 +121,7 @@ class TestSemFilterMocked:
             llm_config=mock_llm_config,
             max_workers=1,
         )
-        result = op("animals", {"animals": ds})
+        result, _stats = op("animals", {"animals": ds})
 
         assert "animals" in result
         assert "out" in result
@@ -168,7 +168,7 @@ class TestSemFilterMocked:
             max_workers=1,
             max_steps=3,
         )
-        result = op("d", {"d": ds})
+        result, _stats = op("d", {"d": ds})
 
         # Should succeed after retry
         assert len(result["out"].items) == 1
@@ -187,7 +187,7 @@ class TestSemFilterMocked:
             llm_config=mock_llm_config,
             max_workers=1,
         )
-        result = op("empty", {"empty": ds})
+        result, _stats = op("empty", {"empty": ds})
 
         assert len(result["out"].items) == 0
         assert len(mock_litellm.completion_calls) == 0

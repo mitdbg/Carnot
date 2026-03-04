@@ -138,9 +138,7 @@ class TestE2ESingleDatasetFilter:
 
         # Run phase
         execution._plan = logical_plan
-        items, answer_str = execution.run()
-
-        # Only mammals should remain
+        items, answer_str, stats = execution.run()
         animal_names = {item["animal"] for item in items if isinstance(item, dict)}
         assert animal_names == mammals, f"Expected {mammals}, got {animal_names}"
 
@@ -248,7 +246,7 @@ class TestE2EMultiDatasetJoin:
 
         # Run
         execution._plan = logical_plan
-        items, answer_str = execution.run()
+        items, answer_str, stats = execution.run()
 
         # Should have 3 matched pairs
         assert len(items) == 3, f"Expected 3 joined rows, got {len(items)}"
@@ -350,7 +348,7 @@ class TestE2EIndexAwareTopK:
 
         # Run
         execution._plan = logical_plan
-        items, answer_str = execution.run()
+        items, answer_str, stats = execution.run()
 
         # The mock index returns penguin + polar bear for "cold" queries
         assert len(items) >= 1, f"Expected cold-climate animals, got {items}"

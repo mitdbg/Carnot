@@ -71,7 +71,7 @@ class TestSemAggMocked:
             llm_config=mock_llm_config,
             max_workers=1,
         )
-        result = op("animals", {"animals": ds})
+        result, _stats = op("animals", {"animals": ds})
 
         assert "out" in result
         out_items = result["out"].items
@@ -95,7 +95,7 @@ class TestSemAggMocked:
             llm_config=mock_llm_config,
             max_workers=1,
         )
-        result = op("animals", {"animals": ds})
+        result, _stats = op("animals", {"animals": ds})
 
         item = result["out"].items[0]
         assert item["largest"] == "elephant"
@@ -118,7 +118,7 @@ class TestSemAggMocked:
             llm_config=mock_llm_config,
             max_workers=1,
         )
-        result = op("animals", {"animals": ds})
+        result, _stats = op("animals", {"animals": ds})
 
         item = result["out"].items[0]
         assert item["largest"] == "elephant"
@@ -138,7 +138,7 @@ class TestSemAggMocked:
             llm_config=mock_llm_config,
             max_workers=1,
         )
-        result = op("animals", {"animals": ds})
+        result, _stats = op("animals", {"animals": ds})
 
         assert "animals" in result
         assert "out" in result

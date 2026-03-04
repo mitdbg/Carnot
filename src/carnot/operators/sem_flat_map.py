@@ -20,6 +20,7 @@ from carnot.agents.utils import (
     AgentParsingError,
     parse_json_output,
 )
+from carnot.core.models import LLMCallStats, OperatorStats
 from carnot.data.dataset import Dataset
 
 
@@ -73,7 +74,7 @@ class SemFlatMapOperator:
             messages.extend(memory_step.to_messages(summary_mode=summary_mode))
         return messages
 
-    def _sem_flat_map(self, item: dict, system_prompt: str) -> list[dict] | None:
+    def _sem_flat_map(self, item: dict, system_prompt: str) -> tuple[list[dict] | None, list[LLMCallStats]]:
         """Expand a single item into a list of output dicts via the LLM.
 
         Requires:
@@ -81,8 +82,11 @@ class SemFlatMapOperator:
             - *system_prompt* is a pre-populated prompt string.
 
         Returns:
-            A ``list[dict]`` of expanded items with ``output_fields`` keys.
-            Missing fields default to ``None``.
+            A tuple ``(expanded_items, llm_call_stats_list)`` where
+            *expanded_items* is a ``list[dict]`` of items with
+            ``output_fields`` keys (missing fields default to ``None``),
+            and *llm_call_stats_list* is a list of :class:`LLMCallStats`
+            from each LLM call made (including retries).
 
         Raises:
             AgentGenerationError: If the LLM call itself fails.
@@ -92,6 +96,7 @@ class SemFlatMapOperator:
         memory.steps.append(SemFlatMapOperatorStep(task=self.task, output_fields=self.output_fields, item=item))
 
         output_json, step_number = None, 0
+        call_stats: list[LLMCallStats] = []
         while output_json is None and step_number < self.max_steps:
             memory_step = ActionStep(step_number=1, timing=Timing(start_time=time.time()))
             try:
@@ -107,6 +112,8 @@ class SemFlatMapOperator:
                     memory_step.model_output_message = chat_message
                     memory_step.token_usage = chat_message.token_usage
                     memory_step.model_output = chat_message.content
+                    if chat_message.llm_call_stats is not None:
+                        call_stats.append(chat_message.llm_call_stats)
                 except Exception as e:
                     raise AgentGenerationError(f"Error in generating model output:\n{e}", self.logger) from e
 
@@ -132,22 +139,26 @@ class SemFlatMapOperator:
                 if field_name not in item:
                     item[field_name] = None
 
-        return output_json
+        return output_json, call_stats
 
-    def __call__(self, dataset_id: str, input_datasets: dict[str, Dataset]) -> dict[str, Dataset]:
+    def __call__(self, dataset_id: str, input_datasets: dict[str, Dataset]) -> tuple[dict[str, Dataset], OperatorStats]:
         """Execute the semantic flat-map over every item in the input dataset.
 
         Requires:
             - *dataset_id* is a key in *input_datasets*.
 
         Returns:
-            A new ``dict[str, Dataset]`` that is a copy of *input_datasets*
-            with an additional entry keyed by ``self.output_dataset_id``
-            containing the flattened expansion of all items.
+            A tuple ``(output_datasets, stats)`` where *output_datasets*
+            is a new ``dict[str, Dataset]`` with an additional entry keyed
+            by ``self.output_dataset_id`` containing the flattened
+            expansion of all items, and *stats* is an
+            :class:`OperatorStats` summarising all LLM calls made.
 
         Raises:
             KeyError: If *dataset_id* is not in *input_datasets*.
         """
+        op_start = time.perf_counter()
+
         # retrieve items from the input dataset
         items = input_datasets[dataset_id].items
 
@@ -169,10 +180,24 @@ class SemFlatMapOperator:
 
         # block until futures complete
         done_futures, _ = wait(futures)
-        results = [elt for fut in done_futures for elt in fut.result()]
+        all_call_stats: list[LLMCallStats] = []
+        results = []
+        for fut in done_futures:
+            expanded_items, item_stats = fut.result()
+            all_call_stats.extend(item_stats)
+            results.extend(expanded_items)
 
         # create new dataset and return it with the input datasets
         output_dataset = Dataset(name=self.output_dataset_id, annotation=f"Sem flat map operator output for task: {self.task}", items=results)
         output_datasets = {**input_datasets, output_dataset.name: output_dataset}
 
-        return output_datasets
+        op_stats = OperatorStats(
+            operator_name="SemFlatMap",
+            operator_id=self.output_dataset_id,
+            wall_clock_secs=time.perf_counter() - op_start,
+            llm_calls=all_call_stats,
+            items_in=len(items),
+            items_out=len(results),
+        )
+
+        return output_datasets, op_stats
