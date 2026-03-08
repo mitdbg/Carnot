@@ -316,10 +316,14 @@ def sem_map(
     *,
     data: Sequence[Mapping[str, str]],
     concepts_output_path: str | None = None,
+    concept_schema_cols: List[Dict[str, Any]] = None,
 ) -> Tuple[Dict[str, Dict[str, Any]], List[Dict[str, Any]]]:
     import palimpzest as pz
 
-    concept_schema_cols = _build_concept_schema_cols(top_k=DEFAULT_TOP_K_CONCEPTS, concepts_output_path=concepts_output_path)
+    if concepts_output_path is not None:
+        concept_schema_cols = _build_concept_schema_cols(top_k=DEFAULT_TOP_K_CONCEPTS, concepts_output_path=concepts_output_path)
+    elif concept_schema_cols is None:
+        raise ValueError("Either concepts_output_path or concept_schema_cols must be provided.")
     
     if len(concept_schema_cols) != DEFAULT_TOP_K_CONCEPTS:
         raise RuntimeError(

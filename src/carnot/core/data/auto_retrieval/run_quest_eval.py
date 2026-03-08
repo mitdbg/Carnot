@@ -9,7 +9,7 @@ from typing import Any, Callable, Dict, List, Optional, Set
 
 from _internal.chroma_store import ChromaStore
 from _internal.query_planner import LLMQueryPlanner
-from _internal.sem_map import expand_sem_map_results_to_tags
+from _internal.sem_map import sem_map, expand_sem_map_results_to_tags
 from _internal.hierarchy_augment import postprocess_sem_map
 from quest_utils import prepare_quest_documents, QuestQuery, prepare_quest_queries
 
@@ -69,7 +69,7 @@ def expand_metas(
     Transforms raw per-document concept extractions into stable, queryable
     metadata columns suitable for ChromaDB filtering.
     """
-    out_dir = HERE / "sem_map"
+    out_dir = HERE / "sem_map_subset_3"
     out_dir.mkdir(parents=True, exist_ok=True)
 
     if dump_intermediate is None:
@@ -116,24 +116,28 @@ def expand_metas(
     concept_schema_cols = [
         {**col, "type": _deserialize_type(col["type"])}
         for col in json.loads(
-            (HERE / "sem_map/concept_schema_cols.json").read_text(encoding="utf-8")
+            (HERE / "sem_map_subset_1/concept_schema_cols.json").read_text(encoding="utf-8")
         )
     ]
+        
+    sem_results, concept_schema_cols = sem_map(data=data_rows, concept_schema_cols=concept_schema_cols)
 
-    # Load augmented sem_map output (output of postprocess Steps 1–3).
-    # logger.info("Postprocessing sem_map raw output...")
-    # sem_results = postprocess_sem_map(
-    #     sem_results,
-    #     concept_schema_cols,
-    #     out_dir=str(out_dir) if dump_intermediate else None
-    #     )
-    augmented_path = HERE / "sem_map/postprocess_step3_augmented.json"
-    if not augmented_path.exists():
-        raise FileNotFoundError(
-            f"Missing augmented sem_map file: {augmented_path}. "
-            "Run postprocess_sem_map first to generate it."
+    logger.info("Postprocessing sem_map raw output...")
+    sem_results = postprocess_sem_map(
+        sem_results,
+        concept_schema_cols,
+        out_dir=str(out_dir) if dump_intermediate else None
         )
-    sem_results = json.loads(augmented_path.read_text(encoding="utf-8"))
+    logger.info("Postprocessing complete: step 1-3.")
+    
+    # Load augmented sem_map output (output of postprocess Steps 1–3).
+    # augmented_path = HERE / "sem_map_subset_1/postprocess_step3_augmented.json"
+    # if not augmented_path.exists():
+    #     raise FileNotFoundError(
+    #         f"Missing augmented sem_map file: {augmented_path}. "
+    #         "Run postprocess_sem_map first to generate it."
+    #     )
+    # sem_results = json.loads(augmented_path.read_text(encoding="utf-8"))
 
     # Step 4: Flatten string/list columns into boolean tag columns for ChromaDB.
     logger.info("Expanding sem_map results to tags...")
@@ -405,9 +409,9 @@ if __name__ == "__main__":
     USE_SUBSET = not args.full
 
     if USE_SUBSET:
-        documents_path = str(HERE / "tmp/subset_2_documents.jsonl")
-        queries_source = str(HERE / "tmp/subset_2_quest_queries.jsonl")
-        collection_suffix = "_subset_2"
+        documents_path = str(HERE / "tmp/subset_3_documents.jsonl")
+        queries_source = str(HERE / "tmp/subset_3_quest_queries.jsonl")
+        collection_suffix = "_subset_3"
         max_docs = None
     else:
         documents_path = str(HERE / "tmp/documents.jsonl")
@@ -444,7 +448,7 @@ if __name__ == "__main__":
         dump_intermediate=args.dump_intermediate,
     )
 
-    filter_catalog_path = HERE / "sem_map/filter_catalog.json"
+    filter_catalog_path = HERE / "sem_map_subset_3/filter_catalog.json"
     query_planner = LLMQueryPlanner(filter_catalog_path) if filter_catalog_path.exists() else None
 
     avg_recall = evaluate_collection(
