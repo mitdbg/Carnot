@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from carnot.core.models import LLMCallStats
 from carnot.index.models import FileSummaryEntry, HierarchicalIndexConfig
 from carnot.index.sem_indices_cache import FileSummaryCache
 from carnot.storage.config import StorageConfig
@@ -86,6 +87,13 @@ class SummaryLayer:
                 model_id=self._config.summary_model,
                 api_key=self._api_key,
             )
+
+        self._llm_call_stats: list[LLMCallStats] = []
+
+    @property
+    def llm_call_stats(self) -> list[LLMCallStats]:
+        """Return all LLM call stats collected during summarization."""
+        return self._llm_call_stats
 
     # ── Public API ──────────────────────────────────────────────────────
 
@@ -239,6 +247,8 @@ Summary:"""
                 messages=[message],
                 temperature=_SUMMARY_TEMPERATURE,
             )
+            if response.llm_call_stats is not None:
+                self._llm_call_stats.append(response.llm_call_stats)
             return response.content.strip()
         except Exception as e:
             logger.warning(
@@ -261,10 +271,11 @@ Summary:"""
             None.  Errors are logged.
         """
         try:
-            embeddings, _embed_stats = self._model.embed(
+            embeddings, embed_stats = self._model.embed(
                 texts=[text],
                 model=self._config.embedding_model,
             )
+            self._llm_call_stats.append(embed_stats)
             return embeddings[0]
         except Exception as e:
             logger.warning(f"Embedding generation failed: {e}")

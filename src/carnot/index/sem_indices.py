@@ -112,7 +112,9 @@ class FlatFileIndex:
         if not summaries:
             logger.warning("No file summaries could be generated for FlatFileIndex")
             return None
-        return cls(name=name, file_summaries=summaries, model=model, config=config, api_key=api_key)
+        index = cls(name=name, file_summaries=summaries, model=model, config=config, api_key=api_key)
+        index._llm_call_stats.extend(layer.llm_call_stats)
+        return index
 
     def _embed_texts(self, texts: list[str]) -> list[list[float]]:
         embeddings, embed_stats = self._model.embed(
@@ -324,6 +326,7 @@ class HierarchicalFileIndex:
             config=config,
             api_key=api_key,
         )
+        index._llm_call_stats.extend(layer.llm_call_stats)
         try:
             index_cache.save(index)
         except Exception as e:

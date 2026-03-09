@@ -55,6 +55,7 @@ class Execution:
             storage: TieredStorageManager | None = None,
             index_catalog: IndexCatalog | None = None,
             storage_config: StorageConfig | None = None,
+            execution_model: str | None = None,
         ):
         self.query = query
         self.datasets = datasets
@@ -67,7 +68,7 @@ class Execution:
         self.progress_log_file = progress_log_file
         self.cost_budget = cost_budget
         self.storage_config = storage_config or StorageConfig()
-
+        self.execution_model = execution_model or "openai/gpt-5-mini"
         # Use explicitly passed objects, or derive from storage_config
         self.storage = storage
         if self.storage is None and self.storage_config is not None:
@@ -370,7 +371,7 @@ class Execution:
             operator = SemAggOperator(task=op_params['task'], agg_fields=op_params['agg_fields'], output_dataset_id=plan['output_dataset_id'], model_id="openai/gpt-5-mini", llm_config=self.llm_config, max_workers=4)
 
         elif op_name == "SemanticFilter":
-            operator = SemFilterOperator(task=op_params['condition'], output_dataset_id=plan['output_dataset_id'], model_id="openai/gpt-5-mini", llm_config=self.llm_config, max_workers=4)
+            operator = SemFilterOperator(task=op_params['condition'], output_dataset_id=plan['output_dataset_id'], model_id=self.execution_model, llm_config=self.llm_config, max_workers=4)
 
         elif op_name == "SemanticMap":
             output_fields = [{"name": op_params['field'], "type": op_params['type'], "description": op_params['field_desc']}]

@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-INDEX_BATCH_SIZE = 1000
+INDEX_BATCH_SIZE = 50
 
 
 def _resolve_model(model, api_key) -> LiteLLMModel:
@@ -240,6 +240,13 @@ class HierarchicalCarnotIndex(CarnotIndex):
         uris = self._index.search(query, k)
         return [self.items[self._uri_to_idx[p]] for p in uris if p in self._uri_to_idx][:k]
 
+    @property
+    def _llm_call_stats(self) -> list:
+        """Return LLM call stats from the underlying HierarchicalFileIndex."""
+        if self._index is not None:
+            return self._index._llm_call_stats
+        return []
+
 
 class FlatCarnotIndex(CarnotIndex):
     """CarnotIndex backed by a :class:`FlatFileIndex`.
@@ -342,6 +349,13 @@ class FlatCarnotIndex(CarnotIndex):
             self._get_or_create_index()
         uris = self._index.search(query, k)
         return [self.items[self._uri_to_idx[p]] for p in uris if p in self._uri_to_idx][:k]
+
+    @property
+    def _llm_call_stats(self) -> list:
+        """Return LLM call stats from the underlying FlatFileIndex."""
+        if self._index is not None:
+            return self._index._llm_call_stats
+        return []
 
 
 class ChromaIndex(CarnotIndex):
