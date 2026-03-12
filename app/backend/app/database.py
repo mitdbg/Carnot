@@ -87,14 +87,40 @@ class DatasetFile(Base):
     )
 
 
-class Conversation(Base):
-    __tablename__ = "conversations"
+class Workspace(Base):
+    """Top-level entity representing a user's research context.
+
+    A workspace contains one or more conversations (strictly one today)
+    and zero or more notebooks.  The sidebar lists workspaces.
+
+    Representation invariant:
+        - ``session_id`` is unique across all workspaces.
+        - ``title`` is never NULL (defaults to ``'Untitled Workspace'``).
+
+    Abstraction function:
+        Represents a named research workspace for a user, scoped to a
+        set of datasets (``dataset_ids``), containing child conversations
+        and notebooks.
+    """
+    __tablename__ = "workspaces"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(String, index=True, nullable=False)
     session_id = Column(String, unique=True, nullable=False, index=True)
-    title = Column(String, nullable=True)  # Auto-generated from first query
+    title = Column(String, nullable=False, server_default="Untitled Workspace")
     dataset_ids = Column(String, nullable=True)  # Comma-separated dataset IDs
+    created_at = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc))  # noqa: UP017
+    updated_at = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))  # noqa: UP017
+
+
+class Conversation(Base):
+    __tablename__ = "conversations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    workspace_id = Column(Integer, ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(String, index=True, nullable=False)
+    session_id = Column(String, unique=True, nullable=False, index=True)
+    title = Column(String, nullable=True)  # Auto-generated from first query
     created_at = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc))  # noqa: UP017
     updated_at = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))  # noqa: UP017
 
@@ -115,7 +141,7 @@ class QueryStats(Base):
     """Tracks cost, latency, and token usage for a single step (plan or execute).
 
     Each API call (``POST /plan`` or ``POST /execute``) inserts **one row**.
-    Within a conversation the ``query_iteration`` groups a plan step and its
+    Within a conversation the ``query_iteration`` groups plan step(s) and their
     corresponding execution step together, so:
 
     - ``SELECT * WHERE conversation_id = ? AND query_iteration = ?``
@@ -147,6 +173,7 @@ class QueryStats(Base):
     query_iteration = Column(Integer, nullable=False, default=1)
     step_type = Column(String, nullable=False)  # 'plan' or 'execute'
     message_id = Column(Integer, ForeignKey("messages.id", ondelete="SET NULL"), nullable=True)
+    notebook_id = Column(Integer, ForeignKey("notebooks.id", ondelete="SET NULL"), nullable=True)
 
     # Per-step metrics
     cost_usd = Column(Float, nullable=True)
@@ -159,6 +186,41 @@ class QueryStats(Base):
 
     created_at = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc))  # noqa: UP017
     updated_at = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))  # noqa: UP017
+
+
+class Notebook(Base):
+    """Lightweight metadata row for a notebook so it survives page refresh.
+
+    The heavy in-memory ``NotebookState`` (plan, datasets_store, cell
+    execution) lives in ``query.py``'s ``active_notebooks`` dict and is
+    evicted after a timeout.  This DB row stores enough metadata to
+    restore the notebook tab and, via ``plan_json``, to re-create the
+    in-memory state on demand.
+
+    Representation invariant:
+        - ``notebook_uuid`` is unique across all notebooks.
+        - ``workspace_id`` references a valid workspace.
+        - ``conversation_id`` is NULL or references the conversation
+          that spawned this notebook.
+
+    Abstraction function:
+        Represents a persisted notebook whose visual state (cell list)
+        is captured in ``cells_json`` and whose logical plan is in
+        ``plan_json``.
+    """
+    __tablename__ = "notebooks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    workspace_id = Column(Integer, ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False)
+    conversation_id = Column(Integer, ForeignKey("conversations.id", ondelete="SET NULL"), nullable=True)
+    notebook_uuid = Column(String, unique=True, nullable=False)
+    label = Column(String, nullable=False)
+    query = Column(Text, nullable=False)
+    plan_json = Column(JSONB, nullable=True)
+    cells_json = Column(JSONB, nullable=True)
+    created_at = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc))  # noqa: UP017
+    updated_at = Column(TIMESTAMP(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))  # noqa: UP017
+
 
 # dependency to get database session
 async def get_db():

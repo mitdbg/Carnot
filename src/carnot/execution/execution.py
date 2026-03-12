@@ -14,37 +14,42 @@ from carnot.data.dataset import Dataset
 from carnot.execution.progress import ExecutionProgress, PlanningProgress
 from carnot.index.index import CarnotIndex
 from carnot.memory.memory import Memory
-from carnot.operators.code import CodeOperator
-from carnot.operators.limit import LimitOperator
-from carnot.operators.reasoning import ReasoningOperator
-from carnot.operators.sem_agg import SemAggOperator
-from carnot.operators.sem_filter import SemFilterOperator
-from carnot.operators.sem_flat_map import SemFlatMapOperator
-from carnot.operators.sem_groupby import SemGroupByOperator
-from carnot.operators.sem_join import SemJoinOperator
-from carnot.operators.sem_map import SemMapOperator
-from carnot.operators.sem_topk import SemTopKOperator
+from carnot.plan import PhysicalPlan
+from carnot.plan.feedback import PlanFeedback
+from carnot.plan.node import PlanNode
 from carnot.storage.catalog import IndexCatalog
 from carnot.storage.config import StorageConfig
 from carnot.storage.tiered import TieredStorageManager
 
-Operator = CodeOperator | ReasoningOperator | SemAggOperator | SemFilterOperator | SemFlatMapOperator | SemGroupByOperator | SemJoinOperator | SemMapOperator | SemTopKOperator
 logger = logging.getLogger('uvicorn.error')
 
+
 class Execution:
-    """Class for managing the execution of a query in Carnot.
+    """Orchestrates planning and execution of Carnot queries.
 
     The optional *storage_config* parameter (:class:`StorageConfig`)
     controls how catalogs and storage backends are wired.  When omitted
     a default in-memory configuration is used (no external database
     required).  Callers can also pass pre-built *storage* and
     *index_catalog* objects to override the config-driven defaults.
+
+    Representation invariant:
+        - ``datasets`` is a list of ``Dataset`` objects.
+        - ``llm_config`` contains the necessary API keys.
+        - ``_physical_plan`` is either ``None`` (no plan yet) or a
+          ``PhysicalPlan`` instance.
+
+    Abstraction function:
+        Represents the ability to plan and execute a Carnot query over a
+        set of datasets using a configured LLM provider.  The plan may be
+        supplied as a raw dict (backward compatibility) or as a
+        ``PhysicalPlan``.
     """
     def __init__(
             self,
             query: str,
             datasets: list[Dataset],
-            plan: dict | None = None,
+            plan: dict | PhysicalPlan | None = None,
             tools: list[Tool] | None = None,
             conversation: Conversation | None = None,
             memory: Memory | None = None,
@@ -58,7 +63,6 @@ class Execution:
         ):
         self.query = query
         self.datasets = datasets
-        self._plan = plan or {}
         self.tools = tools or []
         self.conversation = conversation
         self.memory = memory or Memory()
@@ -67,6 +71,12 @@ class Execution:
         self.progress_log_file = progress_log_file
         self.cost_budget = cost_budget
         self.storage_config = storage_config or StorageConfig()
+
+        # Build the PhysicalPlan from whatever was passed in.
+        # Uses the _plan property setter which handles dict->PhysicalPlan
+        # conversion.
+        self._physical_plan: PhysicalPlan | None = None
+        self._plan = plan
 
         # Use explicitly passed objects, or derive from storage_config
         self.storage = storage
@@ -100,10 +110,56 @@ class Execution:
             model=LiteLLMModel(model_id=self.planner_model_id, api_key=llm_config.get(self.api_key_name))
         )
 
-    def plan(self) -> tuple[str, dict]:
+    # -- _plan property (backward-compatible) --------------------------------
+
+    @property
+    def _plan(self) -> dict | PhysicalPlan | None:
+        """Return the current plan.
+
+        External callers that assign ``execution._plan = some_dict``
+        (common in evals and tests) trigger the setter which converts
+        the dict to a ``PhysicalPlan`` automatically.
+
+        Requires:
+            None.
+
+        Returns:
+            The ``PhysicalPlan`` if one exists, else ``None``.
+
+        Raises:
+            None.
         """
-        Generate a logical execution plan for the query.
-        
+        return self._physical_plan
+
+    @_plan.setter
+    def _plan(self, value: dict | PhysicalPlan | None) -> None:
+        """Set the plan, converting dicts to ``PhysicalPlan`` automatically.
+
+        Requires:
+            - *value* is ``None``, a valid plan dict, or a ``PhysicalPlan``.
+
+        Returns:
+            None.
+
+        Raises:
+            None.
+        """
+        if value is None or (isinstance(value, dict) and not value):
+            self._physical_plan = None
+        elif isinstance(value, PhysicalPlan):
+            self._physical_plan = value
+        elif isinstance(value, dict):
+            self._physical_plan = PhysicalPlan.from_plan_dict(
+                value, self.datasets, query=self.query,
+            )
+        else:
+            self._physical_plan = None
+
+    # -- planning ------------------------------------------------------------
+
+    def plan(self) -> tuple[str, dict]:
+        """Generate a logical execution plan for the query.
+
         This method uses a two-phase approach:
         1. Generate a code-based logical plan (the Planner can call its managed 
            DataDiscoveryAgent to explore datasets during planning)
@@ -113,7 +169,7 @@ class Execution:
         from the Planner's and DataDiscoveryAgent's memories and stored
         in ``self._planning_stats`` for later assembly into
         :class:`ExecutionStats`.
-        
+
         Returns:
             A tuple of (natural_language_plan, logical_plan_dict)
         """
@@ -148,7 +204,7 @@ class Execution:
         """Generate a logical execution plan, yielding progress events.
 
         This is the streaming counterpart of :meth:`plan`.  It performs
-        the same two-phase approach (logical plan generation → paraphrase)
+        the same two-phase approach (logical plan generation -> paraphrase)
         but yields :class:`PlanningProgress` events between steps so
         that callers can keep the user informed of progress.
 
@@ -199,12 +255,12 @@ class Execution:
             if isinstance(event, PlanningProgress):
                 yield event
             else:
-                # Terminal value — the logical plan dict
+                # Terminal value -- the logical plan dict
                 logical_plan = event
 
         yield PlanningProgress(
             phase="logical_plan",
-            message="Logical plan generated. Preparing summary…",
+            message="Logical plan generated. Preparing summary...",
         )
 
         # ----------------------------------------------------------
@@ -221,7 +277,7 @@ class Execution:
             if isinstance(event, PlanningProgress):
                 yield event
             else:
-                # Terminal value — the NL plan string
+                # Terminal value -- the NL plan string
                 nl_plan = event
 
         plan_wall_clock = time.perf_counter() - plan_start
@@ -235,7 +291,7 @@ class Execution:
 
         return nl_plan, logical_plan
 
-    # -- stats helpers -----------------------------------------------------------
+    # -- stats helpers -------------------------------------------------------
 
     @staticmethod
     def _collect_llm_calls_from_memory(memory) -> list[LLMCallStats]:
@@ -316,184 +372,83 @@ class Execution:
             operator_stats=operator_stats,
         )
 
-    def _get_op_from_plan_dict(self, plan: dict) -> tuple[Operator | Dataset, list[str]]:
-        """Return the physical operator (or Dataset) for a single plan node.
+    # -- execution -----------------------------------------------------------
 
-        The *plan* dict must have the following schema::
+    def run_node(
+        self,
+        node_id: str,
+        datasets_store: dict[str, Dataset],
+    ) -> tuple[dict[str, Dataset], OperatorStats | None]:
+        """Execute a single plan node.
 
-            {
-                "name": str,                  # node name
-                "output_dataset_id": str,     # output identifier
-                "params": {                   # operator-specific params
-                    "operator": str,          # one of the recognized names below
-                    ...                       # operator-specific keys
-                },
-                "parents": [<plan dict>, ...] # parent plan nodes
-            }
-
-        Recognized ``operator`` values and corresponding physical classes:
-
-        - ``"Code"`` → :class:`CodeOperator` (requires ``"task"``).
-        - ``"Limit"`` → :class:`LimitOperator` (requires ``"n"``).
-        - ``"SemanticAgg"`` → :class:`SemAggOperator`.
-        - ``"SemanticFilter"`` → :class:`SemFilterOperator`.
-        - ``"SemanticMap"`` → :class:`SemMapOperator`.
-        - ``"SemanticFlatMap"`` → :class:`SemFlatMapOperator`.
-        - ``"SemanticGroupBy"`` → :class:`SemGroupByOperator`.
-        - ``"SemanticJoin"`` → :class:`SemJoinOperator`.
-        - ``"SemanticTopK"`` → :class:`SemTopKOperator`.
-
-        If no ``"operator"`` key is present in ``params``, the node is
-        treated as a dataset reference — the ``name`` is looked up in
-        ``self.datasets``.
-
-        Returns:
-            A tuple ``(operator_or_dataset, parent_dataset_ids)`` where
-            *parent_dataset_ids* is a list of ``output_dataset_id``
-            strings from the node's parents.
-
-        Raises:
-            ValueError: if the operator name is unrecognized and does
-            not match any dataset name.
-        """
-        # TODO: filter for model_id and max_workers from llm_config
-        operator = None
-        op_params = plan['params']
-        op_name = op_params.get('operator', plan['name'])
-        if op_name == "Code":
-            operator = CodeOperator(task=op_params['task'], output_dataset_id=plan['output_dataset_id'], model_id="openai/gpt-5-mini", llm_config=self.llm_config)
-
-        elif op_name == "Limit":
-            operator = LimitOperator(n=op_params['n'], output_dataset_id=plan['output_dataset_id'])
-
-        elif op_name == "SemanticAgg":
-            operator = SemAggOperator(task=op_params['task'], agg_fields=op_params['agg_fields'], output_dataset_id=plan['output_dataset_id'], model_id="openai/gpt-5-mini", llm_config=self.llm_config, max_workers=4)
-
-        elif op_name == "SemanticFilter":
-            operator = SemFilterOperator(task=op_params['condition'], output_dataset_id=plan['output_dataset_id'], model_id="openai/gpt-5-mini", llm_config=self.llm_config, max_workers=4)
-
-        elif op_name == "SemanticMap":
-            output_fields = [{"name": op_params['field'], "type": op_params['type'], "description": op_params['field_desc']}]
-            operator = SemMapOperator(
-                task="Execute the map operation to compute the following output field.",
-                output_fields=output_fields,
-                output_dataset_id=plan['output_dataset_id'],
-                model_id="openai/gpt-5-mini",
-                llm_config=self.llm_config,
-                max_workers=4,
-            )
-
-        elif op_name == "SemanticFlatMap":
-            output_fields = [{"name": op_params['field'], "type": op_params['type'], "description": op_params['field_desc']}]
-            operator = SemFlatMapOperator(
-                task="Execute the flat map operation to compute the following output field.",
-                output_fields=output_fields,
-                output_dataset_id=plan['output_dataset_id'],
-                model_id="openai/gpt-5-mini",
-                llm_config=self.llm_config,
-                max_workers=4,
-            )
-
-        elif op_name == "SemanticGroupBy":
-            gby_field_names = [field['name'] for field in op_params['gby_fields']]
-            agg_field_names = [field['name'] for field in op_params['agg_fields']]
-            agg_funcs = [field['func'] for field in op_params['agg_fields']]
-            task = f"Group by fields {gby_field_names} with aggregations on {agg_field_names} using {agg_funcs} for each aggregation field, respectively."
-            operator = SemGroupByOperator(
-                task=task,
-                group_by_fields=op_params['gby_fields'],
-                agg_fields=op_params['agg_fields'],
-                output_dataset_id=plan['output_dataset_id'],
-                model_id="openai/gpt-5-mini",
-                llm_config=self.llm_config,
-                max_workers=4,
-            )
-
-        elif op_name == "SemanticJoin":
-            operator = SemJoinOperator(task=op_params['condition'], output_dataset_id=plan['output_dataset_id'], model_id="openai/gpt-5-mini", llm_config=self.llm_config, max_workers=4)
-
-        elif op_name == "SemanticTopK":
-            operator = SemTopKOperator(task=op_params['search_str'], k=op_params['k'], output_dataset_id=plan['output_dataset_id'], model_id="openai/text-embedding-3-small", llm_config=self.llm_config, max_workers=4, index_name=op_params["index_name"], catalog=self.index_catalog)
-
-        else:
-            for dataset in self.datasets:
-                if dataset.name == op_name:
-                    operator = dataset
-
-        if operator is None:
-            raise ValueError(f"Unknown operator or dataset name: {op_name}")
-
-        return operator, [subplan['output_dataset_id'] for subplan in plan['parents']]
-
-    def _get_ops_in_topological_order(self, plan: dict) -> list[tuple[Operator | Dataset, list[str]]]:
-        """Linearise a plan DAG into topological (dependency-first) order.
-
-        Uses a recursive DFS: for each node, all parents are visited
-        before the node itself.
+        This is the primitive that :meth:`run` composes and which external
+        callers may use directly for node-by-node execution.
 
         Requires:
-            - *plan* is a valid plan dict (see :meth:`_get_op_from_plan_dict`).
+            - ``self._physical_plan`` is not None.
+            - *node_id* exists in the plan.
+            - All parent datasets for that node exist in
+              *datasets_store*.
 
         Returns:
-            A list of ``(operator_or_dataset, parent_dataset_ids)``
-            tuples in topological order (leaves first, root last).
-        """
-        # base case: this operator has no parents
-        parents = plan.get('parents', [])
-        if not parents:
-            return [self._get_op_from_plan_dict(plan)]
-        
-        # recursive case: use DFS to get topological order, get parents first and then append this operator
-        ops = []
-        for parent in parents:
-            ops.extend(self._get_ops_in_topological_order(parent))
-        ops.append(self._get_op_from_plan_dict(plan))
-        return ops
+            ``(updated_store, op_stats)`` -- the store with the new
+            output dataset added, and the operator's stats (``None``
+            for dataset loads).
 
-    def run(self) -> tuple[list[dict], str, ExecutionStats]: # physical_plan: PhysicalPlan -> str
+        Raises:
+            KeyError: If a required parent dataset is missing.
+            ValueError: If the operator type is unrecognized.
+        """
+        plan = self._physical_plan
+        node = plan.get_node(node_id)
+
+        # Resolve parent output_dataset_ids for operator calling convention
+        parent_output_ids = [
+            plan.get_node(pid).output_dataset_id
+            for pid in node.parent_ids
+        ]
+
+        return node.execute(
+            datasets_store,
+            self.llm_config,
+            leaf_datasets={ds.name: ds for ds in self.datasets},
+            storage=self.storage,
+            index_catalog=self.index_catalog,
+            parent_output_ids=parent_output_ids,
+        )
+
+    def run(self) -> tuple[list[dict], str, ExecutionStats]:
         """Execute the physical plan and return the result with stats.
 
-        Runs every operator in topological order, collects
-        ``OperatorStats`` from each, and assembles an
+        Runs every node in topological order via :meth:`run_node`,
+        collects ``OperatorStats`` from each, and assembles an
         ``ExecutionStats`` that combines planning and execution
         phase statistics.
+
+        Requires:
+            - ``self._physical_plan`` is not None (either set via
+              constructor, ``_plan`` setter, or :meth:`plan`).
 
         Returns:
             A 3-tuple ``(items, answer_str, stats)`` where *items* is
             the list of result dicts, *answer_str* is the final
             answer text, and *stats* is the full ``ExecutionStats``.
+
+        Raises:
+            ValueError: If an operator fails.
         """
         exec_start = time.perf_counter()
-        # TODO: scope input_datasets based on children / parents in plan
-        input_datasets = {}
+        datasets_store: dict[str, Dataset] = {}
         all_operator_stats: list[OperatorStats] = []
-        operators = self._get_ops_in_topological_order(self._plan)
-        for operator, parent_ids in operators:
-            if isinstance(operator, Dataset):
-                # materialize items through the storage layer (or fallback)
-                input_datasets[operator.name] = operator.materialize(self.storage)
-            elif isinstance(operator, CodeOperator):
-                input_datasets, op_stats = operator(input_datasets)
-                all_operator_stats.append(op_stats)
-            elif isinstance(operator, SemJoinOperator):
-                left_dataset_id = parent_ids[0]
-                right_dataset_id = parent_ids[1]
-                input_datasets, op_stats = operator(left_dataset_id, right_dataset_id, input_datasets)
-                all_operator_stats.append(op_stats)
-            else:
-                dataset_id = parent_ids[0]
-                input_datasets, op_stats = operator(dataset_id, input_datasets)
+
+        for node in self._physical_plan.topo_order():
+            datasets_store, op_stats = self.run_node(
+                node.node_id, datasets_store,
+            )
+            if op_stats is not None:
                 all_operator_stats.append(op_stats)
 
-        # Use a reasoning operator to return a final output dataset which has all of the items, code_state, and/or answer text
-        # from the input datasets which is relevant to the user for interpreting the final answer
-        # - list of items (dicts) can be written to a pd.DataFrame --> csv
-        # - text can be displayed to the user
-        # - for now, assume code state is debug only (exposed in the future)
-        final_answer_operator = ReasoningOperator(task=self.query, output_dataset_id="final_dataset", model_id="openai/gpt-5-mini", llm_config=self.llm_config)
-        output_datasets, reasoning_stats = final_answer_operator(input_datasets)
-        all_operator_stats.append(reasoning_stats)
-        final_dataset = output_datasets["final_dataset"]
+        final_dataset = datasets_store.get("final_dataset")
 
         exec_wall_clock = time.perf_counter() - exec_start
 
@@ -509,55 +464,211 @@ class Execution:
             execution=execution_phase,
         )
 
-        return final_dataset.items, final_dataset.code_state.get("final_answer_str", ""), stats
+        items = final_dataset.items if final_dataset else []
+        answer_str = final_dataset.code_state.get("final_answer_str", "") if final_dataset else ""
 
-    # -- operator display helpers ------------------------------------------------
+        return items, answer_str, stats
 
-    _OPERATOR_DISPLAY_NAMES: dict[type, str] = {
-        SemFilterOperator: "Semantic Filter",
-        SemMapOperator: "Semantic Map",
-        SemFlatMapOperator: "Semantic Flat Map",
-        SemGroupByOperator: "Semantic Group By",
-        SemJoinOperator: "Semantic Join",
-        SemTopKOperator: "Semantic Top-K",
-        SemAggOperator: "Semantic Aggregation",
-        CodeOperator: "Code",
-        ReasoningOperator: "Reasoning",
-        LimitOperator: "Limit",
-    }
+    # -- notebook / interactive plan helpers ---------------------------------
 
-    @staticmethod
-    def _operator_display_name(operator: Operator | Dataset) -> str:
-        """Return a human-readable label for an operator or dataset.
+    def get_physical_plan(self) -> list[dict]:
+        """Serialise the physical plan into a list of node descriptors.
+
+        Delegates to ``PhysicalPlan.to_node_dicts()`` which produces a
+        node descriptor for each node in topological order.
+
+        Each descriptor is a dict with keys: ``node_id``,
+        ``node_type`` (``"dataset"`` | ``"operator"`` | ``"reasoning"``),
+        ``operator_name``, ``operator_type``, ``description``, ``code``,
+        ``original_code``, ``params``, ``parent_dataset_ids``, and
+        ``output_dataset_id``.
 
         Requires:
-            - *operator* is an instance of a known operator type or
-              :class:`Dataset`.
+            - ``self._physical_plan`` is not None.
 
         Returns:
-            A short display string such as ``"Semantic Filter"`` or
-            ``"Dataset: Movies"``.
+            A list of node-descriptor dicts suitable for JSON
+            serialization.
 
         Raises:
             None.
         """
-        if isinstance(operator, Dataset):
-            return f"Dataset: {operator.name}"
-        return Execution._OPERATOR_DISPLAY_NAMES.get(
-            type(operator), type(operator).__name__
+        return self._physical_plan.to_node_dicts()
+
+    def execute_cell(
+        self,
+        cell: dict,
+        input_datasets: dict[str, Dataset],
+    ) -> tuple[dict[str, Dataset], OperatorStats | None, dict]:
+        """Execute a single cell and return the updated datasets and output preview.
+
+        Delegates to :meth:`run_node` for the actual execution, using
+        the cell's ``node_id`` to look up the corresponding plan node.
+
+        Requires:
+            - ``cell`` is a valid node descriptor dict (must contain
+              ``"node_id"``).
+            - All datasets referenced by the node's parents exist in
+              ``input_datasets``.
+
+        Returns:
+            A 3-tuple ``(updated_datasets, op_stats, output_preview)``
+            where ``output_preview`` contains ``items_count``,
+            ``preview`` (first 10 items), and ``schema``.
+
+        Raises:
+            KeyError: If a required parent dataset is missing.
+            ValueError: If the operator type is unrecognized.
+        """
+        node_id = cell["node_id"]
+        node = self._physical_plan.get_node(node_id)
+
+        updated, op_stats = self.run_node(node_id, input_datasets)
+
+        output_dataset = updated.get(node.output_dataset_id)
+        preview = self._build_output_preview(output_dataset) if output_dataset else {}
+
+        # Add answer text for reasoning nodes
+        if node.node_type == "reasoning" and output_dataset:
+            preview["answer"] = output_dataset.code_state.get("final_answer_str", "")
+
+        return updated, op_stats, preview
+
+    @staticmethod
+    def _build_output_preview(dataset: Dataset) -> dict:
+        """Build a preview dict for a dataset's items.
+
+        Returns:
+            A dict with ``items_count``, ``preview`` (first 10 items),
+            and ``schema`` (list of field names from the first item).
+
+        Raises:
+            None.
+        """
+        items = dataset.items if dataset else []
+        schema = list(items[0].keys()) if items else []
+        return {
+            "items_count": len(items),
+            "preview": items[:10],
+            "schema": schema,
+        }
+
+    # -- re-optimisation -------------------------------------------------------
+
+    def reoptimize(
+        self,
+        feedback: PlanFeedback,
+    ) -> dict[str, list[str]]:
+        """Apply user feedback to the current physical plan.
+
+        Processes the feedback in order:
+
+        1. **Node edits** (param changes) are applied in-place via
+           ``PhysicalPlan.edit_node()``.  No LLM call is made.
+        2. **Structural deletions** are applied via
+           ``PhysicalPlan.delete_node()``.
+        3. **Structural insertions** are applied via
+           ``PhysicalPlan.insert_node()``.
+
+        All mutations return a set of invalidated downstream node IDs.
+        The caller (typically the web backend) uses these to reset
+        application-level state (e.g., cell status in the frontend).
+
+        Requires:
+            - ``self._physical_plan`` is not ``None``.
+            - ``feedback`` contains at least one edit or structural
+              change.
+
+        Returns:
+            A dict mapping edit labels to their invalidated-node-ID
+            lists::
+
+                {
+                    "edit:<node_id>": ["n3", "n4"],
+                    "delete:<node_id>": ["n3"],
+                    "insert:<new_node_id>": ["n5"],
+                }
+
+        Raises:
+            KeyError: If any referenced node ID does not exist.
+            ValueError: If an edit has empty params, or a dataset node
+                is deleted, or an inserted node ID already exists.
+        """
+        plan = self._physical_plan
+        invalidation_map: dict[str, list[str]] = {}
+
+        # 1. Apply param edits.
+        for edit in feedback.node_edits:
+            inv = plan.edit_node(edit.node_id, edit.new_params)
+            invalidation_map[f"edit:{edit.node_id}"] = inv
+
+        # 2. Apply deletions (before insertions so that IDs remain stable).
+        for sc in feedback.structural_changes:
+            if sc.change_type == "delete" and sc.node_id is not None:
+                inv = plan.delete_node(sc.node_id)
+                invalidation_map[f"delete:{sc.node_id}"] = inv
+
+        # 3. Apply insertions.
+        for sc in feedback.structural_changes:
+            if (
+                sc.change_type == "insert"
+                and sc.after_node_id is not None
+                and sc.new_node_params is not None
+            ):
+                new_node = self._node_from_params(sc.new_node_params, plan)
+                inv = plan.insert_node(sc.after_node_id, new_node)
+                invalidation_map[f"insert:{new_node.node_id}"] = inv
+
+        return invalidation_map
+
+    @staticmethod
+    def _node_from_params(params: dict, plan: PhysicalPlan) -> PlanNode:
+        """Create a ``PlanNode`` from a user-supplied params dict.
+
+        Requires:
+            - *params* has at least ``"operator"`` and ``"name"`` keys.
+
+        Returns:
+            A new ``PlanNode`` with a unique auto-generated ``node_id``.
+
+        Raises:
+            KeyError: If required keys are missing from *params*.
+        """
+        # Generate a unique node ID.
+        existing_ids = {n.node_id for n in plan.nodes}
+        counter = 0
+        while f"node-{counter}" in existing_ids:
+            counter += 1
+        node_id = f"node-{counter}"
+
+        operator_type = params.get("operator", "")
+        name = params.get("name", operator_type)
+        description = params.get("description", name)
+        output_dataset_id = params.get("output_dataset_id", name)
+        node_type = "reasoning" if operator_type == "Reasoning" else "operator"
+
+        return PlanNode(
+            node_id=node_id,
+            node_type=node_type,
+            operator_type=operator_type or None,
+            name=name,
+            description=description,
+            params=dict(params),
+            parent_ids=[],  # Will be set by insert_node()
+            output_dataset_id=output_dataset_id,
         )
 
-    # -- streaming run -----------------------------------------------------------
+    # -- streaming run -------------------------------------------------------
 
     def run_stream(self) -> Generator[ExecutionProgress, None, tuple[list[dict], str, ExecutionStats]]:
         """Execute the physical plan, yielding progress events.
 
         This is the streaming counterpart of :meth:`run`.  It performs
-        the same operator-by-operator execution but yields
-        :class:`ExecutionProgress` events between operators so that
+        the same node-by-node execution but yields
+        :class:`ExecutionProgress` events between nodes so that
         callers can keep the user informed of progress.
 
-        After each operator completes, the ``"Completed step"`` progress
+        After each node completes, the ``"Completed step"`` progress
         event includes the ``OperatorStats`` for that operator.
 
         The **return value** (accessed via ``StopIteration.value``) is
@@ -576,7 +687,7 @@ class Execution:
                 result = exc.value  # (items, answer_str, stats)
 
         Requires:
-            - ``self._plan`` is a valid plan dict.
+            - ``self._physical_plan`` is not None.
             - ``self.datasets`` is a non-empty list.
 
         Returns:
@@ -588,40 +699,30 @@ class Execution:
             ValueError: If the plan contains unrecognized operators.
         """
         exec_start = time.perf_counter()
-        input_datasets: dict[str, Dataset] = {}
+        datasets_store: dict[str, Dataset] = {}
         all_operator_stats: list[OperatorStats] = []
-        operators = self._get_ops_in_topological_order(self._plan)
-        total = len(operators)
+        nodes = self._physical_plan.topo_order()
+        total = len(nodes)
 
         yield ExecutionProgress(
-            message=f"Starting execution — {total} step(s) in plan.",
+            message=f"Starting execution -- {total} step(s) in plan.",
             total_operators=total,
         )
 
-        for idx, (operator, parent_ids) in enumerate(operators):
-            display = self._operator_display_name(operator)
+        for idx, node in enumerate(nodes):
+            display = node.display_name()
 
             yield ExecutionProgress(
-                message=f"Running step {idx + 1}/{total}: {display}…",
+                message=f"Running step {idx + 1}/{total}: {display}...",
                 operator_index=idx,
                 total_operators=total,
                 operator_name=display,
             )
 
-            op_stats: OperatorStats | None = None
-            if isinstance(operator, Dataset):
-                input_datasets[operator.name] = operator.materialize(self.storage)
-            elif isinstance(operator, CodeOperator):
-                input_datasets, op_stats = operator(input_datasets)
-                all_operator_stats.append(op_stats)
-            elif isinstance(operator, SemJoinOperator):
-                left_dataset_id = parent_ids[0]
-                right_dataset_id = parent_ids[1]
-                input_datasets, op_stats = operator(left_dataset_id, right_dataset_id, input_datasets)
-                all_operator_stats.append(op_stats)
-            else:
-                dataset_id = parent_ids[0]
-                input_datasets, op_stats = operator(dataset_id, input_datasets)
+            datasets_store, op_stats = self.run_node(
+                node.node_id, datasets_store,
+            )
+            if op_stats is not None:
                 all_operator_stats.append(op_stats)
 
             yield ExecutionProgress(
@@ -632,31 +733,7 @@ class Execution:
                 operator_stats=op_stats,
             )
 
-        # Final reasoning step
-        yield ExecutionProgress(
-            message="Generating final answer…",
-            operator_index=total,
-            total_operators=total + 1,
-            operator_name="Reasoning",
-        )
-
-        final_answer_operator = ReasoningOperator(
-            task=self.query,
-            output_dataset_id="final_dataset",
-            model_id="openai/gpt-5-mini",
-            llm_config=self.llm_config,
-        )
-        output_datasets, reasoning_stats = final_answer_operator(input_datasets)
-        all_operator_stats.append(reasoning_stats)
-        final_dataset = output_datasets["final_dataset"]
-
-        yield ExecutionProgress(
-            message="Execution complete.",
-            operator_index=total + 1,
-            total_operators=total + 1,
-            operator_name="Reasoning",
-            operator_stats=reasoning_stats,
-        )
+        final_dataset = datasets_store.get("final_dataset")
 
         exec_wall_clock = time.perf_counter() - exec_start
 
@@ -672,4 +749,7 @@ class Execution:
             execution=execution_phase,
         )
 
-        return final_dataset.items, final_dataset.code_state.get("final_answer_str", ""), stats
+        items = final_dataset.items if final_dataset else []
+        answer_str = final_dataset.code_state.get("final_answer_str", "") if final_dataset else ""
+
+        return items, answer_str, stats
