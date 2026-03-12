@@ -158,9 +158,10 @@ function UserWorkspacePage() {
 
       setCurrentWorkspaceId(workspace.id)
 
-      // Restore dataset selection from workspace
-      if (workspace.dataset_ids) {
-        const datasetIds = workspace.dataset_ids.split(',').map(id => parseInt(id))
+      // Restore dataset selection from workspace.
+      // Guard against empty strings (falsy in JS) and malformed values.
+      if (workspace.dataset_ids && workspace.dataset_ids.trim()) {
+        const datasetIds = workspace.dataset_ids.split(',').map(id => parseInt(id)).filter(id => !isNaN(id))
         setSelectedDatasets(new Set(datasetIds))
       } else {
         setSelectedDatasets(new Set())
@@ -382,16 +383,19 @@ function UserWorkspacePage() {
   }
 
   const toggleDataset = (datasetId) => {
+    // Capture the workspace ID synchronously so the async persist uses
+    // the correct value even if React batches a state update.
+    const wsId = currentWorkspaceId
     setSelectedDatasets(prev => {
       const newSet = new Set(prev)
       if (newSet.has(datasetId)) newSet.delete(datasetId)
       else newSet.add(datasetId)
 
       // Persist dataset selection to workspace if one exists
-      if (currentWorkspaceId) {
+      if (wsId) {
         const updatedIds = Array.from(newSet).map(id => parseInt(id)).join(',')
         getValidToken().then(token => {
-          if (token) workspacesApi.update(currentWorkspaceId, { dataset_ids: updatedIds }, token).catch(console.error)
+          if (token) workspacesApi.update(wsId, { dataset_ids: updatedIds }, token).catch(console.error)
         })
       }
 
@@ -438,15 +442,21 @@ function UserWorkspacePage() {
       return
     }
 
+    // Snapshot dataset selection as a string before any async work —
+    // this avoids any stale-closure issues with React state.
+    const datasetIdsStr = Array.from(selectedDatasets).map(id => parseInt(id)).join(',')
+
     // Ensure a workspace + conversation exist before submitting
     let currentSessionId = sessionId
+    let workspaceId = currentWorkspaceId
     if (!currentSessionId) {
       try {
         const token = await getValidToken()
         if (!token) return
-        const response = await workspacesApi.create({ title: 'Untitled Workspace' }, token)
+        const response = await workspacesApi.create({ title: 'Untitled Workspace', dataset_ids: datasetIdsStr }, token)
         const workspace = response.data
         const firstConv = workspace.conversations[0]
+        workspaceId = workspace.id
         setCurrentWorkspaceId(workspace.id)
         setCurrentConversationId(firstConv.id)
         setSessionId(firstConv.session_id)
@@ -459,13 +469,14 @@ function UserWorkspacePage() {
       }
     }
 
-    // Persist dataset selection to workspace
-    if (currentWorkspaceId) {
+    // Always persist dataset selection to workspace — this is a safety net
+    // in case the create above didn't carry the value, or the workspace
+    // already existed but with stale dataset_ids.
+    if (workspaceId) {
       try {
         const token = await getValidToken()
         if (token) {
-          const datasetIdsStr = Array.from(selectedDatasets).join(',')
-          await workspacesApi.update(currentWorkspaceId, { dataset_ids: datasetIdsStr }, token)
+          await workspacesApi.update(workspaceId, { dataset_ids: datasetIdsStr }, token)
         }
       } catch (error) {
         console.warn('Failed to persist dataset selection:', error)

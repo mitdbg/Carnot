@@ -27,6 +27,7 @@ router = APIRouter()
 
 class WorkspaceCreate(BaseModel):
     title: str = "Untitled Workspace"
+    dataset_ids: str | None = None
 
 
 class WorkspaceUpdate(BaseModel):
@@ -214,6 +215,7 @@ async def create_workspace(
         user_id=user_id,
         session_id=session_id,
         title=body.title,
+        dataset_ids=body.dataset_ids,
     )
     db.add(workspace)
     await db.flush()  # get workspace.id without committing
